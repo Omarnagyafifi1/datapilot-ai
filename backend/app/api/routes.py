@@ -34,10 +34,12 @@ def health_check() -> HealthResponse:
 @router.post("/query", response_model=QueryResponse)
 def query_endpoint(
     payload: QueryRequest,
+    data_source_service: DataSourceService = Depends(get_data_source_service),
     graph=Depends(get_graph_orchestrator),
 ) -> QueryResponse:
-    result = graph.run(payload.question)
-    return QueryResponse(answer=result)
+    data_source_service.get_conn_string(payload.source_id)
+    result = graph.run(payload.question, payload.source_id)
+    return QueryResponse(**result)
 
 
 @router.post("/datasources/connect")
