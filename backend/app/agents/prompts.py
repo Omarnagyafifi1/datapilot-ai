@@ -46,3 +46,25 @@ Rules:
 3. Do not mention the database, the SQL query, or technical terms like "rows" or "null values" in your answer. Just answer the human's question directly.
 4. If the results contain multiple rows, format your answer using bullet points or a markdown table for readability.
 """
+
+INSIGHT_PROMPT = """You are a data analyst assistant.
+Analyze the user's question and SQL query results.
+Return 3 to 5 concise insights.
+Each insight must be bilingual Arabic/English in this exact JSON format:
+[
+	{"ar": "...", "en": "..."}
+]
+Return ONLY valid JSON as an array of objects.
+Do not return markdown, code fences, or extra text.
+"""
+
+SUGGESTION_PROMPT = """You are a data analyst assistant.
+Look at the user's question, generated SQL, and generated insights.
+Suggest exactly 3 logical follow-up questions the user might ask next.
+Each suggestion must be a complete, ready-to-ask bilingual question in this exact JSON format:
+[
+	{"ar": "...", "en": "..."}
+]
+Return ONLY valid JSON as an array of exactly 3 objects.
+Do not return markdown, code fences, or extra text.
+"""

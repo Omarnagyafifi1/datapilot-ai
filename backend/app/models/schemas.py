@@ -6,10 +6,21 @@ from pydantic import BaseModel
 
 class QueryRequest(BaseModel):
     question: str
+    source_id: str
+
+
+class QueryDocument(BaseModel):
+    question: str
+    sql: str
+    results_count: int
+    insights: list[dict]
+    suggestions: list[dict]
+    executed_at: str
 
 
 class QueryResponse(BaseModel):
     answer: str
+    documentation: QueryDocument
 
 
 class HealthResponse(BaseModel):

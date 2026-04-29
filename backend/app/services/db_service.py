@@ -111,8 +111,9 @@ class DBService:
         if conn_string:
             _SOURCE_CONN_STRINGS[source_id] = conn_string
 
-    def run_query(self, sql: str) -> list[dict]:
-        return execute_query(sql=sql, source_id=self.source_id)
+    def run_query(self, sql: str, source_id: str | None = None) -> list[dict]:
+        resolved_source_id = source_id or self.source_id
+        return execute_query(sql=sql, source_id=resolved_source_id)
 
     def test_connection(self, params: dict) -> dict:
         params_with_source = {"source_id": self.source_id, **params}
