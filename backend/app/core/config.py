@@ -15,6 +15,8 @@ class Settings:
         "LANGSMITH_ENDPOINT", "https://api.smith.langchain.com"
     )
     langsmith_project: str = os.getenv("LANGSMITH_PROJECT", "")
+    encryption_key: str = os.getenv("ENCRYPTION_KEY", "")
+    data_sources_db_url: str = os.getenv("DATA_SOURCES_DB_URL", "")
 
 
 settings = Settings()

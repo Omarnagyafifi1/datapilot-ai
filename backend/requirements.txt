@@ -13,8 +13,10 @@ groq
 
 sqlalchemy
 psycopg2-binary
+pymysql
 
 pandas
 
 tenacity
 loguru
+cryptography
