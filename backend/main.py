@@ -1,15 +1,11 @@
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
 from fastapi import FastAPI, UploadFile, File, HTTPException, status
 from fastapi.responses import JSONResponse
 import logging
 
-from exceptions import CSVValidationError, DataCleaningError, DatabaseIngestionError
-from schemas import UploadResponse, UploadMetadata
-from database import engine
-from services.data_service import DataSourceService
+from app.core.exceptions import CSVValidationError, DataCleaningError, DatabaseIngestionError
+from app.models.schemas import UploadResponse, UploadMetadata
+from app.services.database import engine
+from app.services.data_service import DataSourceService
 
 # Setup basic logging
 logging.basicConfig(level=logging.INFO)

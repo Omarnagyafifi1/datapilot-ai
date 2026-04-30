@@ -16,6 +16,9 @@ psycopg2-binary
 pymysql
 
 pandas
+plotly
+numpy
+faiss-cpu
 
 tenacity
 loguru

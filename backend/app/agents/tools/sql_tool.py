@@ -1,5 +1,6 @@
 import re
 from pathlib import Path
+from typing import Optional
 
 from langchain.tools import tool
 
@@ -7,14 +8,15 @@ from app.agents.prompts import SQL_GENERATION_PROMPT, SQL_FIX_PROMPT
 from app.agents.tools.schema_tools import fetch_schema_context
 from app.services.db_service import DBService
 from app.services.schema_service import SchemaService
+from app.agents.state.agent_state import AgentState
 
 MAX_RETRIES = 3
 QUERY_TIMEOUT_SECONDS = 10
 MAX_ROWS = 1000
 RESULTS_FILE = Path("sql_results.txt")
 
-_db_service: DBService = None
-_schema_service: SchemaService = None
+_db_service: Optional[DBService] = None
+_schema_service: Optional[SchemaService] = None
 _redis_client = None
 _llm = None
 
@@ -31,6 +33,11 @@ def init_sql_tool(
     _schema_service = schema_service
     _redis_client = redis_client
     _llm = llm
+
+
+def execute_sql(db_service: DBService, sql: str, source_id: str) -> list[dict]:
+    """Execute a SQL query using the provided DB service."""
+    return db_service.run_query(sql, source_id=source_id)
 
 
 def _write_results_file(results: list) -> None:
@@ -72,13 +79,13 @@ def execute_sql_query(question: str) -> str:
     if not _db_service or not _schema_service or not _llm:
         return "Error: SQL tool not initialized. Call init_sql_tool first."
 
-    state = AgentState(question=question)
+    state = AgentState(question=question, source_id="default")
     retry_count = 0
     success = False
     error = None
     sql_results = []
 
-    schema_context = fetch_schema_context(_schema_service)
+    schema_context = fetch_schema_context(_schema_service, state.source_id)
     if isinstance(schema_context, dict):
         schema_context = str(schema_context)
 
@@ -146,7 +153,7 @@ def fix_and_execute_sql(question: str, failed_query: str, error_message: str) ->
     if not _db_service or not _schema_service or not _llm:
         return "Error: SQL tool not initialized. Call init_sql_tool first."
 
-    schema_context = fetch_schema_context(_schema_service)
+    schema_context = fetch_schema_context(_schema_service, "default")
     if isinstance(schema_context, dict):
         schema_context = str(schema_context)
 

@@ -1,22 +1,25 @@
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import Optional
 import os
-from dataclasses import dataclass
 
-from dotenv import load_dotenv
-
-
-load_dotenv()
-
-
-@dataclass(frozen=True)
-class Settings:
-    groq_api_key: str = os.getenv("GROQ_API_KEY", "")
-    langsmith_api_key: str = os.getenv("LANGSMITH_API_KEY", "")
-    langsmith_endpoint: str = os.getenv(
-        "LANGSMITH_ENDPOINT", "https://api.smith.langchain.com"
+class Settings(BaseSettings):
+    # Database
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "")
+    
+    # LLM API Keys
+    OPENAI_API_KEY: Optional[str] = None
+    GEMINI_API_KEY: Optional[str] = None
+    GROQ_API_KEY: Optional[str] = None
+    OPENROUTER_API_KEY: Optional[str] = None
+    
+    # App Settings
+    APP_NAME: str = "DataPilot AI"
+    DEBUG: bool = False
+    
+    model_config = SettingsConfigDict(
+        env_file=".env", 
+        env_file_encoding="utf-8", 
+        extra="ignore"
     )
-    langsmith_project: str = os.getenv("LANGSMITH_PROJECT", "")
-    encryption_key: str = os.getenv("ENCRYPTION_KEY", "")
-    data_sources_db_url: str = os.getenv("DATA_SOURCES_DB_URL", "")
-
 
 settings = Settings()

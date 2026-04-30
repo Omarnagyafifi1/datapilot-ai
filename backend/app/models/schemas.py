@@ -1,46 +1,43 @@
-from datetime import datetime
-from typing import Literal
-
 from pydantic import BaseModel
+from typing import List, Dict, Any, Optional
+from enum import Enum
+from datetime import datetime
 
+class DataSourceType(str, Enum):
+    POSTGRES = "postgresql"
+    MYSQL = "mysql"
+    ORACLE = "oracle"
+    SQLSERVER = "sqlserver"
+    REDSHIFT = "redshift"
+    SPARK = "spark"
 
-class QueryRequest(BaseModel):
-    question: str
+class DataSourceConfig(BaseModel):
     source_id: str
-
+    data_source_type: DataSourceType
+    db_user: str
+    db_password: str
+    db_host: str
+    db_port: str
+    db_name: str
+    service_name: str | None = None
 
 class QueryDocument(BaseModel):
     question: str
     sql: str
+    results: List[Dict[str, Any]]
     results_count: int
-    insights: list[dict]
-    suggestions: list[dict]
+    visualization: Dict[str, Any] | None = None
+    insights: List[Dict[str, str]]
+    suggestions: List[Dict[str, str]]
     executed_at: str
 
+class UploadMetadata(BaseModel):
+    table_name: str
+    columns: Dict[str, str]
+    sample_data: List[Dict[str, Any]]
 
-class QueryResponse(BaseModel):
-    answer: str
-    documentation: QueryDocument
-
-
-class HealthResponse(BaseModel):
-    status: str
-
-
-class ConnectRequest(BaseModel):
-    name: str
-    db_type: Literal["postgresql", "mysql", "sqlite"]
-    host: str
-    port: int
-    db_name: str
-    username: str
-    password: str
+class UploadResponse(BaseModel):
+    message: str
+    metadata: UploadMetadata
 
 
-class DataSourceResponse(BaseModel):
-    id: str
-    name: str
-    db_type: str
-    host: str
-    db_name: str
-    created_at: datetime

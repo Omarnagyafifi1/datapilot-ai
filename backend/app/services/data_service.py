@@ -7,7 +7,7 @@ from typing import Dict, Any
 from pathlib import Path
 from fastapi import UploadFile
 from sqlalchemy import inspect
-from exceptions import CSVValidationError, DataCleaningError, DatabaseIngestionError
+from app.core.exceptions import CSVValidationError, DataCleaningError, DatabaseIngestionError
 
 class DataSourceService:
     @staticmethod
