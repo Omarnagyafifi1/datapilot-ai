@@ -153,7 +153,8 @@ The goal of this structure is to make development, testing, and future extension
 3. Run the application:
    - backend/.venv/Scripts/uvicorn.exe app.main:app --reload --app-dir backend
 
-Graph:
+## Execution Flow
+```mermaid
 graph TD
     START([START]) --> Router[router]
     
@@ -202,3 +203,4 @@ graph TD
     ScenarioFailure --> Document
     
     Document --> END3([END])
+```
