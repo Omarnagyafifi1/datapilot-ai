@@ -1,9 +1,6 @@
 import json
 import pandas as pd
-try:
-    import plotly.express as px
-except ImportError:  # pragma: no cover
-    px = None
+import plotly.express as px
 from app.core.logger import get_logger
 
 logger = get_logger(__name__)
