@@ -26,7 +26,7 @@ class QueryDocument(BaseModel):
     sql: str
     results: List[Dict[str, Any]]
     results_count: int
-    visualization: Dict[str, Any] | None = None
+    visualization:   Optional[VisualizationResponse] = None
     insights: List[Dict[str, str]]
     suggestions: List[Dict[str, str]]
     executed_at: str
@@ -41,3 +41,17 @@ class UploadResponse(BaseModel):
     metadata: UploadMetadata
 
 
+class VisualizationResponse(BaseModel):
+    library:    str
+    chart_type: str
+    x:          str
+    y:          str
+    spec:       Dict[str, Any]  
+
+
+class QueryResponse(BaseModel):
+    sql:           str
+    results:       List[Dict[str, Any]]
+    visualization: Optional[VisualizationResponse] = None
+    documentation: Dict[str, Any]
+    
