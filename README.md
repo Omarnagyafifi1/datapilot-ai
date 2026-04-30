@@ -152,3 +152,53 @@ The goal of this structure is to make development, testing, and future extension
 
 3. Run the application:
    - backend/.venv/Scripts/uvicorn.exe app.main:app --reload --app-dir backend
+
+Graph:
+graph TD
+    START([START]) --> Router[router]
+    
+    Router -->|conditional| RouteIntent{route_intent}
+    RouteIntent -->|GENERAL| GeneralChat[general_chat]
+    RouteIntent -->|other| FetchSchema[fetch_schema]
+    
+    GeneralChat --> END1([END])
+    
+    FetchSchema -->|conditional| RouteSQLGen{route_sql_gen}
+    RouteSQLGen -->|ADD/UPDATE/DELETE| GenerateModSQL[generate_mod_sql]
+    RouteSQLGen -->|other| LookupScenario[lookup_scenario]
+    
+    GenerateModSQL --> Approval[approval]
+    
+    Approval -->|conditional| RouteApproval{route_approval}
+    RouteApproval -->|success=true| ExecuteSQL[execute_sql]
+    RouteApproval -->|success=false| END2([END])
+    
+    LookupScenario -->|conditional| RouteScenario{route_scenario}
+    RouteScenario -->|scenario_matched AND sql exists| ExecuteSQL
+    RouteScenario -->|otherwise| GenerateSQL[generate_sql]
+    
+    GenerateSQL --> ExecuteSQL
+    
+    ExecuteSQL -->|conditional| RouteExecution{route_execution}
+    RouteExecution -->|success=true| ValidateResult[validate_result]
+    RouteExecution -->|success=false AND retry_count >= MAX_RETRIES| ScenarioFailure[scenario_failure]
+    RouteExecution -->|success=false AND retry_count < MAX_RETRIES| FixSQL[fix_sql]
+    
+    FixSQL -->|conditional| RouteFix{route_fix}
+    RouteFix -->|success=true| ValidateResult
+    RouteFix -->|success=false AND retry_count >= MAX_RETRIES| ScenarioFailure
+    RouteFix -->|success=false AND retry_count < MAX_RETRIES| ExecuteSQL
+    
+    ValidateResult -->|conditional| RouteValidation{route_validation}
+    RouteValidation -->|validation_passed=true| ScenarioSuccess[scenario_success]
+    RouteValidation -->|validation_passed=false AND retry_count >= MAX_RETRIES| ScenarioFailure
+    RouteValidation -->|validation_passed=false AND retry_count < MAX_RETRIES| GenerateSQL
+    
+    ScenarioSuccess --> GenerateViz[generate_visualization]
+    GenerateViz --> GenerateInsights[generate_insights]
+    GenerateInsights --> GenerateSuggestions[generate_suggestions]
+    GenerateSuggestions --> Document[document]
+    
+    ScenarioFailure --> Document
+    
+    Document --> END3([END])
