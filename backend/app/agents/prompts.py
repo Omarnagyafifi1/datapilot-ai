@@ -158,3 +158,23 @@ You are an automated data QA tool. Your job is to compare the user's intent with
 ### Output
 Return ONLY the validation string starting with "VALID" or "INVALID:".
 """
+
+CONTEXT_FILTER_PROMPT = """
+You are an expert data architect. Your task is to analyze the user's question and the full database schema to identify the MINIMAL subset of tables and columns required to answer the question.
+
+### Full Database Schema
+{full_schema}
+
+### User Question
+{question}
+
+### Instructions
+1. Identify all tables that must be joined or queried.
+2. Identify all columns necessary for filtering (WHERE clauses), grouping (GROUP BY), or displaying (SELECT).
+3. Include foreign key columns necessary for joins.
+4. Output ONLY a valid JSON object containing the filtered schema. Use the exact same structure as the input schema but only include the relevant elements.
+5. If the question cannot be answered with the given schema, return an empty tables list: {{"tables": []}}.
+
+### Output Format
+Return ONLY the raw JSON. No markdown blocks, no explanations.
+"""
