@@ -112,6 +112,10 @@ The goal of this structure is to make development, testing, and future extension
 - app/agents/tools/schema_tools.py
   - Schema retrieval helper through schema_service.
 
+- app/agents/tools/context_filtering.py
+  - LLM-based tool to filter and prune the database schema based on the user's question.
+  - Optimizes token usage and improves performance by providing a context-aware minimal schema.
+
 - app/agents/state/
   - Agent state definitions during execution.
 
@@ -127,6 +131,13 @@ The goal of this structure is to make development, testing, and future extension
 - __init__.py files
   - Mark directories as Python packages.
   - Help keep imports organized across modules.
+
+## Key Features
+
+- **Context-Aware Schema Filtering**
+  - Automatically prunes the database schema based on the user's question.
+  - Only relevant tables and columns are passed to the SQL generator.
+  - **Benefits**: Reduces token consumption, lowers latency, and increases SQL generation accuracy by eliminating noise.
 
 ## Why This Structure Matters
 
@@ -160,11 +171,11 @@ graph TD
     
     Router -->|conditional| RouteIntent{route_intent}
     RouteIntent -->|GENERAL| GeneralChat[general_chat]
-    RouteIntent -->|other| FetchSchema[fetch_schema]
+    RouteIntent -->|other| FetchAndFilterSchema[fetch_and_filter_schema]
     
     GeneralChat --> END1([END])
     
-    FetchSchema -->|conditional| RouteSQLGen{route_sql_gen}
+    FetchAndFilterSchema -->|conditional| RouteSQLGen{route_sql_gen}
     RouteSQLGen -->|ADD/UPDATE/DELETE| GenerateModSQL[generate_mod_sql]
     RouteSQLGen -->|other| LookupScenario[lookup_scenario]
     

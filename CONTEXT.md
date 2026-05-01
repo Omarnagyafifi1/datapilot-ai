@@ -16,6 +16,14 @@ Last updated: 2026-04-26
 - Source credentials are encrypted in storage.
 - Data source connection strings are loaded and cached by source_id.
 
+### FR-04: Context-Aware Schema Filtering
+- Implemented `filter_schema_context` in `app/agents/tools/context_filtering.py`.
+- Integrated into the `fetch_schema` node within the graph.
+- Uses an LLM to analyze the user's question and prune the full database schema.
+- Filters out irrelevant tables and columns to reduce token consumption.
+- Improves SQL generation accuracy by providing a focused, noise-free schema context.
+- Safely falls back to the full schema if the filtering step fails.
+
 ### FR-09: Generate Insights
 - Implemented insight_node in the graph flow.
 - Runs after SQL execution.
@@ -75,7 +83,7 @@ Response shape:
 }
 
 ## Graph Flow (Current)
-schema -> sql generation -> sql execution (source_id) -> insight_node -> suggestion_node -> documentation_node -> final response
+router -> fetch_and_filter_schema -> lookup_scenario -> generate_sql -> execute_sql -> validate_result -> insight_node -> suggestion_node -> documentation_node -> final response
 
 ## Key Files To Reopen First
 - backend/app/api/routes.py
@@ -83,6 +91,7 @@ schema -> sql generation -> sql execution (source_id) -> insight_node -> suggest
 - backend/app/agents/graph.py
 - backend/app/agents/state/agent_state.py
 - backend/app/agents/tools/sql_tools.py
+- backend/app/agents/tools/context_filtering.py
 - backend/app/services/db_service.py
 
 ## Smoke Checks Already Done
