@@ -6,6 +6,7 @@ import sqlite3
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import Engine
 from fastapi import HTTPException
+from urllib.parse import quote_plus
 from app.core.logger import get_logger
 
 logger = get_logger(__name__)
@@ -65,6 +66,40 @@ def _normalize_numeric_text_columns(df: pd.DataFrame) -> pd.DataFrame:
 def _dialect_from_conn_string(conn_string: str) -> str:
     prefix = conn_string.split(":", 1)[0].lower()
     return prefix.split("+", 1)[0]
+
+
+def test_connection(params: dict) -> dict:
+    db_type = str(params.get("db_type", "")).lower()
+    try:
+        if db_type == "sqlite":
+            db_name = str(params.get("db_name") or params.get("database") or params.get("path") or "")
+            if not db_name:
+                raise ValueError("SQLite database path is required")
+            conn_string = f"sqlite:///{db_name}"
+        elif db_type == "postgresql":
+            username = str(params.get("username") or params.get("user") or "")
+            password = quote_plus(str(params.get("password") or ""))
+            host = str(params.get("host") or "")
+            port = str(params.get("port") or "")
+            db_name = str(params.get("db_name") or params.get("database") or "")
+            conn_string = f"postgresql+psycopg2://{username}:{password}@{host}:{port}/{db_name}"
+        elif db_type == "mysql":
+            username = str(params.get("username") or params.get("user") or "")
+            password = quote_plus(str(params.get("password") or ""))
+            host = str(params.get("host") or "")
+            port = str(params.get("port") or "")
+            db_name = str(params.get("db_name") or params.get("database") or "")
+            conn_string = f"mysql+pymysql://{username}:{password}@{host}:{port}/{db_name}"
+        else:
+            raise ValueError("Unsupported database type")
+
+        engine = create_engine(_normalize_conn_string_for_sync(conn_string))
+        with engine.connect():
+            pass
+        return {"success": True}
+    except Exception as exc:
+        logger.error("Connection test failed: %s", exc)
+        return {"success": False, "error": str(exc)}
 
 
 def _normalize_conn_string_for_sync(conn_string: str) -> str:

@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 import logging
 
 from app.core.exceptions import CSVValidationError, DataCleaningError, DatabaseIngestionError
+from app.api.routes import router as api_router
 from app.models.schemas import UploadResponse, UploadMetadata
 from app.services.database import engine
 from app.services.data_service import DataSourceService
@@ -16,6 +17,8 @@ app = FastAPI(
     description="API for managing data uploads and text-to-SQL conversions",
     version="1.0.0"
 )
+
+app.include_router(api_router)
 
 # Exception Handlers
 @app.exception_handler(CSVValidationError)

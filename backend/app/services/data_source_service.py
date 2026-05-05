@@ -38,7 +38,7 @@ _SESSION_FACTORY: sessionmaker | None = None
 
 
 def _get_fernet() -> Fernet:
-    key = settings.encryption_key.strip()
+    key = settings.ENCRYPTION_KEY.strip()
     if not key:
         raise HTTPException(status_code=500, detail="Encryption key is not configured")
     try:
@@ -54,7 +54,7 @@ def _get_store_engine() -> Engine:
     if _REGISTRY_ENGINE is not None:
         return _REGISTRY_ENGINE
 
-    db_url = settings.data_sources_db_url.strip()
+    db_url = settings.DATA_SOURCES_DB_URL.strip()
     if not db_url:
         raise HTTPException(status_code=500, detail="Data source store is not configured")
 

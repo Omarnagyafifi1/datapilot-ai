@@ -6,9 +6,11 @@ import webbrowser
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
+from uuid import uuid4
 
+from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import StateGraph, START, END
-from langgraph.types import interrupt
+from langgraph.types import Command, interrupt
 from app.agents.nodes.sql_node import run_sql_node
 from app.agents.prompts import (
     INSIGHT_PROMPT, 
@@ -573,6 +575,7 @@ class AgentGraph:
         self.llm = llm
         self.db_service = db_service
         self.schema_service = schema_service
+        self.checkpointer = InMemorySaver()
         self.graph = self._build_graph()
 
     def _build_graph(self):
@@ -658,9 +661,13 @@ class AgentGraph:
         workflow.add_edge("scenario_failure", "document")
         workflow.add_edge("document", END)
 
-        return workflow.compile()
+        return workflow.compile(checkpointer=self.checkpointer)
 
-    def run(self, question: str, source_id: str, cli_mode: bool = False) -> dict[str, Any]:
+    def _build_config(self, thread_id: str) -> dict[str, Any]:
+        return {"configurable": {"thread_id": thread_id}}
+
+    def start(self, question: str, source_id: str, cli_mode: bool = False, thread_id: str | None = None) -> dict:
+        resolved_thread_id = thread_id or str(uuid4())
         initial_state = {
             "question": question,
             "source_id": source_id,
@@ -669,7 +676,20 @@ class AgentGraph:
                 "cli_mode": cli_mode,
             },
         }
-        final_state = self.graph.invoke(initial_state)
+        final_state = self.graph.invoke(initial_state, self._build_config(resolved_thread_id))
+
+        return {
+            "thread_id": resolved_thread_id,
+            "state": final_state,
+        }
+
+    def resume(self, thread_id: str, resume_value: str) -> dict[str, Any]:
+        command = Command(resume=resume_value)
+        return self.graph.invoke(command, self._build_config(thread_id))
+
+    def run(self, question: str, source_id: str, cli_mode: bool = False) -> dict[str, Any]:
+        result = self.start(question, source_id, cli_mode=cli_mode)
+        final_state = result["state"]
         
         return {
             "sql": final_state.get("sql", ""),

@@ -5,6 +5,10 @@ import os
 class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = os.getenv("DATABASE_URL", "")
+    DATA_SOURCES_DB_URL: str = os.getenv("DATA_SOURCES_DB_URL", "sqlite:///./data_sources.db")
+    ENCRYPTION_KEY: str = os.getenv("ENCRYPTION_KEY", "")
+    REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    APPROVAL_TTL_SECONDS: int = int(os.getenv("APPROVAL_TTL_SECONDS", "3600"))
     
     # LLM API Keys
     OPENAI_API_KEY: Optional[str] = None
