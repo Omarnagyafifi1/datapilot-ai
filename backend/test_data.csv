@@ -1,0 +1,4 @@
+id,name,age,salary,department,manager,hire_date,location,email,phone,office_number,emergency_contact,blood_type,favorite_color,hobbies
+1,Ibrahim,25,5000,Engineering,Sarah,2023-01-01,Cairo,ibrahim@example.com,123456789,101,Father,A+,Blue,Coding
+2,Adel,30,6000,Marketing,Mike,2022-05-15,Dubai,adel@example.com,987654321,202,Mother,B-,Green,Reading
+3,Sara,28,5500,Engineering,Sarah,2024-02-10,Cairo,sara@example.com,555666777,102,Brother,O+,Red,Hiking

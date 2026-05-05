@@ -21,6 +21,7 @@ from app.agents.prompts import (
 )
 from app.agents.state.agent_state import AgentState
 from app.agents.tools.schema_tools import fetch_schema_context
+from app.agents.tools.context_filtering import filter_schema_context
 from app.agents.tools.sql_tool import execute_sql
 from app.core.logger import get_logger
 from app.llm.base_llm import BaseLLM
@@ -233,9 +234,10 @@ def general_chat_node(state: AgentState, llm: BaseLLM) -> dict:
     return {"answer": answer, "success": True}
 
 
-def schema_node(state: AgentState, schema_service: SchemaService) -> dict:
-    schema = fetch_schema_context(schema_service, state.source_id)
-    return {"documentation": {**state.documentation, "schema": schema}}
+def schema_node(state: AgentState, schema_service: SchemaService, llm: BaseLLM) -> dict:
+    full_schema = fetch_schema_context(schema_service, state.source_id)
+    filtered_schema = filter_schema_context(llm, full_schema, state.question)
+    return {"documentation": {**state.documentation, "schema": filtered_schema}}
 
 
 def scenario_lookup_node(state: AgentState) -> dict:
@@ -581,7 +583,7 @@ class AgentGraph:
         # Nodes
         workflow.add_node("router", lambda s: intent_router_node(s, self.llm))
         workflow.add_node("general_chat", lambda s: general_chat_node(s, self.llm))
-        workflow.add_node("fetch_schema", lambda s: schema_node(s, self.schema_service))
+        workflow.add_node("fetch_schema", lambda s: schema_node(s, self.schema_service, self.llm))
         workflow.add_node("lookup_scenario", scenario_lookup_node)
         workflow.add_node("generate_sql", lambda s: run_sql_node(s, self.llm))
         workflow.add_node("generate_mod_sql", lambda s: modification_sql_node(s, self.llm, self.schema_service))
@@ -670,11 +672,22 @@ class AgentGraph:
             },
         }
         final_state = self.graph.invoke(initial_state)
-        
+        # Ensure returned shape matches the API `QueryResponse` model which
+        # expects an `answer` string and `documentation` payload. Some graph
+        # flows set `answer` (e.g., general chat); others produce `sql`/`results`.
+        # Provide a best-effort `answer` fallback to avoid validation errors.
+        answer = final_state.get("answer")
+        if not isinstance(answer, str):
+            # Prefer a human-friendly summary if available, otherwise use SQL.
+            doc = final_state.get("documentation") or {}
+            if isinstance(doc, dict):
+                # Try to use any existing summary fields
+                answer = doc.get("summary") or doc.get("answer")
+            if not isinstance(answer, str):
+                answer = final_state.get("sql", "No answer available")
+
         return {
-            "sql": final_state.get("sql", ""),
-            "results": final_state.get("query_results", []),
-            # "visualization": final_state.get("visualization"),
+            "answer": answer,
             "documentation": final_state.get("documentation", {}),
         }
 
