@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     encryption_key: str = os.getenv("ENCRYPTION_KEY", "7Nf7Nf7Nf7Nf7Nf7Nf7Nf7Nf7Nf7Nf7Nf7Nf7Nf7Nf7=")
     langgraph_memory_db_uri: str = os.getenv("LANGGRAPH_MEMORY_DB_URI", "")
     langgraph_run_migrations_on_start: bool = os.getenv("LANGGRAPH_RUN_MIGRATIONS_ON_START", "false").lower() == "true"
+    redis_url: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    approval_ttl_seconds: int = int(os.getenv("APPROVAL_TTL_SECONDS", "3600"))
     
     # LLM API Keys
     OPENAI_API_KEY: Optional[str] = None

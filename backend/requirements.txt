@@ -2,6 +2,7 @@ fastapi
 uvicorn
 pydantic
 python-dotenv
+redis
 
 langchain
 langchain-core

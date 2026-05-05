@@ -5,6 +5,7 @@ import logging
 from app.api.deps import close_graph_orchestrator
 from app.api.routes import router as api_router
 from app.core.exceptions import CSVValidationError, DataCleaningError, DatabaseIngestionError
+from app.api.routes import router as api_router
 from app.models.schemas import UploadResponse, UploadMetadata
 from app.services.database import engine
 from app.services.data_service import DataSourceService
@@ -77,6 +78,8 @@ async def catch_all_options(full_path: str):
 dist_dir = Path(__file__).resolve().parent.parent / "frontend" / "dist"
 if dist_dir.exists():
     app.mount("/", StaticFiles(directory=str(dist_dir), html=True), name="frontend")
+
+app.include_router(api_router)
 
 # Exception Handlers
 @app.exception_handler(CSVValidationError)

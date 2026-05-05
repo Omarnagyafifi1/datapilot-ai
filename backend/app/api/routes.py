@@ -3,9 +3,11 @@ from typing import Any
 from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import JSONResponse
-from app.api.deps import get_data_source_service, get_graph_orchestrator, get_history_service
+from app.api.deps import get_approval_store, get_data_source_service, get_graph_orchestrator, get_history_service
 from app.core.logger import get_logger
 from app.models.schemas import (
+    ApprovalPayload,
+    ApprovalRequest,
     ConnectRequest,
     DataSourceResponse,
     HealthResponse,
@@ -17,6 +19,7 @@ from app.models.schemas import (
     ActivityFeedResponse,
     SchemaResponse,
 )
+from app.services.approval_store import ApprovalStore
 from app.services.data_source_service import DataSourceService
 from app.services.history_service import HistoryService
 from app.services import db_service
@@ -107,6 +110,30 @@ def approve_query_endpoint(
     }
     response_data = QueryResponse(**result).model_dump(mode='json')
     return JSONResponse(content=response_data, headers=headers)
+
+
+@router.post("/approval", response_model=QueryResponse)
+def approval_endpoint(
+    payload: ApprovalRequest,
+    approval_store: ApprovalStore = Depends(get_approval_store),
+    graph=Depends(get_graph_orchestrator),
+) -> QueryResponse:
+    pending = approval_store.get(payload.run_id)
+
+    if not payload.approved:
+        if pending:
+            approval_store.delete(payload.run_id)
+        return QueryResponse(
+            status="cancelled",
+            message=payload.reason or "Operation cancelled by user.",
+        )
+
+    result = graph.resume(thread_id=payload.run_id, approved=True)
+    if pending:
+        approval_store.delete(payload.run_id)
+    result["status"] = "completed"
+    result["message"] = "Operation approved and executed."
+    return QueryResponse(**result)
 
 
 @router.post("/datasources/connect")

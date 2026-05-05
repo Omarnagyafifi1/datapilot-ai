@@ -35,10 +35,27 @@ class UploadResponse(BaseModel):
     message: str
     metadata: UploadMetadata
 
-class QueryRequest(BaseModel):
-    question: str
-    source_id: str
 
+class ApprovalPayload(BaseModel):
+    run_id: str
+    question: Optional[str] = None
+    sql: Optional[str] = None
+    message: Optional[str] = None
+
+
+class QueryResponse(BaseModel):
+    status: str = "completed"
+    sql: Optional[str] = None
+    results: Optional[List[Dict[str, Any]]] = None
+    documentation: Optional[Dict[str, Any]] = None
+    approval: Optional[ApprovalPayload] = None
+    message: Optional[str] = None
+
+
+class ApprovalRequest(BaseModel):
+    run_id: str
+    approved: bool
+    reason: Optional[str] = None
 
 
 class QueryDocument(BaseModel):
@@ -60,6 +77,7 @@ class QueryResponse(BaseModel):
     thread_id: str | None = None
     requires_approval: bool = False
     approval_request: Dict[str, Any] | None = None
+    approval: ApprovalPayload | None = None
     status: str | None = None
     message: str | None = None
     answer: str = ""

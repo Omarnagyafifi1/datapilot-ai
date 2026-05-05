@@ -828,6 +828,26 @@ class AgentGraph:
         final_state = self.graph.invoke(initial_state, config=config)
         return self._format_output(final_state, resolved_thread_id)
 
+    def start(
+        self,
+        question: str,
+        source_id: str,
+        cli_mode: bool = False,
+        thread_id: str | None = None,
+    ) -> dict[str, Any]:
+        resolved_thread_id = thread_id or str(uuid4())
+        initial_state = {
+            "question": question,
+            "source_id": source_id,
+            "documentation": {
+                "dialect": self.db_service.get_dialect(source_id),
+                "cli_mode": cli_mode,
+            },
+        }
+        config = {"configurable": {"thread_id": resolved_thread_id, "user_id": source_id}}
+        final_state = self.graph.invoke(initial_state, config=config)
+        return {"thread_id": resolved_thread_id, "state": final_state}
+
     def resume(self, thread_id: str, approved: bool) -> dict[str, Any]:
         config = {"configurable": {"thread_id": thread_id}}
         state_snapshot = self.graph.get_state(config)
