@@ -14,7 +14,14 @@ class Settings(BaseSettings):
     
     # App Settings
     APP_NAME: str = "DataPilot AI"
-    DEBUG: bool = False
+    # Allow DEBUG to be provided as various env values (some environments
+    # set DEBUG to strings like 'release'); coerce to boolean after loading.
+    DEBUG: str | bool = False
+    
+    # Data Sources
+    encryption_key: str = os.getenv("ENCRYPTION_KEY", "7Nf7Nf7Nf7Nf7Nf7Nf7Nf7Nf7Nf7Nf7Nf7Nf7Nf7Nf7=") # Default for dev
+    data_sources_db_url: str = os.getenv("DATA_SOURCES_DB_URL", "sqlite:///./data_sources.db")
+    query_history_db_url: str = os.getenv("QUERY_HISTORY_DB_URL", "sqlite:///./query_history.db")
     
     model_config = SettingsConfigDict(
         env_file=".env", 
@@ -23,3 +30,12 @@ class Settings(BaseSettings):
     )
 
 settings = Settings()
+# Coerce DEBUG to a real boolean for runtime usage.
+try:
+    raw_debug = settings.DEBUG
+    if isinstance(raw_debug, str):
+        settings.DEBUG = raw_debug.lower() in ("1", "true", "yes", "on")
+    else:
+        settings.DEBUG = bool(raw_debug)
+except Exception:
+    settings.DEBUG = False

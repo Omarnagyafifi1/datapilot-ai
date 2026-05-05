@@ -672,11 +672,22 @@ class AgentGraph:
             },
         }
         final_state = self.graph.invoke(initial_state)
-        
+        # Ensure returned shape matches the API `QueryResponse` model which
+        # expects an `answer` string and `documentation` payload. Some graph
+        # flows set `answer` (e.g., general chat); others produce `sql`/`results`.
+        # Provide a best-effort `answer` fallback to avoid validation errors.
+        answer = final_state.get("answer")
+        if not isinstance(answer, str):
+            # Prefer a human-friendly summary if available, otherwise use SQL.
+            doc = final_state.get("documentation") or {}
+            if isinstance(doc, dict):
+                # Try to use any existing summary fields
+                answer = doc.get("summary") or doc.get("answer")
+            if not isinstance(answer, str):
+                answer = final_state.get("sql", "No answer available")
+
         return {
-            "sql": final_state.get("sql", ""),
-            "results": final_state.get("query_results", []),
-            # "visualization": final_state.get("visualization"),
+            "answer": answer,
             "documentation": final_state.get("documentation", {}),
         }
 

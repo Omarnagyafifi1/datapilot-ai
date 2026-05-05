@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-background text-foreground font-sans antialiased overflow-hidden;
+}
+
+::selection {
+  background-color: #00f2ff;
+  color: #050505;
+}
+
+.font-tech {
+  @apply font-mono uppercase tracking-tighter;
+}
+
+.glass {
+  @apply bg-card border border-border backdrop-blur-md;
+}
+
+.glow-cyan {
+  box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
+}
+
+.glow-lime {
+  box-shadow: 0 0 15px rgba(204, 255, 0, 0.2);
+}
+
+.neon-border-cyan {
+  border-color: rgba(0, 242, 255, 0.3);
+  box-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
+}
+
+.neon-border-lime {
+  border-color: rgba(204, 255, 0, 0.3);
+  box-shadow: 0 0 10px rgba(204, 255, 0, 0.3);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-white/10 rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 242, 255, 0.5);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

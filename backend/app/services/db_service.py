@@ -74,6 +74,45 @@ def _normalize_conn_string_for_sync(conn_string: str) -> str:
     return conn_string
 
 
+def test_connection(params: dict) -> dict:
+    """Attempt to open a synchronous connection to the provided DB params.
+
+    Expects a dict with keys: db_type, username, password, host, port, db_name (or path for sqlite).
+    Returns a dict with `success` bool and optional `error` message.
+    """
+    try:
+        db_type = str(params.get("db_type", "")).lower()
+        if db_type == "sqlite":
+            db_name = params.get("db_name") or params.get("path") or params.get("database")
+            if not db_name:
+                return {"success": False, "error": "Missing sqlite database path"}
+            conn_string = f"sqlite:///{db_name}"
+        else:
+            username = params.get("username") or params.get("user") or ""
+            password = params.get("password") or ""
+            host = params.get("host") or "localhost"
+            port = params.get("port") or ""
+            db_name = params.get("db_name") or params.get("database") or ""
+            from urllib.parse import quote_plus
+            pwd = quote_plus(str(password))
+            if db_type in ("postgresql", "postgres"):
+                conn_string = f"postgresql+psycopg2://{username}:{pwd}@{host}:{port}/{db_name}"
+            elif db_type in ("mysql",):
+                conn_string = f"mysql+pymysql://{username}:{pwd}@{host}:{port}/{db_name}"
+            else:
+                return {"success": False, "error": f"Unsupported db_type: {db_type}"}
+
+        # Try creating a synchronous engine and connecting
+        engine = create_engine(_normalize_conn_string_for_sync(conn_string))
+        with engine.connect() as conn:
+            # Lightweight validation
+            conn.execute(text("SELECT 1"))
+        return {"success": True}
+    except Exception as exc:
+        logger.exception("Test connection failed")
+        return {"success": False, "error": str(exc)}
+
+
 def _strip_identifier_quotes(identifier: str) -> str:
     return identifier.strip().strip('"').strip("`").strip("[]")
 

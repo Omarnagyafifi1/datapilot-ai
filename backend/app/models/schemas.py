@@ -40,4 +40,90 @@ class UploadResponse(BaseModel):
     message: str
     metadata: UploadMetadata
 
+class QueryRequest(BaseModel):
+    question: str
+    source_id: str
 
+class QueryResponse(BaseModel):
+    answer: str
+    documentation: QueryDocument
+
+
+class ExplainRequest(BaseModel):
+    sql: str
+
+
+class ExplainResponse(BaseModel):
+    success: bool
+    message: str
+    data: str
+
+class ConnectRequest(BaseModel):
+    name: str
+    db_type: str
+    host: str
+    port: int
+    db_name: str
+    username: str
+    password: str
+
+class DataSourceResponse(BaseModel):
+    id: str
+    name: str
+    db_type: str
+    host: str
+    db_name: str
+    created_at: datetime
+
+class HealthResponse(BaseModel):
+    status: str
+
+class QueryHistoryItem(BaseModel):
+    id: str
+    question: str
+    source_id: str
+    status: str
+    latency: float
+    executed_at: datetime
+
+class QueryHistoryResponse(BaseModel):
+    success: bool
+    message: str
+    data: List[QueryHistoryItem]
+
+class SystemStats(BaseModel):
+    total_sources: int
+    total_queries: int
+    avg_latency: float
+    success_rate: float
+
+class SystemStatsResponse(BaseModel):
+    success: bool
+    message: str
+    data: SystemStats
+
+class ActivityFeedItem(BaseModel):
+    id: str
+    type: str
+    content: str
+    timestamp: datetime
+
+class ActivityFeedResponse(BaseModel):
+    success: bool
+    message: str
+    data: List[ActivityFeedItem]
+
+class ColumnSchema(BaseModel):
+    name: str
+    type: str
+    nullable: bool
+    primary_key: bool
+
+class TableSchema(BaseModel):
+    name: str
+    columns: List[ColumnSchema]
+
+class SchemaResponse(BaseModel):
+    success: bool
+    message: str
+    data: List[TableSchema]

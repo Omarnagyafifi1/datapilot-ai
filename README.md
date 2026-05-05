@@ -164,6 +164,48 @@ The goal of this structure is to make development, testing, and future extension
 3. Run the application:
    - backend/.venv/Scripts/uvicorn.exe app.main:app --reload --app-dir backend
 
+## Frontend illustration assets
+
+- Placeholder SVG files live in `frontend/src/assets/illustrations/`.
+- Replace the placeholder files with licensed isometric SVGs (examples: ManyPixels, unDraw, Vecteezy, Freepik). Download the SVGs, optimize with `svgo`, then overwrite the files:
+
+```bash
+# example
+npm install -g svgo
+npx svgo -i path/to/downloaded.svg -o frontend/src/assets/illustrations/isometric-neon-purple.svg
+```
+
+- If using Freepik/Vecteezy/Flaticon free assets, include attribution in this README or in the app footer. Example attribution:
+
+  "Illustrations by Freepik — https://www.freepik.com"
+
+- The component `IsometricIllustration` (frontend/src/components/IsometricIllustration.jsx) imports these files by default and is used in the dashboard hero.
+
+### Automating download + optimization
+
+If you want me to automatically download and optimize SVGs, use the helper script included at `frontend/scripts/fetch_optimize_svgs.js`.
+
+1. Create a text file with lines of `url,filename.svg` (one per SVG). Example `svg-urls.txt`:
+
+```
+https://undraw.co/api/illustrations/Analyze.svg,isometric-neutral-undraw.svg
+https://example.com/path/to/teal-isometric.svg,isometric-teal-data.svg
+https://example.com/path/to/neon-isometric.svg,isometric-neon-purple.svg
+```
+
+2. Install dependencies and run the script:
+
+```bash
+cd frontend
+npm install node-fetch@2 svgo@2
+node scripts/fetch_optimize_svgs.js ../svg-urls.txt
+```
+
+3. The script writes optimized SVGs to `frontend/src/assets/illustrations/`.
+
+4. After verifying the images and licenses, update `ATTRIBUTION.md` with exact credits and asset URLs.
+
+
 ## Execution Flow
 ```mermaid
 graph TD

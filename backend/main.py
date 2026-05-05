@@ -7,6 +7,12 @@ from app.models.schemas import UploadResponse, UploadMetadata
 from app.services.database import engine
 from app.services.data_service import DataSourceService
 
+from fastapi.middleware.cors import CORSMiddleware
+from app.api.routes import router as api_router
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
+from fastapi import Response
+
 # Setup basic logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,6 +22,53 @@ app = FastAPI(
     description="API for managing data uploads and text-to-SQL conversions",
     version="1.0.0"
 )
+
+# CORS configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # For development, allow all. In production, restrict this.
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# Fallback middleware to ensure CORS headers are present on all responses
+@app.middleware("http")
+async def _ensure_cors_headers(request, call_next):
+    # Short-circuit preflight OPTIONS requests to ensure CORS headers are present
+    if request.method == "OPTIONS":
+        headers = {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+        }
+        return Response(status_code=200, headers=headers)
+
+    response = await call_next(request)
+    # these are safe to set in development; in production refine as needed
+    response.headers.setdefault("Access-Control-Allow-Origin", "*")
+    response.headers.setdefault("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
+    response.headers.setdefault("Access-Control-Allow-Headers", "*")
+    return response
+# Include Routes
+app.include_router(api_router)
+
+
+# Catch-all OPTIONS handler to ensure preflight requests return CORS headers
+@app.options("/{full_path:path}")
+async def catch_all_options(full_path: str):
+    headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "*",
+    }
+    return Response(status_code=200, headers=headers)
+
+# Mount frontend static files when available (built via `npm run build` into frontend/dist)
+dist_dir = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+if dist_dir.exists():
+    app.mount("/", StaticFiles(directory=str(dist_dir), html=True), name="frontend")
 
 # Exception Handlers
 @app.exception_handler(CSVValidationError)
