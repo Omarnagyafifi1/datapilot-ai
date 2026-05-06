@@ -7,7 +7,9 @@ langchain
 langchain-core
 langchain-groq
 langgraph
+langgraph-checkpoint-postgres
 langsmith
+psycopg[binary,pool]
 
 groq
 

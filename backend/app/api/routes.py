@@ -1,4 +1,5 @@
 from typing import Any
+from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException
 from app.api.deps import get_data_source_service, get_graph_orchestrator
 from app.core.logger import get_logger
@@ -6,6 +7,7 @@ from app.models.schemas import (
     ConnectRequest,
     DataSourceResponse,
     HealthResponse,
+    QueryApprovalRequest,
     QueryRequest,
     QueryResponse,
 )
@@ -36,7 +38,25 @@ def query_endpoint(
     graph=Depends(get_graph_orchestrator),
 ) -> QueryResponse:
     data_source_service.get_conn_string(payload.source_id)
-    result = graph.run(payload.question, payload.source_id)
+    thread_id = payload.thread_id or str(uuid4())
+    result = graph.run(payload.question, payload.source_id, thread_id=thread_id)
+    if result.get("requires_approval"):
+        result["message"] = "Approval required for write query."
+    return QueryResponse(**result)
+
+
+@router.post("/query/approval", response_model=QueryResponse)
+def approve_query_endpoint(
+    payload: QueryApprovalRequest,
+    graph=Depends(get_graph_orchestrator),
+) -> QueryResponse:
+    result = graph.resume(thread_id=payload.thread_id, approved=payload.approved)
+    if not payload.approved:
+        result["status"] = "cancelled"
+        result["message"] = "Operation cancelled by user."
+    else:
+        result["status"] = "completed"
+        result["message"] = "Operation approved and executed."
     return QueryResponse(**result)
 
 

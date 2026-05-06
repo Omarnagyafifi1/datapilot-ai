@@ -6,10 +6,14 @@ import webbrowser
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
+from uuid import uuid4
 from app.services.visualization_service import generate_visualization
 
+from langchain_core.runnables import RunnableConfig
 from langgraph.graph import StateGraph, START, END
-from langgraph.types import interrupt
+from langgraph.runtime import Runtime
+from langgraph.store.memory import InMemoryStore
+from langgraph.types import Command, interrupt
 from app.agents.nodes.sql_node import run_sql_node
 from app.agents.prompts import (
     INSIGHT_PROMPT, 
@@ -225,6 +229,14 @@ def intent_router_node(state: AgentState, llm: BaseLLM) -> dict:
     for valid_intent in ["GENERAL", "ADD", "DELETE", "UPDATE", "INQUIRE"]:
         if valid_intent in intent:
             return {"intent": valid_intent}
+
+    normalized_question = state.question.strip().lower()
+    if any(token in normalized_question for token in ["insert", "add", "create"]):
+        return {"intent": "ADD"}
+    if any(token in normalized_question for token in ["update", "set ", "edit", "change"]):
+        return {"intent": "UPDATE"}
+    if any(token in normalized_question for token in ["delete", "remove", "drop"]):
+        return {"intent": "DELETE"}
     return {"intent": "INQUIRE"}
 
 
@@ -287,19 +299,27 @@ def approval_node(state: AgentState) -> dict:
             return {"success": True}
         return {"success": False, "error": "User denied the operation", "answer": "Operation cancelled by user."}
 
-    # The user must provide a value like "approved" or "denied" to resume
+    # For API flows, interrupt and wait for a resume value.
     response = interrupt(
         {
             "question": state.question,
             "sql": state.sql,
             "message": "This operation modifies data. Do you approve the following SQL?",
+            "intent": state.intent,
         }
     )
-    
-    if response == "approved":
-        return {"success": True} # Mark as ready for execution
-    else:
-        return {"success": False, "error": "User denied the operation", "answer": "Operation cancelled by user."}
+
+    approved = False
+    if isinstance(response, bool):
+        approved = response
+    elif isinstance(response, str):
+        approved = response.strip().lower() in {"approved", "approve", "yes", "y", "true", "1"}
+    elif isinstance(response, dict):
+        approved = bool(response.get("approved"))
+
+    if approved:
+        return {"success": True}
+    return {"success": False, "error": "User denied the operation", "answer": "Operation cancelled by user."}
 
 
 def sql_execution_node(state: AgentState, db_service: DBService) -> dict:
@@ -466,9 +486,58 @@ def documentation_node(state: AgentState) -> dict:
         suggestions=state.suggestions,
         executed_at=executed_at.isoformat(),
     )
-    serialized_document = document.model_dump()
+    serialized_document = {**state.documentation, **document.model_dump()}
     logger.debug("%s", _json_dumps(serialized_document))
     return {"documentation": serialized_document, "executed_at": executed_at}
+
+
+def load_long_term_memory_node(
+    state: AgentState,
+    config: RunnableConfig,
+    runtime: Runtime[Any],
+) -> dict:
+    store = runtime.store
+    if store is None:
+        return {}
+
+    user_id = str(config.get("configurable", {}).get("user_id") or state.source_id)
+    namespace = (user_id, "query_history")
+    memories = list(store.search(namespace, query=state.question))
+
+    memory_context: list[dict[str, Any]] = []
+    for item in memories[:3]:
+        value = getattr(item, "value", None)
+        if isinstance(value, dict):
+            memory_context.append(value)
+
+    if not memory_context:
+        return {}
+    return {"documentation": {**state.documentation, "memory_context": memory_context}}
+
+
+def persist_long_term_memory_node(
+    state: AgentState,
+    config: RunnableConfig,
+    runtime: Runtime[Any],
+) -> dict:
+    store = runtime.store
+    if store is None:
+        return {}
+
+    user_id = str(config.get("configurable", {}).get("user_id") or state.source_id)
+    namespace = (user_id, "query_history")
+    memory_key = str(uuid4())
+    payload = {
+        "question": state.question,
+        "intent": state.intent,
+        "sql": state.sql,
+        "success": state.success,
+        "results_count": len(state.query_results),
+        "error": state.error,
+        "executed_at": (state.executed_at.isoformat() if state.executed_at else None),
+    }
+    store.put(namespace, memory_key, payload)
+    return {}
 
 
 class AgentGraph:
@@ -477,10 +546,14 @@ class AgentGraph:
         llm: BaseLLM,
         db_service: DBService,
         schema_service: SchemaService,
+        checkpointer: Any | None = None,
+        store: Any | None = None,
     ) -> None:
         self.llm = llm
         self.db_service = db_service
         self.schema_service = schema_service
+        self.checkpointer = checkpointer
+        self.store = store or InMemoryStore()
         self.graph = self._build_graph()
 
     def _build_graph(self):
@@ -490,6 +563,7 @@ class AgentGraph:
         workflow.add_node("router", lambda s: intent_router_node(s, self.llm))
         workflow.add_node("general_chat", lambda s: general_chat_node(s, self.llm))
         workflow.add_node("fetch_schema", lambda s: schema_node(s, self.schema_service))
+        workflow.add_node("load_memory", load_long_term_memory_node)
         workflow.add_node("lookup_scenario", scenario_lookup_node)
         workflow.add_node("generate_sql", lambda s: run_sql_node(s, self.llm))
         workflow.add_node("generate_mod_sql", lambda s: modification_sql_node(s, self.llm, self.schema_service))
@@ -503,6 +577,7 @@ class AgentGraph:
         workflow.add_node("generate_insights", lambda s: insight_node(s, self.llm))
         workflow.add_node("generate_suggestions", lambda s: suggestion_node(s, self.llm))
         workflow.add_node("document", documentation_node)
+        workflow.add_node("persist_memory", persist_long_term_memory_node)
 
         # Edges
         workflow.add_edge(START, "router")
@@ -516,7 +591,8 @@ class AgentGraph:
         def route_sql_gen(state: AgentState) -> Literal["lookup_scenario", "generate_mod_sql"]:
             return "generate_mod_sql" if state.intent in ["ADD", "UPDATE", "DELETE"] else "lookup_scenario"
              
-        workflow.add_conditional_edges("fetch_schema", route_sql_gen, ["lookup_scenario", "generate_mod_sql"])
+        workflow.add_edge("fetch_schema", "load_memory")
+        workflow.add_conditional_edges("load_memory", route_sql_gen, ["lookup_scenario", "generate_mod_sql"])
         
         def route_scenario(state: AgentState) -> Literal["execute_sql", "generate_sql"]:
             return "execute_sql" if state.scenario_matched and bool(state.sql.strip()) else "generate_sql"
@@ -564,11 +640,44 @@ class AgentGraph:
         workflow.add_edge("generate_insights", "generate_suggestions")
         workflow.add_edge("generate_suggestions", "document")
         workflow.add_edge("scenario_failure", "document")
-        workflow.add_edge("document", END)
+        workflow.add_edge("document", "persist_memory")
+        workflow.add_edge("persist_memory", END)
 
-        return workflow.compile()
+        return workflow.compile(checkpointer=self.checkpointer, store=self.store)
 
-    def run(self, question: str, source_id: str, cli_mode: bool = False) -> dict[str, Any]:
+    @staticmethod
+    def _extract_interrupt_payload(final_state: dict[str, Any]) -> dict[str, Any] | None:
+        interrupts = final_state.get("__interrupt__")
+        if not interrupts:
+            return None
+        first_interrupt = interrupts[0]
+        payload = getattr(first_interrupt, "value", first_interrupt)
+        if isinstance(payload, dict):
+            return payload
+        return {"value": payload}
+
+    @staticmethod
+    def _format_output(final_state: dict[str, Any], thread_id: str) -> dict[str, Any]:
+        interrupt_payload = AgentGraph._extract_interrupt_payload(final_state)
+        return {
+            "sql": final_state.get("sql", ""),
+            "results": final_state.get("query_results", []),
+            "visualization": final_state.get("visualization"),
+            "documentation": final_state.get("documentation", {}),
+            "thread_id": thread_id,
+            "requires_approval": interrupt_payload is not None,
+            "approval_request": interrupt_payload,
+            "status": "awaiting_approval" if interrupt_payload is not None else "completed",
+        }
+
+    def run(
+        self,
+        question: str,
+        source_id: str,
+        cli_mode: bool = False,
+        thread_id: str | None = None,
+    ) -> dict[str, Any]:
+        resolved_thread_id = thread_id or str(uuid4())
         initial_state = {
             "question": question,
             "source_id": source_id,
@@ -577,14 +686,20 @@ class AgentGraph:
                 "cli_mode": cli_mode,
             },
         }
-        final_state = self.graph.invoke(initial_state)
-        
-        return {
-            "sql": final_state.get("sql", ""),
-            "results": final_state.get("query_results", []),
-            "visualization": final_state.get("visualization"),
-            "documentation": final_state.get("documentation", {}),
-        }
+        config = {"configurable": {"thread_id": resolved_thread_id}}
+        config["configurable"]["user_id"] = source_id
+        final_state = self.graph.invoke(initial_state, config=config)
+        return self._format_output(final_state, resolved_thread_id)
+
+    def resume(self, thread_id: str, approved: bool) -> dict[str, Any]:
+        config = {"configurable": {"thread_id": thread_id}}
+        state_snapshot = self.graph.get_state(config)
+        values = getattr(state_snapshot, "values", {}) or {}
+        source_id = values.get("source_id")
+        if source_id:
+            config["configurable"]["user_id"] = str(source_id)
+        final_state = self.graph.invoke(Command(resume=approved), config=config)
+        return self._format_output(final_state, thread_id)
 
 if __name__ == "__main__":
     # This part allows you to run the agent from the CLI for testing

@@ -2,9 +2,14 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 import os
 
+
 class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = os.getenv("DATABASE_URL", "")
+    data_sources_db_url: str = os.getenv("DATA_SOURCES_DB_URL", "")
+    encryption_key: str = os.getenv("ENCRYPTION_KEY", "")
+    langgraph_memory_db_uri: str = os.getenv("LANGGRAPH_MEMORY_DB_URI", "")
+    langgraph_run_migrations_on_start: bool = os.getenv("LANGGRAPH_RUN_MIGRATIONS_ON_START", "false").lower() == "true"
     
     # LLM API Keys
     OPENAI_API_KEY: Optional[str] = None
