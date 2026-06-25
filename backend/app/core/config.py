@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     # App Settings
     APP_NAME: str = "DataPilot AI"
     DEBUG: bool = False
+    LLM_PROVIDER: str = "mock"  # mock | groq | openrouter | gemini
     
     model_config = SettingsConfigDict(
         env_file=".env", 

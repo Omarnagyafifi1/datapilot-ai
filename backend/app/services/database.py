@@ -16,13 +16,3 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
         finally:
             await session.close()
 
-# Session factory for dependencies if needed later
-AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
-
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    """FastAPI dependency for database sessions."""
-    async with AsyncSessionLocal() as session:
-        try:
-            yield session
-        finally:
-            await session.close()

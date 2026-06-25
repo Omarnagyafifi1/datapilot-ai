@@ -1,5 +1,6 @@
 from app.agents.graph import AgentGraph
 from app.agents.memory_backends import GraphMemoryBackends
+from app.core.config import settings
 from app.llm.factory import get_llm
 from app.services.db_service import DBService
 from app.services.data_source_service import DataSourceService
@@ -15,7 +16,7 @@ _graph_orchestrator: AgentGraph | None = None
 def get_graph_orchestrator() -> AgentGraph:
     global _graph_orchestrator
     if _graph_orchestrator is None:
-        llm = get_llm(provider="mock")
+        llm = get_llm(provider=settings.LLM_PROVIDER)
         _graph_orchestrator = AgentGraph(
             llm=llm,
             db_service=_db_service,

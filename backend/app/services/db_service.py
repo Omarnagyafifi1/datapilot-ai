@@ -191,6 +191,55 @@ def execute_query(sql: str, source_id: str) -> list[dict]:
         raise HTTPException(status_code=500, detail=f"Failed to execute query: {str(exc)}")
 
 
+def test_connection(params: dict) -> dict:
+    """Test a database connection using the provided parameters.
+
+    Builds a temporary connection string from the params dict and executes
+    a lightweight query (``SELECT 1``) to validate connectivity.
+
+    Returns ``{"success": True}`` on success, or
+    ``{"success": False, "error": "<message>"}`` on failure.
+    """
+    db_type = str(params.get("db_type", "")).lower().strip()
+    host = str(params.get("host", ""))
+    port = params.get("port")
+    db_name = str(params.get("db_name") or params.get("database") or params.get("path") or "")
+    username = str(params.get("username") or params.get("user") or "")
+    password = str(params.get("password", ""))
+
+    try:
+        if db_type == "sqlite":
+            conn_string = f"sqlite:///{db_name}"
+        elif db_type == "postgresql":
+            from urllib.parse import quote_plus
+            conn_string = f"postgresql+psycopg2://{username}:{quote_plus(password)}@{host}:{port}/{db_name}"
+        elif db_type == "mysql":
+            from urllib.parse import quote_plus
+            conn_string = f"mysql+pymysql://{username}:{quote_plus(password)}@{host}:{port}/{db_name}"
+        else:
+            return {"success": False, "error": f"Unsupported database type: {db_type}"}
+
+        engine = create_engine(conn_string, connect_args={"connect_timeout": 5} if db_type != "sqlite" else {})
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+        engine.dispose()
+        return {"success": True}
+    except Exception as exc:
+        logger.warning("test_connection failed for db_type=%s host=%s: %s", db_type, host, exc)
+        return {"success": False, "error": str(exc)}
+
+
+def close_engine(source_id: str) -> None:
+    """Dispose and remove the cached engine for a given source_id."""
+    engine = _ENGINE_CACHE.pop(source_id, None)
+    if engine is not None:
+        try:
+            engine.dispose()
+        except Exception:
+            logger.exception("Failed to dispose engine for source_id=%s", source_id)
+    _SOURCE_CONN_STRINGS.pop(source_id, None)
+
+
 def get_source_schema(source_id: str) -> dict:
     conn_string = _SOURCE_CONN_STRINGS.get(source_id)
     if conn_string is None:

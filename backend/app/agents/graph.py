@@ -322,6 +322,26 @@ def approval_node(state: AgentState) -> dict:
     return {"success": False, "error": "User denied the operation", "answer": "Operation cancelled by user."}
 
 
+_FORBIDDEN_SQL_KEYWORDS_ALWAYS = {"DROP", "ALTER", "TRUNCATE", "GRANT", "REVOKE", "EXEC"}
+_FORBIDDEN_SQL_KEYWORDS_READONLY = {"INSERT", "UPDATE", "DELETE"} | _FORBIDDEN_SQL_KEYWORDS_ALWAYS
+
+
+def _validate_sql_keywords(sql: str, intent: str) -> str | None:
+    """Return an error message if the SQL contains forbidden keywords, else None."""
+    import re
+
+    forbidden = (
+        _FORBIDDEN_SQL_KEYWORDS_ALWAYS
+        if intent in {"ADD", "UPDATE", "DELETE"}
+        else _FORBIDDEN_SQL_KEYWORDS_READONLY
+    )
+    sql_upper = sql.upper()
+    for keyword in forbidden:
+        if re.search(rf"\b{keyword}\b", sql_upper):
+            return f"Blocked: forbidden keyword '{keyword}' in generated SQL"
+    return None
+
+
 def sql_execution_node(state: AgentState, db_service: DBService) -> dict:
     if _is_error_sql(state.sql):
         return {
@@ -331,12 +351,24 @@ def sql_execution_node(state: AgentState, db_service: DBService) -> dict:
             "retry_count": MAX_RETRIES,
         }
 
+    # Programmatic SQL safety check — blocks dangerous keywords
+    validation_error = _validate_sql_keywords(state.sql, state.intent)
+    if validation_error:
+        logger.warning("SQL blocked by keyword validation: %s", validation_error)
+        return {
+            "query_results": [],
+            "success": False,
+            "error": validation_error,
+            "retry_count": MAX_RETRIES,
+        }
+
     try:
         results = execute_sql(db_service, state.sql, state.source_id) or []
         return {"query_results": results, "success": True}
     except Exception as e:
         logger.error("SQL execution failed: %s", e)
         return {"query_results": [], "success": False, "error": str(e)}
+
 
 
 def fix_sql_node(state: AgentState, llm: BaseLLM, schema_service: SchemaService, db_service: DBService) -> dict:
