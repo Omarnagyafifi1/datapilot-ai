@@ -39,12 +39,6 @@ class QueryRequest(BaseModel):
     question: str
     source_id: str
 
-class VisualizationResponse(BaseModel):
-    library: str
-    chart_type: str
-    x: str
-    y: str
-    spec: Dict[str, Any]
 
 
 class QueryDocument(BaseModel):
@@ -52,7 +46,7 @@ class QueryDocument(BaseModel):
     sql: str
     results: List[Dict[str, Any]]
     results_count: int
-    visualization: Optional[VisualizationResponse] = None
+    visualization: Dict[str, Any] | None = None
     insights: List[Dict[str, str]]
     suggestions: List[Dict[str, str]]
     executed_at: str
@@ -61,7 +55,7 @@ class QueryDocument(BaseModel):
 class QueryResponse(BaseModel):
     sql: str = ""
     results: List[Dict[str, Any]] = Field(default_factory=list)
-    visualization: Optional[VisualizationResponse] = None
+    visualization: Dict[str, Any] | None = None
     documentation: Any = None
     thread_id: str | None = None
     requires_approval: bool = False

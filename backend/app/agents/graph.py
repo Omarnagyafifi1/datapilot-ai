@@ -7,7 +7,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Literal
 from uuid import uuid4
-from app.services.visualization_service import generate_visualization
 
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import StateGraph, START, END
@@ -504,8 +503,102 @@ def scenario_failure_node(state: AgentState) -> dict:
 
 
 def visualization_node(state: AgentState) -> dict:
-    result = generate_visualization(state.query_results, state.question)
-    return {"visualization": result}
+    if not state.query_results:
+        return {"visualization": None}
+
+    try:
+        import pandas as pd
+        import plotly.express as px
+    except Exception as exc:
+        logger.warning("Visualization dependencies unavailable: %s", exc)
+        return {"visualization": None}
+
+    try:
+        df = pd.DataFrame(state.query_results)
+        if df.empty:
+            return {"visualization": None}
+
+        for column in df.columns:
+            if df[column].dtype == "object":
+                numeric_candidate = pd.to_numeric(df[column], errors="coerce")
+                if numeric_candidate.notna().mean() >= 0.8:
+                    df[column] = numeric_candidate
+                    continue
+
+                lower_column_name = str(column).lower()
+                if any(token in lower_column_name for token in ("date", "time", "timestamp")):
+                    datetime_candidate = pd.to_datetime(df[column], errors="coerce")
+                    if datetime_candidate.notna().mean() >= 0.8:
+                        df[column] = datetime_candidate
+
+        numeric_cols = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]
+        datetime_cols = [c for c in df.columns if pd.api.types.is_datetime64_any_dtype(df[c])]
+        categorical_cols = [c for c in df.columns if c not in numeric_cols and c not in datetime_cols]
+
+        fig = None
+        chart_type = ""
+        x_col = ""
+        y_col = ""
+
+        if datetime_cols and numeric_cols:
+            x_col = datetime_cols[0]
+            y_col = numeric_cols[0]
+            df_sorted = df.sort_values(by=x_col)
+            fig = px.line(df_sorted, x=x_col, y=y_col, title=f"{y_col} over {x_col}")
+            chart_type = "line"
+        elif categorical_cols and numeric_cols:
+            x_col = categorical_cols[0]
+            y_col = numeric_cols[0]
+            grouped = (
+                df.groupby(x_col, dropna=False)[y_col]
+                .sum()
+                .sort_values(ascending=False)
+                .head(20)
+                .reset_index()
+            )
+            fig = px.bar(grouped, x=x_col, y=y_col, title=f"{y_col} by {x_col}")
+            chart_type = "bar"
+        elif len(numeric_cols) >= 2:
+            x_col = numeric_cols[0]
+            y_col = numeric_cols[1]
+            fig = px.scatter(df, x=x_col, y=y_col, title=f"{y_col} vs {x_col}")
+            chart_type = "scatter"
+        elif len(numeric_cols) == 1:
+            y_col = numeric_cols[0]
+            fig = px.histogram(df, x=y_col, nbins=min(30, max(10, len(df) // 10)), title=f"Distribution of {y_col}")
+            chart_type = "histogram"
+        elif categorical_cols:
+            x_col = categorical_cols[0]
+            counts = (
+                df[x_col]
+                .astype(str)
+                .fillna("N/A")
+                .value_counts()
+                .head(20)
+                .rename_axis(x_col)
+                .reset_index(name="count")
+            )
+            fig = px.bar(counts, x=x_col, y="count", title=f"Top values of {x_col}")
+            chart_type = "bar"
+            y_col = "count"
+
+        if fig is None:
+            return {"visualization": None}
+
+        fig.update_layout(template="plotly_white")
+        import json
+        return {
+            "visualization": {
+                "library": "plotly",
+                "chart_type": chart_type,
+                "x": x_col,
+                "y": y_col,
+                "spec": json.loads(fig.to_json()),
+            }
+        }
+    except Exception as exc:
+        logger.warning("Visualization generation failed: %s", exc)
+        return {"visualization": None}
 
 
 def documentation_node(state: AgentState) -> dict:
