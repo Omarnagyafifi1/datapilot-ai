@@ -26,6 +26,7 @@ from app.agents.prompts import (
 )
 from app.agents.state.agent_state import AgentState
 from app.agents.tools.schema_tools import fetch_schema_context
+from app.agents.tools.context_filtering import filter_schema_context
 from app.agents.tools.sql_tool import execute_sql
 from app.core.logger import get_logger
 from app.llm.base_llm import BaseLLM
@@ -246,9 +247,10 @@ def general_chat_node(state: AgentState, llm: BaseLLM) -> dict:
     return {"answer": answer, "success": True}
 
 
-def schema_node(state: AgentState, schema_service: SchemaService) -> dict:
-    schema = fetch_schema_context(schema_service, state.source_id)
-    return {"documentation": {**state.documentation, "schema": schema}}
+def schema_node(state: AgentState, schema_service: SchemaService, llm: BaseLLM) -> dict:
+    full_schema = fetch_schema_context(schema_service, state.source_id)
+    filtered_schema = filter_schema_context(llm, full_schema, state.question)
+    return {"documentation": {**state.documentation, "schema": filtered_schema}}
 
 
 def scenario_lookup_node(state: AgentState) -> dict:
@@ -594,7 +596,7 @@ class AgentGraph:
         # Nodes
         workflow.add_node("router", lambda s: intent_router_node(s, self.llm))
         workflow.add_node("general_chat", lambda s: general_chat_node(s, self.llm))
-        workflow.add_node("fetch_schema", lambda s: schema_node(s, self.schema_service))
+        workflow.add_node("fetch_schema", lambda s: schema_node(s, self.schema_service, self.llm))
         workflow.add_node("load_memory", load_long_term_memory_node)
         workflow.add_node("lookup_scenario", scenario_lookup_node)
         workflow.add_node("generate_sql", lambda s: run_sql_node(s, self.llm))
@@ -691,6 +693,15 @@ class AgentGraph:
     @staticmethod
     def _format_output(final_state: dict[str, Any], thread_id: str) -> dict[str, Any]:
         interrupt_payload = AgentGraph._extract_interrupt_payload(final_state)
+        
+        answer = final_state.get("answer")
+        if not isinstance(answer, str):
+            doc = final_state.get("documentation") or {}
+            if isinstance(doc, dict):
+                answer = doc.get("summary") or doc.get("answer")
+            if not isinstance(answer, str):
+                answer = final_state.get("sql", "No answer available")
+
         return {
             "sql": final_state.get("sql", ""),
             "results": final_state.get("query_results", []),
@@ -700,6 +711,7 @@ class AgentGraph:
             "requires_approval": interrupt_payload is not None,
             "approval_request": interrupt_payload,
             "status": "awaiting_approval" if interrupt_payload is not None else "completed",
+            "answer": answer,
         }
 
     def run(

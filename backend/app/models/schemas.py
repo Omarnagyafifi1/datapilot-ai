@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Any, Dict, List, Optional
+from datetime import datetime
 
 from pydantic import BaseModel, Field
 
@@ -34,6 +35,9 @@ class UploadResponse(BaseModel):
     message: str
     metadata: UploadMetadata
 
+class QueryRequest(BaseModel):
+    question: str
+    source_id: str
 
 class VisualizationResponse(BaseModel):
     library: str
@@ -58,12 +62,13 @@ class QueryResponse(BaseModel):
     sql: str = ""
     results: List[Dict[str, Any]] = Field(default_factory=list)
     visualization: Optional[VisualizationResponse] = None
-    documentation: Dict[str, Any] = Field(default_factory=dict)
+    documentation: Any = None
     thread_id: str | None = None
     requires_approval: bool = False
     approval_request: Dict[str, Any] | None = None
     status: str | None = None
     message: str | None = None
+    answer: str = ""
 
 
 class QueryRequest(BaseModel):
@@ -77,9 +82,14 @@ class QueryApprovalRequest(BaseModel):
     approved: bool
 
 
-class HealthResponse(BaseModel):
-    status: str
+class ExplainRequest(BaseModel):
+    sql: str
 
+
+class ExplainResponse(BaseModel):
+    success: bool
+    message: str
+    data: str
 
 class ConnectRequest(BaseModel):
     name: str
@@ -90,11 +100,63 @@ class ConnectRequest(BaseModel):
     username: str = ""
     password: str = ""
 
-
 class DataSourceResponse(BaseModel):
     id: str
     name: str
     db_type: str
     host: str
     db_name: str
-    created_at: Any
+    created_at: datetime
+
+class HealthResponse(BaseModel):
+    status: str
+
+class QueryHistoryItem(BaseModel):
+    id: str
+    question: str
+    source_id: str
+    status: str
+    latency: float
+    executed_at: datetime
+
+class QueryHistoryResponse(BaseModel):
+    success: bool
+    message: str
+    data: List[QueryHistoryItem]
+
+class SystemStats(BaseModel):
+    total_sources: int
+    total_queries: int
+    avg_latency: float
+    success_rate: float
+
+class SystemStatsResponse(BaseModel):
+    success: bool
+    message: str
+    data: SystemStats
+
+class ActivityFeedItem(BaseModel):
+    id: str
+    type: str
+    content: str
+    timestamp: datetime
+
+class ActivityFeedResponse(BaseModel):
+    success: bool
+    message: str
+    data: List[ActivityFeedItem]
+
+class ColumnSchema(BaseModel):
+    name: str
+    type: str
+    nullable: bool
+    primary_key: bool
+
+class TableSchema(BaseModel):
+    name: str
+    columns: List[ColumnSchema]
+
+class SchemaResponse(BaseModel):
+    success: bool
+    message: str
+    data: List[TableSchema]

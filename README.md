@@ -112,6 +112,10 @@ The goal of this structure is to make development, testing, and future extension
 - app/agents/tools/schema_tools.py
   - Schema retrieval helper through schema_service.
 
+- app/agents/tools/context_filtering.py
+  - LLM-based tool to filter and prune the database schema based on the user's question.
+  - Optimizes token usage and improves performance by providing a context-aware minimal schema.
+
 - app/agents/state/
   - Agent state definitions during execution.
 
@@ -127,6 +131,13 @@ The goal of this structure is to make development, testing, and future extension
 - __init__.py files
   - Mark directories as Python packages.
   - Help keep imports organized across modules.
+
+## Key Features
+
+- **Context-Aware Schema Filtering**
+  - Automatically prunes the database schema based on the user's question.
+  - Only relevant tables and columns are passed to the SQL generator.
+  - **Benefits**: Reduces token consumption, lowers latency, and increases SQL generation accuracy by eliminating noise.
 
 ## Why This Structure Matters
 
@@ -153,6 +164,48 @@ The goal of this structure is to make development, testing, and future extension
 3. Run the application:
    - backend/.venv/Scripts/uvicorn.exe app.main:app --reload --app-dir backend
 
+## Frontend illustration assets
+
+- Placeholder SVG files live in `frontend/src/assets/illustrations/`.
+- Replace the placeholder files with licensed isometric SVGs (examples: ManyPixels, unDraw, Vecteezy, Freepik). Download the SVGs, optimize with `svgo`, then overwrite the files:
+
+```bash
+# example
+npm install -g svgo
+npx svgo -i path/to/downloaded.svg -o frontend/src/assets/illustrations/isometric-neon-purple.svg
+```
+
+- If using Freepik/Vecteezy/Flaticon free assets, include attribution in this README or in the app footer. Example attribution:
+
+  "Illustrations by Freepik — https://www.freepik.com"
+
+- The component `IsometricIllustration` (frontend/src/components/IsometricIllustration.jsx) imports these files by default and is used in the dashboard hero.
+
+### Automating download + optimization
+
+If you want me to automatically download and optimize SVGs, use the helper script included at `frontend/scripts/fetch_optimize_svgs.js`.
+
+1. Create a text file with lines of `url,filename.svg` (one per SVG). Example `svg-urls.txt`:
+
+```
+https://undraw.co/api/illustrations/Analyze.svg,isometric-neutral-undraw.svg
+https://example.com/path/to/teal-isometric.svg,isometric-teal-data.svg
+https://example.com/path/to/neon-isometric.svg,isometric-neon-purple.svg
+```
+
+2. Install dependencies and run the script:
+
+```bash
+cd frontend
+npm install node-fetch@2 svgo@2
+node scripts/fetch_optimize_svgs.js ../svg-urls.txt
+```
+
+3. The script writes optimized SVGs to `frontend/src/assets/illustrations/`.
+
+4. After verifying the images and licenses, update `ATTRIBUTION.md` with exact credits and asset URLs.
+
+
 ## Execution Flow
 ```mermaid
 graph TD
@@ -160,11 +213,11 @@ graph TD
     
     Router -->|conditional| RouteIntent{route_intent}
     RouteIntent -->|GENERAL| GeneralChat[general_chat]
-    RouteIntent -->|other| FetchSchema[fetch_schema]
+    RouteIntent -->|other| FetchAndFilterSchema[fetch_and_filter_schema]
     
     GeneralChat --> END1([END])
     
-    FetchSchema -->|conditional| RouteSQLGen{route_sql_gen}
+    FetchAndFilterSchema -->|conditional| RouteSQLGen{route_sql_gen}
     RouteSQLGen -->|ADD/UPDATE/DELETE| GenerateModSQL[generate_mod_sql]
     RouteSQLGen -->|other| LookupScenario[lookup_scenario]
     

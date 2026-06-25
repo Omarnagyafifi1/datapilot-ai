@@ -1,0 +1,62 @@
+<!-- Generated isometric teal illustration (original) -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 320" width="560" height="320" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <linearGradient id="tealGrad" x1="0" x2="1">
+      <stop offset="0" stop-color="#06b6d4" />
+      <stop offset="1" stop-color="#14b8a6" />
+    </linearGradient>
+    <linearGradient id="glass" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.02"/>
+    </linearGradient>
+    <filter id="softShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="10" stdDeviation="18" flood-color="#000" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <rect width="100%" height="100%" fill="#071024" />
+
+  <!-- base grid -->
+  <g opacity="0.06" stroke="#fff" stroke-width="1">
+    <line x1="20" y1="260" x2="540" y2="260" />
+    <line x1="20" y1="270" x2="540" y2="270" />
+  </g>
+
+  <!-- central isometric platform -->
+  <g transform="translate(120,40)" filter="url(#softShadow)">
+    <polygon points="120,0 360,0 420,80 180,80" fill="#042031" />
+    <polygon points="120,0 180,80 60,80 0,0" fill="#073545" />
+    <polygon points="0,0 120,0 180,80 60,80" fill="#0b5260" opacity="0.9"/>
+
+    <!-- stacked disk -->
+    <g transform="translate(170,10)">
+      <ellipse cx="80" cy="30" rx="70" ry="22" fill="url(#tealGrad)" />
+      <ellipse cx="80" cy="22" rx="70" ry="18" fill="#0cb5a5" opacity="0.9" />
+      <ellipse cx="80" cy="38" rx="70" ry="18" fill="#07323b" opacity="0.15" />
+      <circle cx="80" cy="30" r="8" fill="#fff" opacity="0.9" />
+    </g>
+
+    <!-- left stack -->
+    <g transform="translate(40,100)">
+      <rect x="0" y="0" width="96" height="56" rx="8" fill="#03141a" />
+      <rect x="8" y="8" width="80" height="40" rx="6" fill="#07282e" />
+      <rect x="16" y="16" width="64" height="24" rx="4" fill="#06b6d4" />
+    </g>
+
+    <!-- right panel -->
+    <g transform="translate(260,88)">
+      <rect x="0" y="0" width="120" height="56" rx="6" fill="#021014" />
+      <rect x="12" y="8" width="96" height="40" rx="4" fill="#0db3a0" />
+    </g>
+  </g>
+
+  <!-- floating indicators -->
+  <g fill="#06b6d4" opacity="0.95">
+    <rect x="420" y="30" width="18" height="8" rx="2" />
+    <rect x="440" y="54" width="12" height="6" rx="2" />
+  </g>
+
+  <!-- subtle glass overlay -->
+  <rect x="40" y="20" width="480" height="260" rx="12" fill="url(#glass)" />
+</svg>
+

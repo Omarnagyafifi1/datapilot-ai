@@ -6,8 +6,9 @@ import os
 class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = os.getenv("DATABASE_URL", "")
-    data_sources_db_url: str = os.getenv("DATA_SOURCES_DB_URL", "")
-    encryption_key: str = os.getenv("ENCRYPTION_KEY", "")
+    data_sources_db_url: str = os.getenv("DATA_SOURCES_DB_URL", "sqlite:///./data_sources.db")
+    query_history_db_url: str = os.getenv("QUERY_HISTORY_DB_URL", "sqlite:///./query_history.db")
+    encryption_key: str = os.getenv("ENCRYPTION_KEY", "7Nf7Nf7Nf7Nf7Nf7Nf7Nf7Nf7Nf7Nf7Nf7Nf7Nf7Nf7=")
     langgraph_memory_db_uri: str = os.getenv("LANGGRAPH_MEMORY_DB_URI", "")
     langgraph_run_migrations_on_start: bool = os.getenv("LANGGRAPH_RUN_MIGRATIONS_ON_START", "false").lower() == "true"
     
@@ -19,7 +20,7 @@ class Settings(BaseSettings):
     
     # App Settings
     APP_NAME: str = "DataPilot AI"
-    DEBUG: bool = False
+    DEBUG: str | bool = False
     LLM_PROVIDER: str = "mock"  # mock | groq | openrouter | gemini
     
     model_config = SettingsConfigDict(
@@ -29,3 +30,13 @@ class Settings(BaseSettings):
     )
 
 settings = Settings()
+
+# Coerce DEBUG to a real boolean for runtime usage.
+try:
+    raw_debug = settings.DEBUG
+    if isinstance(raw_debug, str):
+        settings.DEBUG = raw_debug.lower() in ("1", "true", "yes", "on")
+    else:
+        settings.DEBUG = bool(raw_debug)
+except Exception:
+    settings.DEBUG = False

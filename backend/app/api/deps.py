@@ -5,11 +5,13 @@ from app.llm.factory import get_llm
 from app.services.db_service import DBService
 from app.services.data_source_service import DataSourceService
 from app.services.schema_service import SchemaService
+from app.services.history_service import HistoryService
 
 _db_service = DBService()
 _data_source_service = DataSourceService()
 _schema_service = SchemaService()
 _memory_backends = GraphMemoryBackends()
+_history_service = HistoryService()
 _graph_orchestrator: AgentGraph | None = None
 
 
@@ -33,3 +35,6 @@ def get_data_source_service() -> DataSourceService:
 
 def close_graph_orchestrator() -> None:
     _memory_backends.close()
+
+def get_history_service() -> HistoryService:
+    return _history_service
