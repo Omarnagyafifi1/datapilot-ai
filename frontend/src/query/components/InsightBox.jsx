@@ -21,11 +21,25 @@ export default function InsightBox({ insights = [], error = null }) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {insights.map((ins, i) => (
-        <div key={i} className="glass p-4 rounded-xl border-white/5">
-          <div className="text-sm text-white/80 leading-relaxed">{ins}</div>
-        </div>
-      ))}
+      {insights.map((ins, i) => {
+        const enText = ins?.en || (typeof ins === 'string' ? ins : '');
+        const arText = ins?.ar || '';
+        return (
+          <div key={i} className="glass p-5 rounded-xl border-white/5 flex flex-col gap-3 hover:border-white/10 transition-colors">
+            {enText && (
+              <div className="text-sm text-white/90 leading-relaxed font-sans">
+                {enText}
+              </div>
+            )}
+            {arText && (
+              <div className="text-sm text-cyber-cyan/95 leading-relaxed font-sans text-right" dir="rtl">
+                {arText}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
+
