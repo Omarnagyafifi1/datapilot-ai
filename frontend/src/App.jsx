@@ -46,7 +46,13 @@ function App() {
       case 'chat':
         return <ChatInterface selectedSourceId={selectedSourceId} selectedSource={selectedSource} />;
       case 'datasources':
-        return <DataSourceManager onUpdate={fetchSources} selectedSourceId={selectedSourceId} />;
+        return (
+          <DataSourceManager 
+            onUpdate={fetchSources} 
+            selectedSourceId={selectedSourceId} 
+            onSelectSource={setSelectedSourceId} 
+          />
+        );
       case 'schema':
         return <SchemaViewer />;
       case 'history':
@@ -68,6 +74,8 @@ function App() {
       setActiveView={setActiveView}
       selectedSource={selectedSource}
       selectedSourceId={selectedSourceId}
+      dataSources={dataSources}
+      onSelectSource={setSelectedSourceId}
     >
       {renderView()}
     </Layout>

@@ -2,12 +2,17 @@ import React from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 
-export function Layout({ children, activeView, setActiveView, selectedSource, selectedSourceId }) {
+export function Layout({ children, activeView, setActiveView, selectedSource, selectedSourceId, dataSources, onSelectSource }) {
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden text-white/90">
       <Sidebar activeView={activeView} setActiveView={setActiveView} />
       <div className="flex-1 flex flex-col relative overflow-hidden">
-        <Header selectedSource={selectedSource} selectedSourceId={selectedSourceId} />
+        <Header 
+          selectedSource={selectedSource} 
+          selectedSourceId={selectedSourceId} 
+          dataSources={dataSources} 
+          onSelectSource={onSelectSource} 
+        />
         <main className="flex-1 overflow-hidden relative">
           {/* Subtle Cyber Background Texture */}
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,#111_0%,#050505_100%)] opacity-50 pointer-events-none" />

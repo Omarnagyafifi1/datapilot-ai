@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import QueryInput from './components/QueryInput';
 import SQLViewer from './components/SQLViewer';
 import ResultsTable from './components/ResultsTable';
@@ -8,6 +8,7 @@ import ErrorMessage from '../components/ErrorMessage';
 import EmptyState from '../components/EmptyState';
 import { queryService } from '../services/queryService';
 import { COPY } from '../lib/copy';
+import { api } from '../lib/api';
 
 export default function QueryPage({ selectedSourceId, selectedSource }) {
   const [question, setQuestion] = useState('');
@@ -19,6 +20,57 @@ export default function QueryPage({ selectedSourceId, selectedSource }) {
   const [error, setError] = useState(null);
   const [phase, setPhase] = useState('idle'); // idle | preview | executed
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [examples, setExamples] = useState(COPY.EMPTY_QUERY_EXAMPLES);
+
+  useEffect(() => {
+    if (!selectedSourceId) {
+      setExamples(COPY.EMPTY_QUERY_EXAMPLES);
+      return;
+    }
+    api.schema.get(selectedSourceId)
+      .then(resp => {
+        if (resp.data && resp.data.success) {
+          const schemaData = resp.data.data;
+          const tables = schemaData.tables || [];
+          const tableNames = tables.map(t => String(t.name || t).toLowerCase());
+          
+          let prompts = [];
+          if (tableNames.includes('employees')) {
+            prompts.push("Show all employees and their salaries");
+            prompts.push("ما هو إجمالي الرواتب لكل قسم؟");
+            prompts.push("من هم أعلى 5 موظفين راتباً؟");
+          }
+          if (tableNames.includes('sales')) {
+            prompts.push("Show total sales revenue by category");
+            prompts.push("أظهر المبيعات الإجمالية حسب الفئة بالعربية");
+            prompts.push("What were total sales by month in 2025?");
+          }
+          if (tableNames.includes('inventory')) {
+            prompts.push("Which products are below reorder level?");
+            prompts.push("عرض المنتجات التي نفد مخزونها");
+          }
+          
+          // Fallback if not enough prompts
+          if (prompts.length < 3) {
+            tables.forEach(t => {
+              const name = t.name || t;
+              if (prompts.length < 3 && name) {
+                prompts.push(`Show first 10 rows from ${name}`);
+              }
+            });
+          }
+          
+          if (prompts.length === 0) {
+            prompts = COPY.EMPTY_QUERY_EXAMPLES;
+          }
+          setExamples(prompts.slice(0, 4));
+        }
+      })
+      .catch(err => {
+        console.error("Failed to load schema for examples", err);
+        setExamples(COPY.EMPTY_QUERY_EXAMPLES);
+      });
+  }, [selectedSourceId]);
 
   const handlePreview = async (q) => {
     if (!q || !selectedSourceId) return;
@@ -55,6 +107,11 @@ export default function QueryPage({ selectedSourceId, selectedSource }) {
     }
   };
 
+  const handleSelectExample = (exampleText) => {
+    setQuestion(exampleText);
+    handlePreview(exampleText);
+  };
+
   return (
     <div className="p-12">
       <div className="max-w-6xl mx-auto space-y-8">
@@ -69,7 +126,11 @@ export default function QueryPage({ selectedSourceId, selectedSource }) {
 
         <section className="space-y-4">
           {phase === 'idle' && !generatedSQL ? (
-            <EmptyState title="Ready to ask a question" />
+            <EmptyState 
+              title="Ready to ask a question" 
+              examples={examples} 
+              onSelectExample={handleSelectExample} 
+            />
           ) : (
             <SQLViewer sql={editedSQL} onChange={setEditedSQL} onExecute={() => setConfirmOpen(true)} loading={loading} />
           )}

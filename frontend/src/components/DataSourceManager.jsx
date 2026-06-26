@@ -4,7 +4,7 @@ import { api } from '../lib/api';
 import { cn } from '../lib/utils';
 import { COPY } from '../lib/copy';
 
-export function DataSourceManager({ onUpdate }) {
+export function DataSourceManager({ onUpdate, selectedSourceId, onSelectSource }) {
   const [sources, setSources] = useState([]);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
@@ -12,7 +12,7 @@ export function DataSourceManager({ onUpdate }) {
   
   const [formData, setFormData] = useState({
     name: '',
-    db_type: 'postgresql',
+    db_type: 'sqlite',
     host: '',
     port: 5432,
     db_name: '',
@@ -49,7 +49,7 @@ export function DataSourceManager({ onUpdate }) {
         onUpdate();
         setFormData({
           name: '',
-          db_type: 'postgresql',
+          db_type: 'sqlite',
           host: '',
           port: 5432,
           db_name: '',
@@ -98,28 +98,40 @@ export function DataSourceManager({ onUpdate }) {
             <form onSubmit={handleConnect} className="space-y-6">
               <InputGroup label="Node Alias" value={formData.name} onChange={v => setFormData({...formData, name: v})} placeholder="PROD_RELAY_01" />
               
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-mono font-bold text-muted uppercase">Protocol</label>
-                  <select 
-                    value={formData.db_type}
-                    onChange={e => setFormData({...formData, db_type: e.target.value})}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs font-mono focus:border-cyber-cyan/50 outline-none"
-                  >
-                    <option value="postgresql">PostgreSQL</option>
-                    <option value="mysql">MySQL</option>
-                  </select>
-                </div>
-                <InputGroup label="Port" type="number" value={formData.port} onChange={v => setFormData({...formData, port: parseInt(v)})} />
+              <div className="space-y-2">
+                <label className="text-[10px] font-mono font-bold text-muted uppercase">Protocol</label>
+                <select 
+                  value={formData.db_type}
+                  onChange={e => setFormData({...formData, db_type: e.target.value})}
+                  className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-xs font-mono focus:border-cyber-cyan/50 outline-none text-white"
+                >
+                  <option value="sqlite">SQLite</option>
+                  <option value="postgresql">PostgreSQL</option>
+                  <option value="mysql">MySQL</option>
+                  <option value="mssql">SQL Server (MSSQL)</option>
+                  <option value="oracle">Oracle</option>
+                </select>
               </div>
 
-              <InputGroup label="Relay Host" value={formData.host} onChange={v => setFormData({...formData, host: v})} placeholder="10.0.0.1" />
-              <InputGroup label="Database" value={formData.db_name} onChange={v => setFormData({...formData, db_name: v})} placeholder="NEURAL_CORE" />
+              {formData.db_type !== 'sqlite' && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <InputGroup label="Relay Host" value={formData.host} onChange={v => setFormData({...formData, host: v})} placeholder="10.0.0.1" />
+                    <InputGroup label="Port" type="number" value={formData.port} onChange={v => setFormData({...formData, port: parseInt(v)})} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <InputGroup label="Operator" value={formData.username} onChange={v => setFormData({...formData, username: v})} placeholder="admin" />
+                    <InputGroup label="Key" type="password" value={formData.password} onChange={v => setFormData({...formData, password: v})} placeholder="••••" />
+                  </div>
+                </>
+              )}
 
-              <div className="grid grid-cols-2 gap-4">
-                <InputGroup label="Operator" value={formData.username} onChange={v => setFormData({...formData, username: v})} placeholder="admin" />
-                <InputGroup label="Key" type="password" value={formData.password} onChange={v => setFormData({...formData, password: v})} placeholder="••••" />
-              </div>
+              <InputGroup 
+                label={formData.db_type === 'sqlite' ? 'Database File Path' : 'Database Name'} 
+                value={formData.db_name} 
+                onChange={v => setFormData({...formData, db_name: v})} 
+                placeholder={formData.db_type === 'sqlite' ? 'D:\\path\\to\\db.sqlite' : 'NEURAL_CORE'} 
+              />
 
               {error && (
                 <div className="p-3 bg-red-500/10 border border-red-500/20 rounded flex items-start gap-2">
@@ -162,31 +174,50 @@ export function DataSourceManager({ onUpdate }) {
             </div>
           ) : (
             <div className="grid gap-4">
-              {sources.map((source) => (
-                <div key={source.id} className="glass p-6 rounded-2xl border-white/5 flex items-center gap-6 group hover:border-cyber-cyan/30 transition-all">
-                  <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-cyber-cyan border border-white/10 group-hover:border-cyber-cyan/30 transition-all">
-                    <Zap size={20} />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-1">
-                      <h5 className="font-bold text-white uppercase tracking-tight">{source.name}</h5>
-                      <div className="px-1.5 py-0.5 bg-cyber-cyan/10 border border-cyber-cyan/20 text-cyber-cyan text-[8px] font-mono font-bold rounded uppercase tracking-widest">
-                        {source.db_type}
+              {sources.map((source) => {
+                const isActive = source.id === selectedSourceId;
+                return (
+                  <div 
+                    key={source.id} 
+                    onClick={() => onSelectSource && onSelectSource(source.id)}
+                    className={cn(
+                      "glass p-6 rounded-2xl border-white/5 flex items-center gap-6 group hover:border-cyber-cyan/30 transition-all cursor-pointer",
+                      isActive && "border-cyber-cyan bg-cyber-cyan/[0.03] shadow-glow-cyan/5"
+                    )}
+                  >
+                    <div className={cn(
+                      "w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center text-cyber-cyan border border-white/10 group-hover:border-cyber-cyan/30 transition-all",
+                      isActive && "border-cyber-cyan/50 text-cyber-lime"
+                    )}>
+                      <Zap size={20} />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-1">
+                        <h5 className="font-bold text-white uppercase tracking-tight flex items-center gap-2">
+                          {source.name}
+                          {isActive && <span className="inline-block w-2 h-2 rounded-full bg-cyber-lime animate-pulse" />}
+                        </h5>
+                        <div className="px-1.5 py-0.5 bg-cyber-cyan/10 border border-cyber-cyan/20 text-cyber-cyan text-[8px] font-mono font-bold rounded uppercase tracking-widest">
+                          {source.db_type}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 text-[10px] font-mono text-muted uppercase">
+                        {source.db_type !== 'sqlite' && <span className="flex items-center gap-1.5"><Globe size={10} /> {source.host}</span>}
+                        <span className="flex items-center gap-1.5"><Shield size={10} /> {source.db_name}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 text-[10px] font-mono text-muted uppercase">
-                      <span className="flex items-center gap-1.5"><Globe size={10} /> {source.host}</span>
-                      <span className="flex items-center gap-1.5"><Shield size={10} /> {source.db_name}</span>
-                    </div>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(source.id);
+                      }}
+                      className="p-3 text-white/10 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
-                  <button 
-                    onClick={() => handleDelete(source.id)}
-                    className="p-3 text-white/10 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

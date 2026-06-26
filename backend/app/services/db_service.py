@@ -134,6 +134,10 @@ def test_connection(params: dict) -> dict:
                 conn_string = f"postgresql+psycopg2://{username}:{pwd}@{host}:{port}/{db_name}"
             elif db_type in ("mysql",):
                 conn_string = f"mysql+pymysql://{username}:{pwd}@{host}:{port}/{db_name}"
+            elif db_type == "mssql":
+                conn_string = f"mssql+pyodbc://{username}:{pwd}@{host}:{port or '1433'}/{db_name}?driver=ODBC+Driver+17+for+SQL+Server"
+            elif db_type == "oracle":
+                conn_string = f"oracle+cx_oracle://{username}:{pwd}@{host}:{port or '1521'}/?service_name={db_name}"
             else:
                 return {"success": False, "error": f"Unsupported db_type: {db_type}"}
 
@@ -141,7 +145,10 @@ def test_connection(params: dict) -> dict:
         engine = create_engine(_normalize_conn_string_for_sync(conn_string))
         with engine.connect() as conn:
             # Lightweight validation
-            conn.execute(text("SELECT 1"))
+            if db_type == "oracle":
+                conn.execute(text("SELECT 1 FROM DUAL"))
+            else:
+                conn.execute(text("SELECT 1"))
         return {"success": True}
     except Exception as exc:
         logger.exception("Test connection failed")

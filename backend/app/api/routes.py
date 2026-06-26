@@ -3,11 +3,9 @@ from typing import Any
 from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import JSONResponse
-from app.api.deps import get_approval_store, get_data_source_service, get_graph_orchestrator, get_history_service
+from app.api.deps import get_data_source_service, get_graph_orchestrator, get_history_service
 from app.core.logger import get_logger
 from app.models.schemas import (
-    ApprovalPayload,
-    ApprovalRequest,
     ConnectRequest,
     DataSourceResponse,
     HealthResponse,
@@ -19,7 +17,6 @@ from app.models.schemas import (
     ActivityFeedResponse,
     SchemaResponse,
 )
-from app.services.approval_store import ApprovalStore
 from app.services.data_source_service import DataSourceService
 from app.services.history_service import HistoryService
 from app.services import db_service
@@ -29,6 +26,15 @@ from app.services.database import engine
 
 router = APIRouter(prefix="/api", tags=["api"])
 logger = get_logger(__name__)
+
+
+import json as _json
+from datetime import datetime as _datetime
+
+def _default_serializer(obj):
+    if isinstance(obj, _datetime):
+        return obj.isoformat()
+    raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 
 def _resp(success: bool, message: str, data: dict | list | None) -> JSONResponse:
@@ -42,7 +48,9 @@ def _resp(success: bool, message: str, data: dict | list | None) -> JSONResponse
         "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
         "Access-Control-Allow-Headers": "*",
     }
-    return JSONResponse(content=payload, headers=headers)
+    # Use custom serializer to handle datetime objects
+    content_str = _json.dumps(payload, default=_default_serializer)
+    return JSONResponse(content=_json.loads(content_str), headers=headers)
 
 
 @router.get("/health", response_model=HealthResponse)
@@ -56,12 +64,12 @@ def query_endpoint(
     data_source_service: DataSourceService = Depends(get_data_source_service),
     history_service: HistoryService = Depends(get_history_service),
     graph=Depends(get_graph_orchestrator),
-) -> JSONResponse:
+) -> dict:
     start_time = time.time()
     status = "SUCCESS"
-    thread_id = payload.thread_id or str(uuid4())
     try:
         data_source_service.get_conn_string(payload.source_id)
+        thread_id = payload.thread_id or str(uuid4())
         result = graph.run(payload.question, payload.source_id, thread_id=thread_id)
         if result.get("requires_approval"):
             result["message"] = "Approval required for write query."
@@ -70,9 +78,7 @@ def query_endpoint(
             "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
             "Access-Control-Allow-Headers": "*",
         }
-        # Dump model with serializable output
-        response_data = QueryResponse(**result).model_dump(mode='json')
-        return JSONResponse(content=response_data, headers=headers)
+        return JSONResponse(content=result, headers=headers)
     except Exception as e:
         status = "ERROR"
         logger.exception("Query failed")
@@ -90,11 +96,11 @@ def query_endpoint(
             logger.exception("Failed to save query history in finally block")
 
 
-@router.post("/query/approval")
+@router.post("/query/approval", response_model=QueryResponse)
 def approve_query_endpoint(
     payload: QueryApprovalRequest,
     graph=Depends(get_graph_orchestrator),
-) -> JSONResponse:
+) -> QueryResponse:
     result = graph.resume(thread_id=payload.thread_id, approved=payload.approved)
     if not payload.approved:
         result["status"] = "cancelled"
@@ -102,37 +108,6 @@ def approve_query_endpoint(
     else:
         result["status"] = "completed"
         result["message"] = "Operation approved and executed."
-    
-    headers = {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-        "Access-Control-Allow-Headers": "*",
-    }
-    response_data = QueryResponse(**result).model_dump(mode='json')
-    return JSONResponse(content=response_data, headers=headers)
-
-
-@router.post("/approval", response_model=QueryResponse)
-def approval_endpoint(
-    payload: ApprovalRequest,
-    approval_store: ApprovalStore = Depends(get_approval_store),
-    graph=Depends(get_graph_orchestrator),
-) -> QueryResponse:
-    pending = approval_store.get(payload.run_id)
-
-    if not payload.approved:
-        if pending:
-            approval_store.delete(payload.run_id)
-        return QueryResponse(
-            status="cancelled",
-            message=payload.reason or "Operation cancelled by user.",
-        )
-
-    result = graph.resume(thread_id=payload.run_id, approved=True)
-    if pending:
-        approval_store.delete(payload.run_id)
-    result["status"] = "completed"
-    result["message"] = "Operation approved and executed."
     return QueryResponse(**result)
 
 
@@ -245,11 +220,11 @@ def explain_sql(payload: dict) -> dict[str, Any]:
         raise HTTPException(status_code=400, detail="Missing 'sql' in request body")
 
     try:
+        import re
         s = sql.replace('\n', ' ').replace('\t', ' ')
         s = ' '.join(s.split())
         sel = (s.lower().split('select ')[1].split(' from')[0] if 'select ' in s.lower() and ' from' in s.lower() else '')
         from_part = ''
-        import re
         m = re.search(r'from (.+?)( where| group by| order by| limit|$)', s, flags=re.IGNORECASE)
         if m:
             from_part = m.group(1)
@@ -283,3 +258,16 @@ def explain_sql(payload: dict) -> dict[str, Any]:
     except Exception as e:
         logger.exception('Explain failed')
         raise HTTPException(status_code=500, detail='Explain failed')
+
+
+@router.post('/report/generate')
+def generate_report(payload: dict) -> dict[str, Any]:
+    """Generate a markdown report from a query document."""
+    from app.services.report_service import build_report
+    try:
+        document = payload.get("document", payload)
+        report = build_report(document)
+        return _resp(success=True, message="Report generated", data=report)
+    except Exception as e:
+        logger.exception("Report generation failed")
+        raise HTTPException(status_code=500, detail=str(e))

@@ -3,11 +3,11 @@ from __future__ import annotations
 from datetime import datetime
 from urllib.parse import quote_plus
 from uuid import UUID, uuid4
+import uuid
 
 from cryptography.fernet import Fernet
 from fastapi import HTTPException
 from sqlalchemy import Column, DateTime, Integer, MetaData, String, Table, create_engine, delete, insert, select
-from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -22,7 +22,7 @@ _METADATA = MetaData()
 _DATA_SOURCES = Table(
     "data_sources",
     _METADATA,
-    Column("id", PGUUID(as_uuid=True), primary_key=True),
+    Column("id", String(36), primary_key=True),
     Column("name", String(255), nullable=False),
     Column("db_type", String(32), nullable=False),
     Column("host", String(255), nullable=False, default=""),
@@ -38,7 +38,7 @@ _SESSION_FACTORY: sessionmaker | None = None
 
 
 def _get_fernet() -> Fernet:
-    key = settings.ENCRYPTION_KEY.strip()
+    key = settings.encryption_key.strip()
     if not key:
         raise HTTPException(status_code=500, detail="Encryption key is not configured")
     try:
@@ -54,9 +54,9 @@ def _get_store_engine() -> Engine:
     if _REGISTRY_ENGINE is not None:
         return _REGISTRY_ENGINE
 
-    db_url = settings.DATA_SOURCES_DB_URL.strip()
+    db_url = settings.data_sources_db_url.strip()
     if not db_url:
-        raise HTTPException(status_code=500, detail="Data source store is not configured")
+        db_url = "sqlite:///./data_sources.db"
 
     connect_args = {"timeout": 5} if db_url.startswith("sqlite:///") else {"connect_timeout": 5}
     _REGISTRY_ENGINE = create_engine(
@@ -92,21 +92,28 @@ def _build_conn_string_from_source(source: dict, password: str) -> str:
         return f"postgresql+psycopg2://{username}:{encoded_password}@{host}:{port}/{db_name}"
     if db_type == "mysql":
         return f"mysql+pymysql://{username}:{encoded_password}@{host}:{port}/{db_name}"
+    if db_type == "mssql":
+        return f"mssql+pyodbc://{username}:{encoded_password}@{host}:{port or '1433'}/{db_name}?driver=ODBC+Driver+17+for+SQL+Server"
+    if db_type == "oracle":
+        return f"oracle+cx_oracle://{username}:{encoded_password}@{host}:{port or '1521'}/?service_name={db_name}"
 
     raise HTTPException(status_code=400, detail="Unsupported database type")
 
 
 def save_source(params: dict) -> dict:
-    test_result = db_service.test_connection(params)
-    if not test_result.get("success"):
-        return test_result
+    # For SQLite sources, skip the network test_connection
+    db_type_lower = str(params.get("db_type", "")).lower()
+    if db_type_lower != "sqlite":
+        test_result = db_service.test_connection(params)
+        if not test_result.get("success"):
+            return test_result
 
     encrypted_password = _get_fernet().encrypt(str(params.get("password", "")).encode("utf-8")).decode("utf-8")
 
-    source_uuid = uuid4()
+    source_uuid = str(uuid4())
     payload = {
         "id": source_uuid,
-        "name": str(params.get("name", "")).strip() or str(source_uuid),
+        "name": str(params.get("name", "")).strip() or source_uuid,
         "db_type": str(params.get("db_type", "")).lower().strip(),
         "host": str(params.get("host", "")),
         "port": int(params["port"]) if params.get("port") is not None else None,
@@ -128,7 +135,7 @@ def save_source(params: dict) -> dict:
     finally:
         session.close()
 
-    return {"success": True, "id": str(source_uuid)}
+    return {"success": True, "id": source_uuid}
 
 
 def list_sources() -> list[dict]:
@@ -151,6 +158,9 @@ def list_sources() -> list[dict]:
         for row in rows:
             item = dict(row)
             item["id"] = str(item["id"])
+            # Convert datetime to ISO string for JSON serialization
+            if hasattr(item.get("created_at"), "isoformat"):
+                item["created_at"] = item["created_at"].isoformat()
             result.append(item)
         return result
     finally:
@@ -158,15 +168,10 @@ def list_sources() -> list[dict]:
 
 
 def delete_source(id: str) -> None:
-    try:
-        source_uuid = UUID(id)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail="Invalid data source id") from exc
-
     session_local = _get_session_factory()
     session: Session = session_local()
     try:
-        result = session.execute(delete(_DATA_SOURCES).where(_DATA_SOURCES.c.id == source_uuid))
+        result = session.execute(delete(_DATA_SOURCES).where(_DATA_SOURCES.c.id == id))
         if result.rowcount == 0:
             session.rollback()
             raise HTTPException(status_code=404, detail="Data source not found")
@@ -177,15 +182,10 @@ def delete_source(id: str) -> None:
 
 
 def get_conn_string(id: str) -> str:
-    try:
-        source_uuid = UUID(id)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail="Invalid data source id") from exc
-
     session_local = _get_session_factory()
     session: Session = session_local()
     try:
-        row = session.execute(select(_DATA_SOURCES).where(_DATA_SOURCES.c.id == source_uuid)).mappings().first()
+        row = session.execute(select(_DATA_SOURCES).where(_DATA_SOURCES.c.id == id)).mappings().first()
     finally:
         session.close()
 
@@ -195,8 +195,11 @@ def get_conn_string(id: str) -> str:
     try:
         password = _get_fernet().decrypt(str(row["enc_password"]).encode("utf-8")).decode("utf-8")
     except Exception as exc:  # noqa: BLE001
-        logger.exception("Failed to decrypt password for source_id=%s", id)
-        raise HTTPException(status_code=500, detail="Failed to load data source") from exc
+        if str(row["db_type"]).lower() == "sqlite":
+            password = ""
+        else:
+            logger.exception("Failed to decrypt password for source_id=%s", id)
+            raise HTTPException(status_code=500, detail="Failed to load data source") from exc
 
     conn_string = _build_conn_string_from_source(dict(row), password)
     db_service.get_engine(source_id=id, conn_string=conn_string)
@@ -215,4 +218,3 @@ class DataSourceService:
 
     def get_conn_string(self, id: str) -> str:
         return get_conn_string(id)
-

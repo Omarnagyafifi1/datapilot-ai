@@ -1,0 +1,21 @@
+product_id,product_name,product_name_ar,category,category_ar,supplier,supplier_ar,unit_price,stock_quantity,reorder_level,warehouse,warehouse_ar,last_updated,sku,is_active
+1,Laptop Pro 15,لابتوب برو 15,Electronics,إلكترونيات,TechSupply Co,شركة تك سبلاي,15000,45,10,Cairo Warehouse,مخزن القاهرة,2024-06-01,SKU-ELEC-001,1
+2,Smartphone X12,هاتف ذكي X12,Electronics,إلكترونيات,MobileWorld,عالم الموبايل,8000,120,20,Cairo Warehouse,مخزن القاهرة,2024-06-01,SKU-ELEC-002,1
+3,Monitor 4K 27inch,شاشة 4K 27 بوصة,Electronics,إلكترونيات,TechSupply Co,شركة تك سبلاي,6000,55,15,Alex Warehouse,مخزن الإسكندرية,2024-06-01,SKU-ELEC-003,1
+4,Wireless Keyboard,لوحة مفاتيح لاسلكية,Electronics,إلكترونيات,Peripherals Ltd,شركة الملحقات,800,200,50,Cairo Warehouse,مخزن القاهرة,2024-06-01,SKU-ELEC-004,1
+5,Office Chair Pro,كرسي مكتب احترافي,Furniture,أثاث,FurniCo Egypt,فيرني كو مصر,2500,30,5,Giza Warehouse,مخزن الجيزة,2024-06-01,SKU-FURN-001,1
+6,Executive Desk,مكتب تنفيذي,Furniture,أثاث,FurniCo Egypt,فيرني كو مصر,4500,18,3,Giza Warehouse,مخزن الجيزة,2024-06-01,SKU-FURN-002,1
+7,Bookshelf 5-Tier,رف كتب 5 طوابق,Furniture,أثاث,FurniCo Egypt,فيرني كو مصر,1200,60,10,Cairo Warehouse,مخزن القاهرة,2024-06-01,SKU-FURN-003,1
+8,HP Printer Laser,طابعة HP ليزر,Office Equipment,معدات مكتبية,HP Egypt,HP مصر,3500,25,5,Alex Warehouse,مخزن الإسكندرية,2024-06-01,SKU-OFF-001,1
+9,Projector Epson,بروجيكتور إبسون,Office Equipment,معدات مكتبية,Epson Egypt,إبسون مصر,18000,8,2,Cairo Warehouse,مخزن القاهرة,2024-06-01,SKU-OFF-002,1
+10,Canon Scanner,ماسح ضوئي كانون,Office Equipment,معدات مكتبية,Canon Egypt,كانون مصر,4000,15,3,Cairo Warehouse,مخزن القاهرة,2024-06-01,SKU-OFF-003,1
+11,Sony Headphones WH,سماعات سوني WH,Electronics,إلكترونيات,Sony Egypt,سوني مصر,2000,90,20,Alex Warehouse,مخزن الإسكندرية,2024-06-01,SKU-ELEC-005,1
+12,Tablet iPad Air,تابلت iPad Air,Electronics,إلكترونيات,Apple Egypt,آبل مصر,12000,35,8,Cairo Warehouse,مخزن القاهرة,2024-06-01,SKU-ELEC-006,1
+13,WiFi Router 6E,راوتر WiFi 6E,Electronics,إلكترونيات,Networking Pro,نتووركينج برو,1500,75,15,Giza Warehouse,مخزن الجيزة,2024-06-01,SKU-ELEC-007,1
+14,Webcam HD 1080p,كاميرا ويب HD,Electronics,إلكترونيات,Logitech Egypt,لوجيتك مصر,1200,110,25,Cairo Warehouse,مخزن القاهرة,2024-06-01,SKU-ELEC-008,1
+15,Standing Desk Electric,مكتب قائم كهربائي,Furniture,أثاث,FurniCo Egypt,فيرني كو مصر,7000,12,2,Giza Warehouse,مخزن الجيزة,2024-06-01,SKU-FURN-004,1
+16,A4 Paper Ream 500,ورق A4 رزمة 500,Stationery,قرطاسية,PaperCo,ورق كو,50,1000,200,Alex Warehouse,مخزن الإسكندرية,2024-06-01,SKU-STAT-001,1
+17,Ballpoint Pens Box,قلم حبر جاف - علبة,Stationery,قرطاسية,PaperCo,ورق كو,25,500,100,Cairo Warehouse,مخزن القاهرة,2024-06-01,SKU-STAT-002,1
+18,Whiteboard 120x90,لوح أبيض 120x90,Office Equipment,معدات مكتبية,BoardPro,بورد برو,800,20,4,Giza Warehouse,مخزن الجيزة,2024-06-01,SKU-OFF-004,1
+19,USB-C Hub 7-in-1,هاب USB-C متعدد المنافذ,Electronics,إلكترونيات,Peripherals Ltd,شركة الملحقات,350,150,30,Cairo Warehouse,مخزن القاهرة,2024-06-01,SKU-ELEC-009,0
+20,Ergonomic Mouse,فأرة مريحة,Electronics,إلكترونيات,Logitech Egypt,لوجيتك مصر,450,200,40,Alex Warehouse,مخزن الإسكندرية,2024-06-01,SKU-ELEC-010,1

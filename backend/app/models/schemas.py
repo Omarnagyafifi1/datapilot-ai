@@ -1,6 +1,6 @@
+from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
-from datetime import datetime
 
 from pydantic import BaseModel, Field
 
@@ -36,26 +36,12 @@ class UploadResponse(BaseModel):
     metadata: UploadMetadata
 
 
-class ApprovalPayload(BaseModel):
-    run_id: str
-    question: Optional[str] = None
-    sql: Optional[str] = None
-    message: Optional[str] = None
-
-
-class QueryResponse(BaseModel):
-    status: str = "completed"
-    sql: Optional[str] = None
-    results: Optional[List[Dict[str, Any]]] = None
-    documentation: Optional[Dict[str, Any]] = None
-    approval: Optional[ApprovalPayload] = None
-    message: Optional[str] = None
-
-
-class ApprovalRequest(BaseModel):
-    run_id: str
-    approved: bool
-    reason: Optional[str] = None
+class VisualizationResponse(BaseModel):
+    library: str
+    chart_type: str
+    x: str
+    y: str
+    spec: Dict[str, Any]
 
 
 class QueryDocument(BaseModel):
@@ -63,24 +49,10 @@ class QueryDocument(BaseModel):
     sql: str
     results: List[Dict[str, Any]]
     results_count: int
-    visualization: Dict[str, Any] | None = None
+    visualization: Optional[VisualizationResponse] = None
     insights: List[Dict[str, str]]
     suggestions: List[Dict[str, str]]
     executed_at: str
-
-
-class QueryResponse(BaseModel):
-    sql: str = ""
-    results: List[Dict[str, Any]] = Field(default_factory=list)
-    visualization: Dict[str, Any] | None = None
-    documentation: Any = None
-    thread_id: str | None = None
-    requires_approval: bool = False
-    approval_request: Dict[str, Any] | None = None
-    approval: ApprovalPayload | None = None
-    status: str | None = None
-    message: str | None = None
-    answer: str = ""
 
 
 class QueryRequest(BaseModel):
@@ -94,6 +66,18 @@ class QueryApprovalRequest(BaseModel):
     approved: bool
 
 
+class QueryResponse(BaseModel):
+    sql: str = ""
+    results: List[Dict[str, Any]] = Field(default_factory=list)
+    visualization: Optional[VisualizationResponse] = None
+    documentation: Dict[str, Any] = Field(default_factory=dict)
+    thread_id: str | None = None
+    requires_approval: bool = False
+    approval_request: Dict[str, Any] | None = None
+    status: str | None = None
+    message: str | None = None
+
+
 class ExplainRequest(BaseModel):
     sql: str
 
@@ -102,6 +86,7 @@ class ExplainResponse(BaseModel):
     success: bool
     message: str
     data: str
+
 
 class ConnectRequest(BaseModel):
     name: str
@@ -112,16 +97,19 @@ class ConnectRequest(BaseModel):
     username: str = ""
     password: str = ""
 
+
 class DataSourceResponse(BaseModel):
     id: str
     name: str
     db_type: str
     host: str
     db_name: str
-    created_at: datetime
+    created_at: Any
+
 
 class HealthResponse(BaseModel):
     status: str
+
 
 class QueryHistoryItem(BaseModel):
     id: str
@@ -129,12 +117,14 @@ class QueryHistoryItem(BaseModel):
     source_id: str
     status: str
     latency: float
-    executed_at: datetime
+    executed_at: Any
+
 
 class QueryHistoryResponse(BaseModel):
     success: bool
     message: str
     data: List[QueryHistoryItem]
+
 
 class SystemStats(BaseModel):
     total_sources: int
@@ -142,21 +132,25 @@ class SystemStats(BaseModel):
     avg_latency: float
     success_rate: float
 
+
 class SystemStatsResponse(BaseModel):
     success: bool
     message: str
     data: SystemStats
 
+
 class ActivityFeedItem(BaseModel):
     id: str
     type: str
     content: str
-    timestamp: datetime
+    timestamp: Any
+
 
 class ActivityFeedResponse(BaseModel):
     success: bool
     message: str
     data: List[ActivityFeedItem]
+
 
 class ColumnSchema(BaseModel):
     name: str
@@ -164,9 +158,11 @@ class ColumnSchema(BaseModel):
     nullable: bool
     primary_key: bool
 
+
 class TableSchema(BaseModel):
     name: str
     columns: List[ColumnSchema]
+
 
 class SchemaResponse(BaseModel):
     success: bool

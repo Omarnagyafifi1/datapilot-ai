@@ -1,0 +1,21 @@
+id,name,name_ar,age,salary,department,department_ar,manager,hire_date,location,location_ar,email,phone,job_title,job_title_ar,performance_score,status,status_ar
+1,Ahmed Hassan,أحمد حسن,32,12000,Engineering,هندسة,Sara Malik,2020-03-15,Cairo,القاهرة,ahmed.hassan@company.com,01012345678,Senior Engineer,مهندس أول,4.5,Active,نشط
+2,Sara Malik,سارة مالك,38,18000,Engineering,هندسة,Omar Nady,2018-06-01,Cairo,القاهرة,sara.malik@company.com,01098765432,Engineering Manager,مدير هندسة,4.8,Active,نشط
+3,Mohamed Adel,محمد عادل,27,8500,Marketing,تسويق,Layla Ahmed,2022-01-10,Alexandria,الإسكندرية,mohamed.adel@company.com,01234567890,Marketing Specialist,أخصائي تسويق,3.9,Active,نشط
+4,Layla Ahmed,ليلى أحمد,41,22000,Marketing,تسويق,Omar Nady,2015-09-20,Cairo,القاهرة,layla.ahmed@company.com,01187654321,Marketing Director,مدير تسويق,4.7,Active,نشط
+5,Khaled Ibrahim,خالد إبراهيم,29,9000,Sales,مبيعات,Amira Youssef,2021-07-05,Giza,الجيزة,khaled.ibrahim@company.com,01556789012,Sales Representative,مندوب مبيعات,4.1,Active,نشط
+6,Amira Youssef,أميرة يوسف,35,16000,Sales,مبيعات,Omar Nady,2019-11-12,Cairo,القاهرة,amira.youssef@company.com,01678901234,Sales Manager,مدير مبيعات,4.6,Active,نشط
+7,Omar Nady,عمر نادي,45,35000,Management,إدارة,CEO,2010-01-01,Cairo,القاهرة,omar.nady@company.com,01223456789,COO,المدير التشغيلي,4.9,Active,نشط
+8,Nour El-Din,نور الدين,24,7500,IT,تقنية المعلومات,Ahmed Hassan,2023-04-18,Cairo,القاهرة,nour.eldin@company.com,01345678901,Junior Developer,مطور مبتدئ,3.7,Active,نشط
+9,Rania Kamal,رانيا كمال,31,11000,HR,موارد بشرية,Sara Malik,2021-02-28,Alexandria,الإسكندرية,rania.kamal@company.com,01456789012,HR Specialist,أخصائي موارد بشرية,4.2,Active,نشط
+10,Tarek Samir,طارق سمير,36,13500,Finance,مالية,Omar Nady,2017-08-14,Cairo,القاهرة,tarek.samir@company.com,01567890123,Finance Analyst,محلل مالي,4.3,Active,نشط
+11,Dina Mostafa,دينا مصطفى,28,8800,IT,تقنية المعلومات,Ahmed Hassan,2022-09-01,Giza,الجيزة,dina.mostafa@company.com,01689012345,Frontend Developer,مطور واجهة,4.0,Active,نشط
+12,Youssef Farid,يوسف فريد,33,10500,Finance,مالية,Tarek Samir,2020-05-20,Cairo,القاهرة,youssef.farid@company.com,01790123456,Senior Accountant,محاسب أول,3.8,Active,نشط
+13,Heba Nasser,هبة ناصر,26,7800,Marketing,تسويق,Layla Ahmed,2023-01-15,Cairo,القاهرة,heba.nasser@company.com,01801234567,Content Creator,صانع محتوى,3.6,Active,نشط
+14,Sherif Hassan,شريف حسن,39,14000,Engineering,هندسة,Sara Malik,2016-12-01,Alexandria,الإسكندرية,sherif.hassan@company.com,01912345678,Systems Architect,مهندس أنظمة,4.4,Active,نشط
+15,Mai Salah,مي صلاح,30,9500,HR,موارد بشرية,Rania Kamal,2021-10-10,Cairo,القاهرة,mai.salah@company.com,01023456789,HR Coordinator,منسق موارد بشرية,4.0,Inactive,غير نشط
+16,Wael Fouad,وائل فؤاد,34,12500,Sales,مبيعات,Amira Youssef,2019-03-25,Giza,الجيزة,wael.fouad@company.com,01134567890,Senior Sales Rep,مندوب مبيعات أول,4.2,Active,نشط
+17,Aya Mahmoud,آية محمود,25,7200,IT,تقنية المعلومات,Ahmed Hassan,2023-06-01,Cairo,القاهرة,aya.mahmoud@company.com,01245678901,Backend Developer,مطور خلفية,3.5,Active,نشط
+18,Islam Fathy,إسلام فتحي,37,15500,Finance,مالية,Tarek Samir,2018-04-10,Cairo,القاهرة,islam.fathy@company.com,01356789012,Finance Manager,مدير مالي,4.5,Active,نشط
+19,Mariam Taha,مريم طه,22,6500,Marketing,تسويق,Layla Ahmed,2024-02-01,Alexandria,الإسكندرية,mariam.taha@company.com,01467890123,Marketing Intern,متدرب تسويق,3.2,Active,نشط
+20,Bassem Gamal,باسم جمال,43,20000,Management,إدارة,Omar Nady,2012-07-15,Cairo,القاهرة,bassem.gamal@company.com,01578901234,VP Operations,نائب رئيس العمليات,4.7,Active,نشط

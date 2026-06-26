@@ -19,8 +19,16 @@ export const api = {
     delete: (id) => client.delete(`/datasources/${id}`),
   },
   
-  query: (question, sourceId) => client.post('/query', { question, source_id: sourceId }),
+  query: (question, sourceId, threadId) => client.post('/query', { question, source_id: sourceId, thread_id: threadId }),
+  queryApproval: (threadId, approved) => client.post('/query/approval', { thread_id: threadId, approved }),
+  queryPage: ({ sql, sourceId, page, pageSize }) => client.post('/query/page', {
+    sql,
+    source_id: sourceId,
+    page,
+    page_size: pageSize,
+  }),
   explain: (sql) => client.post('/explain', { sql }),
+  report: (document) => client.post('/report/generate', { document }),
   
   history: {
     list: () => client.get('/query-history'),

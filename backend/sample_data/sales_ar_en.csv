@@ -1,0 +1,21 @@
+sale_id,employee_id,employee_name,employee_name_ar,product,product_ar,category,category_ar,quantity,unit_price,total_amount,sale_date,region,region_ar,payment_method,payment_method_ar,status,status_ar
+1,5,Khaled Ibrahim,خالد إبراهيم,Laptop Pro,لابتوب برو,Electronics,إلكترونيات,3,15000,45000,2024-01-05,Cairo,القاهرة,Credit Card,بطاقة ائتمان,Completed,مكتمل
+2,6,Amira Youssef,أميرة يوسف,Office Chair,كرسي مكتب,Furniture,أثاث,10,2500,25000,2024-01-10,Giza,الجيزة,Bank Transfer,تحويل بنكي,Completed,مكتمل
+3,16,Wael Fouad,وائل فؤاد,Smartphone X,هاتف ذكي X,Electronics,إلكترونيات,5,8000,40000,2024-01-15,Alexandria,الإسكندرية,Cash,نقدي,Completed,مكتمل
+4,5,Khaled Ibrahim,خالد إبراهيم,Printer HP,طابعة HP,Office Equipment,معدات مكتبية,2,3500,7000,2024-01-20,Cairo,القاهرة,Credit Card,بطاقة ائتمان,Completed,مكتمل
+5,16,Wael Fouad,وائل فؤاد,Monitor 4K,شاشة 4K,Electronics,إلكترونيات,4,6000,24000,2024-02-01,Giza,الجيزة,Bank Transfer,تحويل بنكي,Completed,مكتمل
+6,5,Khaled Ibrahim,خالد إبراهيم,Keyboard Wireless,لوحة مفاتيح لاسلكي,Electronics,إلكترونيات,15,800,12000,2024-02-10,Cairo,القاهرة,Cash,نقدي,Pending,معلق
+7,6,Amira Youssef,أميرة يوسف,Desk Wooden,مكتب خشبي,Furniture,أثاث,5,4500,22500,2024-02-15,Cairo,القاهرة,Credit Card,بطاقة ائتمان,Completed,مكتمل
+8,16,Wael Fouad,وائل فؤاد,Tablet iPad,تابلت iPad,Electronics,إلكترونيات,3,12000,36000,2024-02-20,Alexandria,الإسكندرية,Bank Transfer,تحويل بنكي,Completed,مكتمل
+9,5,Khaled Ibrahim,خالد إبراهيم,Headphones Sony,سماعات سوني,Electronics,إلكترونيات,8,2000,16000,2024-03-01,Giza,الجيزة,Cash,نقدي,Completed,مكتمل
+10,16,Wael Fouad,وائل فؤاد,Standing Desk,مكتب قائم,Furniture,أثاث,2,7000,14000,2024-03-05,Cairo,القاهرة,Credit Card,بطاقة ائتمان,Completed,مكتمل
+11,5,Khaled Ibrahim,خالد إبراهيم,Projector Epson,بروجيكتور إبسون,Office Equipment,معدات مكتبية,1,18000,18000,2024-03-15,Cairo,القاهرة,Bank Transfer,تحويل بنكي,Completed,مكتمل
+12,6,Amira Youssef,أميرة يوسف,Laptop Pro,لابتوب برو,Electronics,إلكترونيات,2,15000,30000,2024-03-20,Giza,الجيزة,Credit Card,بطاقة ائتمان,Completed,مكتمل
+13,16,Wael Fouad,وائل فؤاد,Router WiFi 6,راوتر WiFi 6,Electronics,إلكترونيات,6,1500,9000,2024-04-01,Alexandria,الإسكندرية,Cash,نقدي,Completed,مكتمل
+14,5,Khaled Ibrahim,خالد إبراهيم,Scanner Canon,ماسح ضوئي كانون,Office Equipment,معدات مكتبية,3,4000,12000,2024-04-10,Cairo,القاهرة,Credit Card,بطاقة ائتمان,Cancelled,ملغي
+15,6,Amira Youssef,أميرة يوسف,Bookshelf,رف كتب,Furniture,أثاث,8,1200,9600,2024-04-15,Cairo,القاهرة,Bank Transfer,تحويل بنكي,Completed,مكتمل
+16,16,Wael Fouad,وائل فؤاد,Smartphone X,هاتف ذكي X,Electronics,إلكترونيات,4,8000,32000,2024-04-20,Giza,الجيزة,Cash,نقدي,Completed,مكتمل
+17,5,Khaled Ibrahim,خالد إبراهيم,Webcam HD,كاميرا ويب HD,Electronics,إلكترونيات,10,1200,12000,2024-05-01,Cairo,القاهرة,Credit Card,بطاقة ائتمان,Completed,مكتمل
+18,6,Amira Youssef,أميرة يوسف,Laptop Pro,لابتوب برو,Electronics,إلكترونيات,3,15000,45000,2024-05-15,Alexandria,الإسكندرية,Bank Transfer,تحويل بنكي,Completed,مكتمل
+19,16,Wael Fouad,وائل فؤاد,Office Chair,كرسي مكتب,Furniture,أثاث,7,2500,17500,2024-05-20,Cairo,القاهرة,Cash,نقدي,Completed,مكتمل
+20,5,Khaled Ibrahim,خالد إبراهيم,Monitor 4K,شاشة 4K,Electronics,إلكترونيات,2,6000,12000,2024-06-01,Giza,الجيزة,Credit Card,بطاقة ائتمان,Pending,معلق

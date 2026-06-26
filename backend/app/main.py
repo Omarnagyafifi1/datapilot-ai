@@ -1,31 +1,33 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, status
-from fastapi.responses import JSONResponse
 import logging
+import time
+from collections import defaultdict, deque
+from pathlib import Path
+
+from fastapi import FastAPI, UploadFile, File, HTTPException, status, Request
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi import Response
 
 from app.api.deps import close_graph_orchestrator
 from app.api.routes import router as api_router
 from app.core.exceptions import CSVValidationError, DataCleaningError, DatabaseIngestionError
-from app.api.routes import router as api_router
 from app.models.schemas import UploadResponse, UploadMetadata
 from app.services.database import engine
 from app.services.data_service import DataSourceService
 
-from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import router as api_router
-from fastapi.staticfiles import StaticFiles
-from pathlib import Path
-from fastapi import Response
-
 # Setup basic logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+_RATE_BUCKETS: dict[str, deque[float]] = defaultdict(deque)
+RATE_LIMIT_WINDOW_SECONDS = 60
+RATE_LIMIT_MAX_REQUESTS = 120
 
 app = FastAPI(
     title="AI Text-to-SQL Data Analyst System API",
     description="API for managing data uploads and text-to-SQL conversions",
     version="1.0.0"
 )
-app.include_router(api_router)
 
 
 @app.on_event("shutdown")
@@ -60,8 +62,24 @@ async def _ensure_cors_headers(request, call_next):
     response.headers.setdefault("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
     response.headers.setdefault("Access-Control-Allow-Headers", "*")
     return response
-# Include Routes
-app.include_router(api_router)
+
+
+@app.middleware("http")
+async def _rate_limit(request: Request, call_next):
+    if request.url.path.startswith("/api"):
+        client = request.client.host if request.client else "unknown"
+        now = time.monotonic()
+        bucket = _RATE_BUCKETS[client]
+        while bucket and now - bucket[0] > RATE_LIMIT_WINDOW_SECONDS:
+            bucket.popleft()
+        if len(bucket) >= RATE_LIMIT_MAX_REQUESTS:
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Rate limit exceeded. Please retry shortly."},
+                headers={"Retry-After": str(RATE_LIMIT_WINDOW_SECONDS)},
+            )
+        bucket.append(now)
+    return await call_next(request)
 
 
 # Catch-all OPTIONS handler to ensure preflight requests return CORS headers
@@ -75,7 +93,7 @@ async def catch_all_options(full_path: str):
     return Response(status_code=200, headers=headers)
 
 # Mount frontend static files when available (built via `npm run build` into frontend/dist)
-dist_dir = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+dist_dir = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 if dist_dir.exists():
     app.mount("/", StaticFiles(directory=str(dist_dir), html=True), name="frontend")
 
