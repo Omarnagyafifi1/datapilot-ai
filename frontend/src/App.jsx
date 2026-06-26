@@ -58,7 +58,7 @@ function App() {
           />
         );
       case 'schema':
-        return <SchemaViewer />;
+        return <SchemaViewer selectedSourceId={selectedSourceId} selectedSource={selectedSource} />;
       case 'history':
         return <QueryHistory />;
       case 'reports':
