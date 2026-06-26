@@ -42,7 +42,11 @@ function App() {
       case 'query':
         return <QueryPage selectedSourceId={selectedSourceId} selectedSource={selectedSource} />;
       case 'dashboard':
-        return <Dashboard onStartAnalyst={() => setActiveView('chat')} />;
+        return <Dashboard 
+          onStartAnalyst={() => setActiveView('chat')} 
+          onManageSources={() => setActiveView('datasources')}
+          onViewHistory={() => setActiveView('history')}
+        />;
       case 'chat':
         return <ChatInterface selectedSourceId={selectedSourceId} selectedSource={selectedSource} />;
       case 'datasources':

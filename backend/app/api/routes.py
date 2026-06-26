@@ -11,6 +11,7 @@ from app.models.schemas import (
     HealthResponse,
     QueryApprovalRequest,
     QueryRequest,
+    QueryPageRequest,
     QueryResponse,
     QueryHistoryResponse,
     SystemStatsResponse,
@@ -111,6 +112,31 @@ def approve_query_endpoint(
     return QueryResponse(**result)
 
 
+@router.post("/query/page")
+def query_page_endpoint(
+    payload: QueryPageRequest,
+    data_source_service: DataSourceService = Depends(get_data_source_service),
+) -> dict[str, Any]:
+    try:
+        data_source_service.get_conn_string(payload.source_id)
+        # Execute query with offset/limit based on dialect
+        dialect = db_service.DBService(source_id=payload.source_id).get_dialect()
+        limit_sql = payload.sql
+        offset = (payload.page - 1) * payload.page_size
+        if dialect in ("sqlite", "postgresql", "mysql"):
+            limit_sql = f"{payload.sql} LIMIT {payload.page_size} OFFSET {offset}"
+        elif dialect == "mssql":
+            limit_sql = f"{payload.sql} OFFSET {offset} ROWS FETCH NEXT {payload.page_size} ROWS ONLY"
+        elif dialect == "oracle":
+            limit_sql = f"{payload.sql} OFFSET {offset} ROWS FETCH NEXT {payload.page_size} ROWS ONLY"
+
+        results = db_service.execute_query(limit_sql, payload.source_id)
+        return _resp(success=True, message="Page fetched", data={"rows": results, "page": payload.page})
+    except Exception as e:
+        logger.exception("Query page failed")
+        return _resp(success=False, message=f"Query page failed: {str(e)}", data=None)
+
+
 @router.post("/datasources/connect")
 def connect_datasource(
     req: ConnectRequest,
@@ -180,6 +206,32 @@ def get_datasource_schema(
     data_source_service.get_conn_string(id)
     schema = db_service.get_source_schema(id)
     return _resp(success=True, message="Schema fetched", data=schema.get("tables", []))
+
+
+@router.get("/datasources/{id}/suggestions")
+def get_datasource_suggestions(
+    id: str,
+    data_source_service: DataSourceService = Depends(get_data_source_service),
+) -> dict[str, Any]:
+    data_source_service.get_conn_string(id)
+    schema = db_service.get_source_schema(id)
+    tables = schema.get("tables", [])
+    
+    suggestions = []
+    table_names = [t["name"].lower() for t in tables]
+    
+    if "employees" in table_names:
+        suggestions.extend(["Show all employees and their salaries", "ما هو إجمالي الرواتب لكل قسم؟", "من هم أعلى 5 موظفين راتباً؟"])
+    if "sales" in table_names:
+        suggestions.extend(["Show total sales revenue by category", "أظهر المبيعات الإجمالية حسب الفئة بالعربية", "What were total sales by month?"])
+    if "inventory" in table_names:
+        suggestions.extend(["Which products are below reorder level?", "عرض المنتجات التي نفد مخزونها"])
+        
+    if len(suggestions) < 3:
+        for t in tables:
+            suggestions.append(f"Show first 10 rows from {t['name']}")
+            
+    return _resp(success=True, message="Suggestions fetched", data=suggestions[:4])
 
 
 @router.get("/system/stats", response_model=SystemStatsResponse)

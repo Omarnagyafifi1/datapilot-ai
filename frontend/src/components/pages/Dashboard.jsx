@@ -4,7 +4,7 @@ import heroPurple from '../../assets/illustrations/isometric-neon-purple.svg';
 
 import { api } from '../../lib/api';
 
-export function Dashboard({ onStartAnalyst }) {
+export function Dashboard({ onStartAnalyst, onManageSources, onViewHistory }) {
   const [feed, setFeed] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -77,7 +77,7 @@ export function Dashboard({ onStartAnalyst }) {
           </div>
           <h3 className="text-xl font-bold mb-3">Data Orchestrator</h3>
           <p className="text-muted text-sm leading-relaxed mb-6">Map and connect your distributed databases into a single unified knowledge graph.</p>
-          <button className="flex items-center gap-2 text-cyber-lime font-mono text-xs font-bold uppercase tracking-widest hover:gap-4 transition-all">
+          <button onClick={onManageSources} className="flex items-center gap-2 text-cyber-lime font-mono text-xs font-bold uppercase tracking-widest hover:gap-4 transition-all">
             Manage Sources <ArrowRight size={14} />
           </button>
         </div>
@@ -88,7 +88,7 @@ export function Dashboard({ onStartAnalyst }) {
           <h4 className="text-xs font-mono font-bold text-muted uppercase tracking-widest flex items-center gap-2">
             <Terminal size={14} /> Active Feed
           </h4>
-          <span className="text-[10px] font-mono text-cyber-cyan underline cursor-pointer">View full logs</span>
+          <span onClick={onViewHistory} className="text-[10px] font-mono text-cyber-cyan underline cursor-pointer">View full logs</span>
         </div>
 
         <div className="space-y-4">

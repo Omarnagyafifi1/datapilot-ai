@@ -27,47 +27,16 @@ export default function QueryPage({ selectedSourceId, selectedSource }) {
       setExamples(COPY.EMPTY_QUERY_EXAMPLES);
       return;
     }
-    api.schema.get(selectedSourceId)
+    api.schema.suggestions(selectedSourceId)
       .then(resp => {
-        if (resp.data && resp.data.success) {
-          const schemaData = resp.data.data;
-          const tables = schemaData.tables || [];
-          const tableNames = tables.map(t => String(t.name || t).toLowerCase());
-          
-          let prompts = [];
-          if (tableNames.includes('employees')) {
-            prompts.push("Show all employees and their salaries");
-            prompts.push("ما هو إجمالي الرواتب لكل قسم؟");
-            prompts.push("من هم أعلى 5 موظفين راتباً؟");
-          }
-          if (tableNames.includes('sales')) {
-            prompts.push("Show total sales revenue by category");
-            prompts.push("أظهر المبيعات الإجمالية حسب الفئة بالعربية");
-            prompts.push("What were total sales by month in 2025?");
-          }
-          if (tableNames.includes('inventory')) {
-            prompts.push("Which products are below reorder level?");
-            prompts.push("عرض المنتجات التي نفد مخزونها");
-          }
-          
-          // Fallback if not enough prompts
-          if (prompts.length < 3) {
-            tables.forEach(t => {
-              const name = t.name || t;
-              if (prompts.length < 3 && name) {
-                prompts.push(`Show first 10 rows from ${name}`);
-              }
-            });
-          }
-          
-          if (prompts.length === 0) {
-            prompts = COPY.EMPTY_QUERY_EXAMPLES;
-          }
-          setExamples(prompts.slice(0, 4));
+        if (resp.data && resp.data.success && resp.data.data.length > 0) {
+          setExamples(resp.data.data);
+        } else {
+          setExamples(COPY.EMPTY_QUERY_EXAMPLES);
         }
       })
       .catch(err => {
-        console.error("Failed to load schema for examples", err);
+        console.error("Failed to load schema suggestions", err);
         setExamples(COPY.EMPTY_QUERY_EXAMPLES);
       });
   }, [selectedSourceId]);

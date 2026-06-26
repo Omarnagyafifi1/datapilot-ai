@@ -492,3 +492,16 @@
 }
 ```
 
+## 2026-06-26T18:20:42.328310+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-06-26T18:20:42.328310+00:00",
+  "status": "resolved",
+  "question": "Total sales by month",
+  "sql": "SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM sales GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+

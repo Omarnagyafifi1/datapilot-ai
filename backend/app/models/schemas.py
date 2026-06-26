@@ -60,6 +60,12 @@ class QueryRequest(BaseModel):
     source_id: str
     thread_id: str | None = None
 
+class QueryPageRequest(BaseModel):
+    sql: str
+    source_id: str
+    page: int = 1
+    page_size: int = 10
+
 
 class QueryApprovalRequest(BaseModel):
     thread_id: str

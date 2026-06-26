@@ -29,13 +29,14 @@ export const api = {
   }),
   explain: (sql) => client.post('/explain', { sql }),
   report: (document) => client.post('/report/generate', { document }),
-  
+
   history: {
     list: () => client.get('/query-history'),
   },
   
   schema: {
     get: (sourceId) => client.get(`/datasources/${sourceId}/schema`),
+    suggestions: (sourceId) => client.get(`/datasources/${sourceId}/suggestions`),
   },
   
   system: {

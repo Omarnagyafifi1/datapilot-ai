@@ -2,29 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Binary, ChevronRight, Table as TableIcon, Hash, Type, Key, Loader2, Database } from 'lucide-react';
 import { api } from '../../lib/api';
 
-export function SchemaViewer() {
-  const [sources, setSources] = useState([]);
-  const [selectedSourceId, setSelectedSourceId] = useState(null);
+export function SchemaViewer({ selectedSourceId, selectedSource }) {
   const [schema, setSchema] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeTable, setActiveTable] = useState(null);
-
-  useEffect(() => {
-    const fetchSources = async () => {
-      try {
-        const resp = await api.datasources.list();
-        if (resp.data.success) {
-          setSources(resp.data.data);
-          if (resp.data.data.length > 0) {
-            setSelectedSourceId(resp.data.data[0].id);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to fetch sources:", err);
-      }
-    };
-    fetchSources();
-  }, []);
 
   useEffect(() => {
     if (!selectedSourceId) return;
@@ -66,16 +47,11 @@ export function SchemaViewer() {
         </div>
 
         <div className="glass p-4 rounded-xl border-white/5 min-w-[240px]">
-          <label className="text-[10px] font-mono font-bold text-muted uppercase block mb-2">Select Data Node</label>
-          <select 
-            value={selectedSourceId || ''}
-            onChange={(e) => setSelectedSourceId(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs font-mono focus:border-cyber-cyan/50 outline-none text-white"
-          >
-            {sources.map(s => (
-              <option key={s.id} value={s.id} className="bg-[#0a0a0a]">{s.name}</option>
-            ))}
-          </select>
+          <label className="text-[10px] font-mono font-bold text-muted uppercase block mb-2">Connected Data Node</label>
+          <div className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-cyber-cyan flex items-center gap-2">
+            <Database size={14} />
+            {selectedSource ? selectedSource.name : 'No source selected'}
+          </div>
         </div>
       </header>
 
