@@ -76,6 +76,8 @@ class QueryResponse(BaseModel):
     sql: str = ""
     results: List[Dict[str, Any]] = Field(default_factory=list)
     visualization: Optional[VisualizationResponse] = None
+    insights: List[Dict[str, str]] = Field(default_factory=list)
+    suggestions: List[Dict[str, str]] = Field(default_factory=list)
     documentation: Dict[str, Any] = Field(default_factory=dict)
     thread_id: str | None = None
     requires_approval: bool = False

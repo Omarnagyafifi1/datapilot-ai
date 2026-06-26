@@ -697,6 +697,8 @@ class AgentGraph:
             "sql": final_state.get("sql", ""),
             "results": final_state.get("query_results", []),
             "visualization": final_state.get("visualization"),
+            "insights": final_state.get("insights", []),
+            "suggestions": final_state.get("suggestions", []),
             "documentation": final_state.get("documentation", {}),
             "thread_id": thread_id,
             "requires_approval": interrupt_payload is not None,
