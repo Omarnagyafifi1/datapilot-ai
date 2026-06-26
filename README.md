@@ -1,212 +1,127 @@
-# DEPI Project Backend
+# DataPilot AI - Text-to-SQL Data Analyst System 🚀
+
+![DataPilot Dashboard Concept](https://img.shields.io/badge/DataPilot-AI-00f0ff?style=for-the-badge&logo=react)
+![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
+![LangGraph](https://img.shields.io/badge/LangGraph-FF4F00?style=for-the-badge&logo=langchain)
+![Databases](https://img.shields.io/badge/Multi--DB-Supported-34D399?style=for-the-badge)
+
+DataPilot AI is an intelligent, agent-based Text-to-SQL system that empowers users to query databases using natural language (English & Arabic). It leverages a LangGraph-powered AI agent to understand intent, generate SQL, safely execute queries, and return the data alongside AI-generated insights and visualizations.
+
+---
+
+## 🌟 Key Features
+
+*   **🗣️ Bilingual Support:** Seamlessly ask questions in English or Arabic (e.g., *"What is our total revenue?"* or *"ما هو إجمالي المبيعات؟"*).
+*   **🔗 Multi-Database Integration:** Connect to multiple database types simultaneously. Supported databases include:
+    *   `SQLite` (Local files & CSV uploads)
+    *   `PostgreSQL`
+    *   `MySQL`
+    *   `SQL Server (MSSQL)`
+    *   `Oracle`
+*   **🧠 Intelligent Agent Flow (LangGraph):** 
+    *   **Context-Aware Schema Filtering:** Prunes the database schema to only send relevant tables to the LLM, reducing token usage and improving accuracy.
+    *   **Auto-Retry & Fix Loop:** If a generated SQL query fails syntax validation or execution, the agent automatically attempts to fix the query and retries up to 3 times.
+*   **🛡️ Security First:**
+    *   **Write-Protection:** Destructive queries (`INSERT`, `UPDATE`, `DELETE`) require explicit Human-in-the-Loop (HITL) approval via the UI before execution.
+    *   **Injection Guard:** Blacklisted keywords (`DROP`, `ALTER`, `TRUNCATE`) are blocked by the agent router.
+*   **📊 Automatic Visualizations & Insights:** Automatically generates Plotly chart specifications and bilingual narrative insights based on query results.
+*   **📂 CSV Data Ingestion:** Upload any CSV file to automatically create a table in the local database and query it instantly.
+
+---
+
+## 🏗️ Architecture
+
+The system is split into a decoupled Backend and Frontend, communicating via RESTful APIs.
+
+### Backend (FastAPI + LangGraph)
+Located in `/backend`.
+*   **FastAPI Routes:** Handles HTTP requests, file uploads, and endpoint security.
+*   **LangGraph Orchestrator:** The brain of the system. Manages state transitions across nodes (Router -> Schema Fetch -> SQL Gen -> Execute -> Validate -> Fix/Retry -> Insights).
+*   **LLM Factory:** Abstracted LLM provider layer allowing easy switching between `Groq`, `OpenAI`, `Gemini`, or `OpenRouter` via `.env` variables.
+*   **Data Services:** Manages secure storage of database credentials (encrypted with `Fernet`) and SQLAlchemy engine caching for fast execution.
+
+### Frontend (React + Vite)
+Located in `/frontend`.
+*   **Cyberpunk UI:** A heavily stylized, dark-mode, animated interface built with Tailwind CSS.
+*   **Pages:**
+    *   **Dashboard:** System overview and active feed.
+    *   **Query:** The main chat interface where natural language questions are entered and previewed as SQL.
+    *   **Schema Explorer:** Interactive tree view of the currently connected database schema.
+    *   **Data Sources:** Manage, test, and add new database connections or upload CSVs.
+    *   **History & Reports:** View query execution logs, export CSVs, and download Markdown reports.
+
+---
+
+## 🚀 Quick Start Guide
+
+### Prerequisites
+*   Python 3.11+
+*   Node.js 18+
+
+### 1. Backend Setup
+1. Open a terminal and navigate to the `backend` directory.
+2. Create and activate a virtual environment:
+   ```bash
+   cd backend
+   python -m venv .venv
+   # Windows:
+   .\.venv\Scripts\activate
+   # Mac/Linux:
+   source .venv/bin/activate
+   ```
+3. Install the dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Set up the Environment Variables:
+   Copy `.env.example` to `.env` and fill in your keys:
+   ```env
+   # Example .env configuration
+   LLM_PROVIDER=groq
+   GROQ_API_KEY=gsk_your_api_key_here
+   ENCRYPTION_KEY=generate_a_fernet_key_and_paste_here
+   ```
+5. Run the FastAPI Server:
+   ```bash
+   python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+   ```
+
+### 2. Frontend Setup
+1. Open a new terminal and navigate to the `frontend` directory.
+2. Install the Node modules:
+   ```bash
+   cd frontend
+   npm install
+   ```
+3. Run the Vite Development Server:
+   ```bash
+   npm run dev
+   ```
+4. Open your browser and go to `http://localhost:5173`.
+
+---
 
-## Overview
-This project is a FastAPI backend organized into clear layers, where each part has a specific responsibility.
-The goal of this structure is to make development, testing, and future extension easier without overcomplication.
+## 📚 API Reference
 
-## Project Structure
+Here are the core endpoints provided by the backend. The full Swagger documentation is available at `http://localhost:8000/docs` while the backend is running.
 
-- backend/
-  - Main backend directory.
-  - Contains environment configuration, dependencies, and application code.
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/api/query` | Submit a natural language question. The agent returns the generated SQL, executed results, insights, and chart specs. |
+| `POST` | `/api/query/approval` | Approve or reject a pending write operation (INSERT/UPDATE/DELETE). |
+| `POST` | `/api/query/page` | Fetch paginated results for a previously executed SQL query. |
+| `GET` | `/api/datasources` | List all registered and encrypted database connections. |
+| `POST` | `/api/datasources/connect` | Register and test a new database connection (SQLite, PostgreSQL, MySQL, MSSQL, Oracle). |
+| `GET` | `/api/datasources/{id}/schema` | Fetch the full schema (tables, columns, types) for a data source. |
+| `GET` | `/api/datasources/{id}/suggestions` | Auto-generate AI query suggestions based on the table schema. |
+| `POST` | `/api/data/csv` | Upload a CSV file. It is automatically cleaned and ingested into the local SQLite database. |
 
-### Inside backend
+---
 
-- .env.example
-  - Template of required environment variables.
-  - Helps new developers understand what needs to be configured.
+## 🤖 AI Execution Flow (LangGraph)
 
-- requirements.txt
-  - Python dependencies required to run the project.
+The core logic of DataPilot AI relies on a state graph. When a question is received, it follows this path:
 
-- app/
-  - The core application package.
-  - Business logic is split by concern.
-
-## app Folder Breakdown
-
-- app/main.py
-  - FastAPI application entry point.
-  - Creates the app and registers API routes.
-
-- app/api/
-  - API endpoint layer.
-  - Receives requests and returns responses.
-
-- app/api/routes.py
-  - Defines routes like health and query.
-  - Represents the external interface of the backend.
-
-- app/api/deps.py
-  - Shared route dependencies.
-  - Builds and provides the graph orchestrator and its required services.
-
-- app/core/
-  - Shared core-level project utilities.
-
-- app/core/config.py
-  - Loads and reads environment variables using python-dotenv.
-  - Includes settings like GROQ_API_KEY and LANGSMITH_*.
-
-- app/core/logger.py
-  - Simple logger setup reusable across the project.
-
-- app/llm/
-  - LLM abstraction and provider layer.
-
-- app/llm/base_llm.py
-  - Base interface for any LLM provider.
-  - Enforces a common method shape (for example generate).
-
-- app/llm/factory.py
-  - Factory for selecting the proper provider (mock or openai placeholder).
-  - Reduces direct coupling between business flow and provider implementation.
-
-- app/llm/providers/
-  - Concrete provider implementations.
-
-- app/llm/providers/mock_llm.py
-  - Mock provider for development and quick testing.
-
-- app/llm/providers/openai_llm.py
-  - Placeholder for a real provider.
-  - Currently a stub with minimal behavior.
-
-- app/services/
-  - Service layer for data access and related operations.
-
-- app/services/db_service.py
-  - Minimal interface for SQL execution (currently stubbed).
-
-- app/services/schema_service.py
-  - Returns schema or database structure context (placeholder).
-
-- app/services/data_source_service.py
-  - Lists or manages available data sources (placeholder).
-
-- app/agents/
-  - Agent flow and orchestration layer.
-
-- app/agents/base_agent.py
-  - Base interface for agent implementations.
-
-- app/agents/graph.py
-  - Main orchestrator for the execution flow.
-  - Coordinates steps: fetch schema, generate SQL, execute SQL, and build a response.
-
-- app/agents/prompts.py
-  - Contains placeholder prompt strings used by the flow.
-
-- app/agents/nodes/
-  - Small, focused execution steps used in the graph.
-
-- app/agents/nodes/sql_node.py
-  - Node responsible for generating SQL from the user question.
-
-- app/agents/tools/
-  - Reusable helper tools for nodes.
-
-- app/agents/tools/sql_tools.py
-  - SQL execution helper through db_service.
-
-- app/agents/tools/schema_tools.py
-  - Schema retrieval helper through schema_service.
-
-- app/agents/tools/context_filtering.py
-  - LLM-based tool to filter and prune the database schema based on the user's question.
-  - Optimizes token usage and improves performance by providing a context-aware minimal schema.
-
-- app/agents/state/
-  - Agent state definitions during execution.
-
-- app/agents/state/agent_state.py
-  - Holds flow fields such as question, sql, and answer.
-
-- app/models/
-  - Request/response data models.
-
-- app/models/schemas.py
-  - Pydantic schemas for API payloads and responses.
-
-- __init__.py files
-  - Mark directories as Python packages.
-  - Help keep imports organized across modules.
-
-## Key Features
-
-- **Context-Aware Schema Filtering**
-  - Automatically prunes the database schema based on the user's question.
-  - Only relevant tables and columns are passed to the SQL generator.
-  - **Benefits**: Reduces token consumption, lowers latency, and increases SQL generation accuracy by eliminating noise.
-
-## Why This Structure Matters
-
-- Separation of concerns
-  - Each layer has a clear purpose, so changes are easier and safer.
-
-- Extensibility
-  - You can swap LLM providers or add new nodes without breaking the whole system.
-
-- Testability
-  - Services, tools, and routes are isolated enough for focused tests.
-
-- Readability
-  - New developers can understand the codebase faster from the folder layout.
-
-## Quick Start
-
-1. Create a virtual environment:
-   - python -m venv backend/.venv
-
-2. Install dependencies:
-   - backend/.venv/Scripts/python.exe -m pip install -r backend/requirements.txt
-
-3. Run the application:
-   - backend/.venv/Scripts/uvicorn.exe app.main:app --reload --app-dir backend
-
-## Frontend illustration assets
-
-- Placeholder SVG files live in `frontend/src/assets/illustrations/`.
-- Replace the placeholder files with licensed isometric SVGs (examples: ManyPixels, unDraw, Vecteezy, Freepik). Download the SVGs, optimize with `svgo`, then overwrite the files:
-
-```bash
-# example
-npm install -g svgo
-npx svgo -i path/to/downloaded.svg -o frontend/src/assets/illustrations/isometric-neon-purple.svg
-```
-
-- If using Freepik/Vecteezy/Flaticon free assets, include attribution in this README or in the app footer. Example attribution:
-
-  "Illustrations by Freepik — https://www.freepik.com"
-
-- The component `IsometricIllustration` (frontend/src/components/IsometricIllustration.jsx) imports these files by default and is used in the dashboard hero.
-
-### Automating download + optimization
-
-If you want me to automatically download and optimize SVGs, use the helper script included at `frontend/scripts/fetch_optimize_svgs.js`.
-
-1. Create a text file with lines of `url,filename.svg` (one per SVG). Example `svg-urls.txt`:
-
-```
-https://undraw.co/api/illustrations/Analyze.svg,isometric-neutral-undraw.svg
-https://example.com/path/to/teal-isometric.svg,isometric-teal-data.svg
-https://example.com/path/to/neon-isometric.svg,isometric-neon-purple.svg
-```
-
-2. Install dependencies and run the script:
-
-```bash
-cd frontend
-npm install node-fetch@2 svgo@2
-node scripts/fetch_optimize_svgs.js ../svg-urls.txt
-```
-
-3. The script writes optimized SVGs to `frontend/src/assets/illustrations/`.
-
-4. After verifying the images and licenses, update `ATTRIBUTION.md` with exact credits and asset URLs.
-
-
-## Execution Flow
 ```mermaid
 graph TD
     START([START]) --> Router[router]
@@ -257,3 +172,8 @@ graph TD
     
     Document --> END3([END])
 ```
+
+---
+
+## 🤝 Contributing
+Contributions are welcome! Please ensure you test any database connection modifications across at least SQLite and PostgreSQL before submitting a pull request.
