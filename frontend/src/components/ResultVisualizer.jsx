@@ -167,11 +167,17 @@ function InsightList({ title, icon, items }) {
       <div className="space-y-2">
         {items.length === 0 ? (
           <div className="glass p-4 rounded-xl border-white/5 text-sm text-white/60">No items available.</div>
-        ) : items.map((item, i) => (
-          <div key={i} className="glass p-4 rounded-xl border-white/5 text-sm text-white/80 leading-relaxed">
-            {typeof item === 'object' ? (item.ar || item.en || JSON.stringify(item)) : String(item)}
-          </div>
-        ))}
+        ) : items.map((item, i) => {
+          const isObj = typeof item === 'object' && item !== null;
+          const enText = isObj ? (item.en || '') : String(item);
+          const arText = isObj ? (item.ar || '') : '';
+          return (
+            <div key={i} className="glass p-4 rounded-xl border-white/5 flex flex-col gap-2 hover:border-white/10 transition-colors">
+              {enText && <div className="text-sm text-white/80 leading-relaxed font-sans">{enText}</div>}
+              {arText && <div className="text-sm text-cyber-cyan/95 leading-relaxed font-sans text-right" dir="rtl">{arText}</div>}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
