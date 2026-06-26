@@ -53,7 +53,7 @@ export default function QueryPage({ selectedSourceId, selectedSource }) {
       if (resp.results) setResults(resp.results || []);
       setPhase('preview');
     } catch (e) {
-      setError(e?.response?.data?.detail || 'Failed to generate SQL');
+      setError(e?.response?.data?.detail || e.message || 'Failed to generate SQL');
     } finally {
       setLoading(false);
     }
@@ -70,7 +70,7 @@ export default function QueryPage({ selectedSourceId, selectedSource }) {
       setInsights(resp.insights || []);
       setPhase('executed');
     } catch (e) {
-      setError(e?.response?.data?.detail || 'Failed to execute SQL');
+      setError(e?.response?.data?.detail || e.message || 'Failed to execute SQL');
     } finally {
       setLoading(false);
     }

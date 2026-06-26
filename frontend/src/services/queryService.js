@@ -5,9 +5,10 @@ export const queryService = {
   generate: async (question, sourceId) => {
     try {
       const resp = await api.query(question, sourceId);
-      // Try to map likely shapes from backend
       if (resp && resp.data) {
-        // backend may return { success, data: { sql, results, insights } }
+        if (resp.data.success === false) {
+          throw new Error(resp.data.message || 'Query failed on backend');
+        }
         const d = resp.data.data || resp.data;
         return {
           sql: d.sql || d.generated_sql || resp.data.answer || '',
@@ -16,17 +17,19 @@ export const queryService = {
         };
       }
     } catch (e) {
-      // fall through to mock
+      if (e.response?.data?.detail) throw new Error(e.response.data.detail);
+      throw e;
     }
-    // fallback
     return mock.generate(question);
   },
 
   execute: async (sql, sourceId) => {
     try {
-      // If backend supports an execute endpoint, use it; otherwise reuse query
       const resp = await api.query(sql, sourceId);
       if (resp && resp.data) {
+        if (resp.data.success === false) {
+          throw new Error(resp.data.message || 'Query execution failed');
+        }
         const d = resp.data.data || resp.data;
         return {
           results: d.results || d.rows || [],
@@ -34,7 +37,8 @@ export const queryService = {
         };
       }
     } catch (e) {
-      // fallback to mock
+      if (e.response?.data?.detail) throw new Error(e.response.data.detail);
+      throw e;
     }
     return mock.execute(sql);
   }
