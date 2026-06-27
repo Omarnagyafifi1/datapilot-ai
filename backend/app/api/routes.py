@@ -71,7 +71,12 @@ def query_endpoint(
     try:
         data_source_service.get_conn_string(payload.source_id)
         thread_id = payload.thread_id or str(uuid4())
-        result = graph.run(payload.question, payload.source_id, thread_id=thread_id)
+        result = graph.run(
+            payload.question,
+            payload.source_id,
+            thread_id=thread_id,
+            preview_only=payload.preview_only
+        )
         if result.get("requires_approval"):
             result["message"] = "Approval required for write query."
         headers = {

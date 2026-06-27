@@ -59,6 +59,7 @@ class QueryRequest(BaseModel):
     question: str
     source_id: str
     thread_id: str | None = None
+    preview_only: bool = False
 
 class QueryPageRequest(BaseModel):
     sql: str

@@ -4,7 +4,7 @@ import { mock } from './mockData';
 export const queryService = {
   generate: async (question, sourceId) => {
     try {
-      const resp = await api.query(question, sourceId);
+      const resp = await api.query(question, sourceId, null, true);
       if (resp && resp.data) {
         if (resp.data.success === false) {
           throw new Error(resp.data.message || 'Query failed on backend');
@@ -27,7 +27,7 @@ export const queryService = {
 
   execute: async (sql, sourceId, threadId) => {
     try {
-      const resp = await api.query(sql, sourceId, threadId);
+      const resp = await api.query(sql, sourceId, threadId, false);
       if (resp && resp.data) {
         if (resp.data.success === false) {
           throw new Error(resp.data.message || 'Query execution failed');

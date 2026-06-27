@@ -625,15 +625,29 @@ class AgentGraph:
         workflow.add_edge("fetch_schema", "load_memory")
         workflow.add_conditional_edges("load_memory", route_sql_gen, ["lookup_scenario", "generate_mod_sql"])
         
-        def route_scenario(state: AgentState) -> Literal["execute_sql", "generate_sql"]:
+        def route_scenario(state: AgentState) -> Literal["execute_sql", "generate_sql", "persist_memory"]:
+            if state.documentation.get("preview_only"):
+                if state.scenario_matched and bool(state.sql.strip()):
+                    return "persist_memory"
+                return "generate_sql"
             return "execute_sql" if state.scenario_matched and bool(state.sql.strip()) else "generate_sql"
 
-        workflow.add_conditional_edges("lookup_scenario", route_scenario, ["execute_sql", "generate_sql"])
+        workflow.add_conditional_edges("lookup_scenario", route_scenario, ["execute_sql", "generate_sql", "persist_memory"])
         
-        workflow.add_edge("generate_sql", "execute_sql")
+        def route_after_sql_gen(state: AgentState) -> Literal["execute_sql", "persist_memory"]:
+            if state.documentation.get("preview_only"):
+                return "persist_memory"
+            return "execute_sql"
+            
+        workflow.add_conditional_edges("generate_sql", route_after_sql_gen, ["execute_sql", "persist_memory"])
         
-        # Modification flow requires approval
-        workflow.add_edge("generate_mod_sql", "approval")
+        # Modification flow requires approval unless preview_only
+        def route_after_mod_sql_gen(state: AgentState) -> Literal["approval", "persist_memory"]:
+            if state.documentation.get("preview_only"):
+                return "persist_memory"
+            return "approval"
+            
+        workflow.add_conditional_edges("generate_mod_sql", route_after_mod_sql_gen, ["approval", "persist_memory"])
         
         def route_approval(state: AgentState) -> Literal["execute_sql", "__end__"]:
             return "execute_sql" if state.success else "__end__"
@@ -709,6 +723,7 @@ class AgentGraph:
         source_id: str,
         cli_mode: bool = False,
         thread_id: str | None = None,
+        preview_only: bool = False,
     ) -> dict[str, Any]:
         resolved_thread_id = thread_id or str(uuid4())
         initial_state = {
@@ -717,6 +732,7 @@ class AgentGraph:
             "documentation": {
                 "dialect": self.db_service.get_dialect(source_id),
                 "cli_mode": cli_mode,
+                "preview_only": preview_only,
             },
         }
         config = {"configurable": {"thread_id": resolved_thread_id}}
