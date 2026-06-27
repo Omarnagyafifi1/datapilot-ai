@@ -21,6 +21,8 @@ export default function QueryPage({ selectedSourceId, selectedSource }) {
   const [phase, setPhase] = useState('idle'); // idle | preview | executed
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [examples, setExamples] = useState(COPY.EMPTY_QUERY_EXAMPLES);
+  const [threadId, setThreadId] = useState(null);
+  const [requiresApproval, setRequiresApproval] = useState(false);
 
   useEffect(() => {
     if (!selectedSourceId) {
@@ -50,6 +52,8 @@ export default function QueryPage({ selectedSourceId, selectedSource }) {
       setGeneratedSQL(resp.sql || '');
       setEditedSQL(resp.sql || '');
       setInsights(resp.insights || []);
+      setRequiresApproval(resp.requiresApproval || false);
+      setThreadId(resp.threadId || null);
       if (resp.results) setResults(resp.results || []);
       setPhase('preview');
     } catch (e) {
@@ -65,9 +69,16 @@ export default function QueryPage({ selectedSourceId, selectedSource }) {
     setLoading(true);
     setError(null);
     try {
-      const resp = await queryService.execute(sql, selectedSourceId);
+      let resp;
+      if (requiresApproval) {
+        resp = await queryService.approve(threadId, true);
+      } else {
+        resp = await queryService.execute(sql, selectedSourceId, threadId);
+      }
       setResults(resp.results || []);
       setInsights(resp.insights || []);
+      setRequiresApproval(resp.requiresApproval || false);
+      setThreadId(resp.threadId || null);
       setPhase('executed');
     } catch (e) {
       setError(e?.response?.data?.detail || e.message || 'Failed to execute SQL');
@@ -121,6 +132,7 @@ export default function QueryPage({ selectedSourceId, selectedSource }) {
         onConfirm={() => handleExecute(editedSQL)}
         sql={editedSQL}
         source={selectedSource}
+        requiresApproval={requiresApproval}
       />
     </div>
   );

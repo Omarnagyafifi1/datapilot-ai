@@ -14,6 +14,8 @@ export const queryService = {
           sql: d.sql || d.generated_sql || resp.data.answer || '',
           results: d.results || d.rows || null,
           insights: d.insights || d.suggestions || d.explanation || [],
+          requiresApproval: d.requires_approval || false,
+          threadId: d.thread_id || null,
         };
       }
     } catch (e) {
@@ -23,9 +25,9 @@ export const queryService = {
     return mock.generate(question);
   },
 
-  execute: async (sql, sourceId) => {
+  execute: async (sql, sourceId, threadId) => {
     try {
-      const resp = await api.query(sql, sourceId);
+      const resp = await api.query(sql, sourceId, threadId);
       if (resp && resp.data) {
         if (resp.data.success === false) {
           throw new Error(resp.data.message || 'Query execution failed');
@@ -34,6 +36,8 @@ export const queryService = {
         return {
           results: d.results || d.rows || [],
           insights: d.insights || d.suggestions || d.explanation || [],
+          requiresApproval: d.requires_approval || false,
+          threadId: d.thread_id || null,
         };
       }
     } catch (e) {
@@ -41,6 +45,29 @@ export const queryService = {
       throw e;
     }
     return mock.execute(sql);
+  },
+
+  approve: async (threadId, approved) => {
+    try {
+      const resp = await api.queryApproval(threadId, approved);
+      if (resp && resp.data) {
+        if (resp.data.success === false) {
+          throw new Error(resp.data.message || 'Approval action failed');
+        }
+        const d = resp.data.data || resp.data;
+        return {
+          results: d.results || d.rows || [],
+          insights: d.insights || d.suggestions || d.explanation || [],
+          requiresApproval: d.requires_approval || false,
+          threadId: d.thread_id || null,
+          message: resp.data.message || '',
+        };
+      }
+    } catch (e) {
+      if (e.response?.data?.detail) throw new Error(e.response.data.detail);
+      throw e;
+    }
+    return { results: [], insights: [], requiresApproval: false, threadId: null };
   }
 };
 
