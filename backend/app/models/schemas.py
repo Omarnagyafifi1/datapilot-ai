@@ -60,6 +60,7 @@ class QueryRequest(BaseModel):
     source_id: str
     thread_id: str | None = None
     preview_only: bool = False
+    sql: str | None = None
 
 class QueryPageRequest(BaseModel):
     sql: str

@@ -619,11 +619,15 @@ class AgentGraph:
         workflow.add_conditional_edges("router", route_intent, ["general_chat", "fetch_schema"])
         workflow.add_edge("general_chat", END)
         
-        def route_sql_gen(state: AgentState) -> Literal["lookup_scenario", "generate_mod_sql"]:
+        def route_sql_gen(state: AgentState) -> Literal["lookup_scenario", "generate_mod_sql", "execute_sql", "approval"]:
+            if state.sql and state.sql.strip():
+                if state.intent in ["ADD", "UPDATE", "DELETE"]:
+                    return "approval"
+                return "execute_sql"
             return "generate_mod_sql" if state.intent in ["ADD", "UPDATE", "DELETE"] else "lookup_scenario"
              
         workflow.add_edge("fetch_schema", "load_memory")
-        workflow.add_conditional_edges("load_memory", route_sql_gen, ["lookup_scenario", "generate_mod_sql"])
+        workflow.add_conditional_edges("load_memory", route_sql_gen, ["lookup_scenario", "generate_mod_sql", "execute_sql", "approval"])
         
         def route_scenario(state: AgentState) -> Literal["execute_sql", "generate_sql", "persist_memory"]:
             if state.documentation.get("preview_only"):
@@ -724,11 +728,13 @@ class AgentGraph:
         cli_mode: bool = False,
         thread_id: str | None = None,
         preview_only: bool = False,
+        sql: str | None = None,
     ) -> dict[str, Any]:
         resolved_thread_id = thread_id or str(uuid4())
         initial_state = {
             "question": question,
             "source_id": source_id,
+            "sql": sql or "",
             "documentation": {
                 "dialect": self.db_service.get_dialect(source_id),
                 "cli_mode": cli_mode,

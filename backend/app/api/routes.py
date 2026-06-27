@@ -75,7 +75,8 @@ def query_endpoint(
             payload.question,
             payload.source_id,
             thread_id=thread_id,
-            preview_only=payload.preview_only
+            preview_only=payload.preview_only,
+            sql=payload.sql
         )
         if result.get("requires_approval"):
             result["message"] = "Approval required for write query."

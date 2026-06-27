@@ -73,7 +73,7 @@ export default function QueryPage({ selectedSourceId, selectedSource }) {
       if (requiresApproval) {
         resp = await queryService.approve(threadId, true);
       } else {
-        resp = await queryService.execute(sql, selectedSourceId, threadId);
+        resp = await queryService.execute(question, sql, selectedSourceId, threadId);
       }
       setResults(resp.results || []);
       setInsights(resp.insights || []);

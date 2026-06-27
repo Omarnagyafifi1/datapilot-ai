@@ -25,9 +25,9 @@ export const queryService = {
     return mock.generate(question);
   },
 
-  execute: async (sql, sourceId, threadId) => {
+  execute: async (question, sql, sourceId, threadId) => {
     try {
-      const resp = await api.query(sql, sourceId, threadId, false);
+      const resp = await api.query(question, sourceId, threadId, false, sql);
       if (resp && resp.data) {
         if (resp.data.success === false) {
           throw new Error(resp.data.message || 'Query execution failed');
