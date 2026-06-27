@@ -658,32 +658,23 @@ class AgentGraph:
             
         workflow.add_conditional_edges("approval", route_approval, ["execute_sql", "__end__"])
         
-        def route_execution(state: AgentState) -> Literal["validate_result", "fix_sql", "scenario_failure"]:
+        def route_execution(state: AgentState) -> Literal["scenario_success", "fix_sql", "scenario_failure"]:
             if state.success:
-                return "validate_result"
+                return "scenario_success"
             if state.retry_count >= MAX_RETRIES:
                 return "scenario_failure"
             return "fix_sql"
               
-        workflow.add_conditional_edges("execute_sql", route_execution, ["validate_result", "fix_sql", "scenario_failure"])
+        workflow.add_conditional_edges("execute_sql", route_execution, ["scenario_success", "fix_sql", "scenario_failure"])
 
-        def route_fix(state: AgentState) -> Literal["validate_result", "execute_sql", "scenario_failure"]:
+        def route_fix(state: AgentState) -> Literal["scenario_success", "execute_sql", "scenario_failure"]:
             if state.success:
-                return "validate_result"
+                return "scenario_success"
             if state.retry_count >= MAX_RETRIES:
                 return "scenario_failure"
             return "execute_sql"
 
-        workflow.add_conditional_edges("fix_sql", route_fix, ["validate_result", "execute_sql", "scenario_failure"])
-
-        def route_validation(state: AgentState) -> Literal["scenario_success", "generate_sql", "scenario_failure"]:
-            if state.validation_passed:
-                return "scenario_success"
-            if state.retry_count >= MAX_RETRIES:
-                return "scenario_failure"
-            return "generate_sql"
-
-        workflow.add_conditional_edges("validate_result", route_validation, ["scenario_success", "generate_sql", "scenario_failure"])
+        workflow.add_conditional_edges("fix_sql", route_fix, ["scenario_success", "execute_sql", "scenario_failure"])
         workflow.add_edge("scenario_success", "generate_visualization")
         workflow.add_edge("generate_visualization", "generate_insights")
         workflow.add_edge("generate_insights", "generate_suggestions")
