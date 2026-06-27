@@ -45,6 +45,8 @@ export default function QueryPage({ selectedSourceId, selectedSource }) {
 
   const handlePreview = async (q) => {
     if (!q || !selectedSourceId) return;
+    setResults([]);
+    setInsights([]);
     setLoading(true);
     setError(null);
     try {
