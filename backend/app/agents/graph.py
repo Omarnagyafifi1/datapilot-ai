@@ -95,11 +95,7 @@ def _normalize_insights(payload: Any) -> list[dict[str, str]] | None:
     if not normalized:
         return None
 
-    trimmed = normalized[:5]
-    if len(trimmed) < 3:
-        return None
-
-    return trimmed
+    return normalized[:5]
 
 
 def _parse_insights(raw_response: str) -> list[dict[str, str]] | None:
@@ -146,10 +142,11 @@ def _normalize_suggestions(payload: Any) -> list[dict[str, str]] | None:
         if ar_value and en_value:
             normalized.append({"ar": ar_value, "en": en_value})
 
-    if len(normalized) != 3:
+    if not normalized:
         return None
 
-    return normalized
+    return normalized[:5]
+
 
 
 def _parse_suggestions(raw_response: str) -> list[dict[str, str]] | None:
