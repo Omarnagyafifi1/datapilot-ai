@@ -68,93 +68,6 @@ def _dialect_from_conn_string(conn_string: str) -> str:
     return prefix.split("+", 1)[0]
 
 
-def test_connection(params: dict) -> dict:
-    db_type = str(params.get("db_type", "")).lower()
-    try:
-        if db_type == "sqlite":
-            db_name = str(params.get("db_name") or params.get("database") or params.get("path") or "")
-            if not db_name:
-                raise ValueError("SQLite database path is required")
-            conn_string = f"sqlite:///{db_name}"
-        elif db_type == "postgresql":
-            username = str(params.get("username") or params.get("user") or "")
-            password = quote_plus(str(params.get("password") or ""))
-            host = str(params.get("host") or "")
-            port = str(params.get("port") or "")
-            db_name = str(params.get("db_name") or params.get("database") or "")
-            conn_string = f"postgresql+psycopg2://{username}:{password}@{host}:{port}/{db_name}"
-        elif db_type == "mysql":
-            username = str(params.get("username") or params.get("user") or "")
-            password = quote_plus(str(params.get("password") or ""))
-            host = str(params.get("host") or "")
-            port = str(params.get("port") or "")
-            db_name = str(params.get("db_name") or params.get("database") or "")
-            conn_string = f"mysql+pymysql://{username}:{password}@{host}:{port}/{db_name}"
-        else:
-            raise ValueError("Unsupported database type")
-
-        engine = create_engine(_normalize_conn_string_for_sync(conn_string))
-        with engine.connect():
-            pass
-        return {"success": True}
-    except Exception as exc:
-        logger.error("Connection test failed: %s", exc)
-        return {"success": False, "error": str(exc)}
-
-
-def _normalize_conn_string_for_sync(conn_string: str) -> str:
-    lowered = conn_string.lower()
-    if lowered.startswith("postgresql+asyncpg://"):
-        return "postgresql+psycopg2://" + conn_string[len("postgresql+asyncpg://") :]
-    return conn_string
-
-
-def test_connection(params: dict) -> dict:
-    """Attempt to open a synchronous connection to the provided DB params.
-
-    Expects a dict with keys: db_type, username, password, host, port, db_name (or path for sqlite).
-    Returns a dict with `success` bool and optional `error` message.
-    """
-    try:
-        db_type = str(params.get("db_type", "")).lower()
-        if db_type == "sqlite":
-            db_name = params.get("db_name") or params.get("path") or params.get("database")
-            if not db_name:
-                return {"success": False, "error": "Missing sqlite database path"}
-            conn_string = f"sqlite:///{db_name}"
-        else:
-            username = params.get("username") or params.get("user") or ""
-            password = params.get("password") or ""
-            host = params.get("host") or "localhost"
-            port = params.get("port") or ""
-            db_name = params.get("db_name") or params.get("database") or ""
-            from urllib.parse import quote_plus
-            pwd = quote_plus(str(password))
-            if db_type in ("postgresql", "postgres"):
-                conn_string = f"postgresql+psycopg2://{username}:{pwd}@{host}:{port}/{db_name}"
-            elif db_type in ("mysql",):
-                conn_string = f"mysql+pymysql://{username}:{pwd}@{host}:{port}/{db_name}"
-            elif db_type == "mssql":
-                conn_string = f"mssql+pyodbc://{username}:{pwd}@{host}:{port or '1433'}/{db_name}?driver=ODBC+Driver+17+for+SQL+Server"
-            elif db_type == "oracle":
-                conn_string = f"oracle+cx_oracle://{username}:{pwd}@{host}:{port or '1521'}/?service_name={db_name}"
-            else:
-                return {"success": False, "error": f"Unsupported db_type: {db_type}"}
-
-        # Try creating a synchronous engine and connecting
-        engine = create_engine(_normalize_conn_string_for_sync(conn_string))
-        with engine.connect() as conn:
-            # Lightweight validation
-            if db_type == "oracle":
-                conn.execute(text("SELECT 1 FROM DUAL"))
-            else:
-                conn.execute(text("SELECT 1"))
-        return {"success": True}
-    except Exception as exc:
-        logger.exception("Test connection failed")
-        return {"success": False, "error": str(exc)}
-
-
 def _strip_identifier_quotes(identifier: str) -> str:
     return identifier.strip().strip('"').strip("`").strip("[]")
 
@@ -218,6 +131,14 @@ def _rewrite_month_extraction_filters(sql: str) -> str:
         return month_replacement(column_expr, month_value, match.group(0))
 
     return strftime_pattern.sub(replace_strftime, rewritten)
+
+
+def _normalize_conn_string_for_sync(conn_string: str) -> str:
+    lowered = conn_string.lower()
+    if lowered.startswith("postgresql+asyncpg://"):
+        return "postgresql+psycopg2://" + conn_string[len("postgresql+asyncpg://") :]
+    return conn_string
+
 
 def upload_csv_to_sqlite(csv_path: str, source_id: str) -> tuple[str, str]:
     """Uploads a CSV to a temporary SQLite database and returns (conn_string, table_name)."""
@@ -289,14 +210,17 @@ def test_connection(params: dict) -> dict:
     password = str(params.get("password", ""))
 
     try:
+        from urllib.parse import quote_plus
         if db_type == "sqlite":
             conn_string = f"sqlite:///{db_name}"
         elif db_type == "postgresql":
-            from urllib.parse import quote_plus
             conn_string = f"postgresql+psycopg2://{username}:{quote_plus(password)}@{host}:{port}/{db_name}"
         elif db_type == "mysql":
-            from urllib.parse import quote_plus
             conn_string = f"mysql+pymysql://{username}:{quote_plus(password)}@{host}:{port}/{db_name}"
+        elif db_type == "mssql":
+            conn_string = f"mssql+pyodbc://{username}:{quote_plus(password)}@{host}:{port or '1433'}/{db_name}?driver=ODBC+Driver+17+for+SQL+Server"
+        elif db_type == "oracle":
+            conn_string = f"oracle+cx_oracle://{username}:{quote_plus(password)}@{host}:{port or '1521'}/?service_name={db_name}"
         else:
             return {"success": False, "error": f"Unsupported database type: {db_type}"}
 

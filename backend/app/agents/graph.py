@@ -11,7 +11,6 @@ from app.services.visualization_service import generate_visualization
 
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import StateGraph, START, END
-from langgraph.runtime import Runtime
 from langgraph.store.memory import InMemoryStore
 from langgraph.types import Command, interrupt
 from app.agents.nodes.sql_node import run_sql_node
@@ -505,6 +504,20 @@ def visualization_node(state: AgentState) -> dict:
     return {"visualization": result}
 
 
+def _coerce_visualization(raw: Any) -> Any:
+    from app.models.schemas import VisualizationResponse
+    if raw is None:
+        return None
+    if isinstance(raw, VisualizationResponse):
+        return raw
+    if isinstance(raw, dict):
+        try:
+            return VisualizationResponse(**raw)
+        except Exception:
+            return None
+    return None
+
+
 def documentation_node(state: AgentState) -> dict:
     executed_at = datetime.now(timezone.utc)
     document = QueryDocument(
@@ -512,7 +525,7 @@ def documentation_node(state: AgentState) -> dict:
         sql=state.sql,
         results=state.query_results,
         results_count=len(state.query_results),
-        visualization=state.visualization,
+        visualization=_coerce_visualization(state.visualization),
         insights=state.insights,
         suggestions=state.suggestions,
         executed_at=executed_at.isoformat(),
@@ -522,53 +535,55 @@ def documentation_node(state: AgentState) -> dict:
     return {"documentation": serialized_document, "executed_at": executed_at}
 
 
-def load_long_term_memory_node(
-    state: AgentState,
-    config: RunnableConfig,
-    runtime: Runtime[Any],
-) -> dict:
-    store = runtime.store
-    if store is None:
+def _make_load_long_term_memory_node(store: Any):
+    def load_long_term_memory_node(
+        state: AgentState,
+        config: RunnableConfig,
+    ) -> dict:
+        local_store = store
+        if local_store is None:
+            return {}
+
+        user_id = str(config.get("configurable", {}).get("user_id") or state.source_id)
+        namespace = (user_id, "query_history")
+        memories = list(local_store.search(namespace, query=state.question))
+
+        memory_context: list[dict[str, Any]] = []
+        for item in memories[:3]:
+            value = getattr(item, "value", None)
+            if isinstance(value, dict):
+                memory_context.append(value)
+
+        if not memory_context:
+            return {}
+        return {"documentation": {**state.documentation, "memory_context": memory_context}}
+    return load_long_term_memory_node
+
+
+def _make_persist_long_term_memory_node(store: Any):
+    def persist_long_term_memory_node(
+        state: AgentState,
+        config: RunnableConfig,
+    ) -> dict:
+        local_store = store
+        if local_store is None:
+            return {}
+
+        user_id = str(config.get("configurable", {}).get("user_id") or state.source_id)
+        namespace = (user_id, "query_history")
+        memory_key = str(uuid4())
+        payload = {
+            "question": state.question,
+            "intent": state.intent,
+            "sql": state.sql,
+            "success": state.success,
+            "results_count": len(state.query_results),
+            "error": state.error,
+            "executed_at": (state.executed_at.isoformat() if state.executed_at else None),
+        }
+        local_store.put(namespace, memory_key, payload)
         return {}
-
-    user_id = str(config.get("configurable", {}).get("user_id") or state.source_id)
-    namespace = (user_id, "query_history")
-    memories = list(store.search(namespace, query=state.question))
-
-    memory_context: list[dict[str, Any]] = []
-    for item in memories[:3]:
-        value = getattr(item, "value", None)
-        if isinstance(value, dict):
-            memory_context.append(value)
-
-    if not memory_context:
-        return {}
-    return {"documentation": {**state.documentation, "memory_context": memory_context}}
-
-
-def persist_long_term_memory_node(
-    state: AgentState,
-    config: RunnableConfig,
-    runtime: Runtime[Any],
-) -> dict:
-    store = runtime.store
-    if store is None:
-        return {}
-
-    user_id = str(config.get("configurable", {}).get("user_id") or state.source_id)
-    namespace = (user_id, "query_history")
-    memory_key = str(uuid4())
-    payload = {
-        "question": state.question,
-        "intent": state.intent,
-        "sql": state.sql,
-        "success": state.success,
-        "results_count": len(state.query_results),
-        "error": state.error,
-        "executed_at": (state.executed_at.isoformat() if state.executed_at else None),
-    }
-    store.put(namespace, memory_key, payload)
-    return {}
+    return persist_long_term_memory_node
 
 
 class AgentGraph:
@@ -594,7 +609,7 @@ class AgentGraph:
         workflow.add_node("router", lambda s: intent_router_node(s, self.llm))
         workflow.add_node("general_chat", lambda s: general_chat_node(s, self.llm))
         workflow.add_node("fetch_schema", lambda s: schema_node(s, self.schema_service, self.llm))
-        workflow.add_node("load_memory", load_long_term_memory_node)
+        workflow.add_node("load_memory", _make_load_long_term_memory_node(self.store))
         workflow.add_node("lookup_scenario", scenario_lookup_node)
         workflow.add_node("generate_sql", lambda s: run_sql_node(s, self.llm))
         workflow.add_node("generate_mod_sql", lambda s: modification_sql_node(s, self.llm, self.schema_service))
@@ -608,7 +623,7 @@ class AgentGraph:
         workflow.add_node("generate_insights", lambda s: insight_node(s, self.llm))
         workflow.add_node("generate_suggestions", lambda s: suggestion_node(s, self.llm))
         workflow.add_node("document", documentation_node)
-        workflow.add_node("persist_memory", persist_long_term_memory_node)
+        workflow.add_node("persist_memory", _make_persist_long_term_memory_node(self.store))
 
         # Edges
         workflow.add_edge(START, "router")
