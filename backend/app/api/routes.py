@@ -8,6 +8,8 @@ from app.core.logger import get_logger
 from app.models.schemas import (
     ConnectRequest,
     DataSourceResponse,
+    EvalRequest,
+    EvalResponse,
     HealthResponse,
     QueryApprovalRequest,
     QueryRequest,
@@ -16,6 +18,7 @@ from app.models.schemas import (
     QueryHistoryResponse,
     SystemStatsResponse,
     ActivityFeedResponse,
+    MetricsResponse,
     SchemaResponse,
 )
 from app.services.data_source_service import DataSourceService
@@ -68,6 +71,7 @@ def query_endpoint(
 ) -> dict:
     start_time = time.time()
     status = "SUCCESS"
+    result = {}
     try:
         data_source_service.get_conn_string(payload.source_id)
         thread_id = payload.thread_id or str(uuid4())
@@ -93,11 +97,14 @@ def query_endpoint(
     finally:
         latency = time.time() - start_time
         try:
+            viz_info = (result.get("documentation") or {}).get("visualization") or {}
             history_service.save_query(
                 question=payload.question,
                 source_id=payload.source_id,
                 status=status,
-                latency=latency
+                latency=latency,
+                has_visualization=bool(viz_info.get("spec")),
+                chart_type=viz_info.get("chart_type"),
             )
         except Exception:
             logger.exception("Failed to save query history in finally block")
@@ -259,6 +266,17 @@ def get_system_feed(
     return _resp(success=True, message="Activity feed fetched", data=feed)
 
 
+@router.get("/system/metrics", response_model=MetricsResponse)
+def get_system_metrics(
+    data_source_service: DataSourceService = Depends(get_data_source_service),
+    history_service: HistoryService = Depends(get_history_service),
+) -> dict[str, Any]:
+    sources = data_source_service.list_sources()
+    metrics = history_service.get_metrics()
+    metrics["total_sources"] = len(sources)
+    return _resp(success=True, message="System metrics fetched", data=metrics)
+
+
 @router.post('/data/csv')
 async def upload_csv(file: UploadFile = File(...)) -> dict[str, Any]:
     """Upload a CSV and ingest it into the configured PostgreSQL database."""
@@ -329,3 +347,23 @@ def generate_report(payload: dict) -> dict[str, Any]:
     except Exception as e:
         logger.exception("Report generation failed")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/evaluate", response_model=EvalResponse)
+def evaluate_query_endpoint(
+    payload: EvalRequest,
+) -> dict[str, Any]:
+    """Evaluate a Text-to-SQL query for syntax, correctness, and schema relevance."""
+    from app.services.evaluation_service import evaluate_sql
+    try:
+        scores = evaluate_sql(
+            question=payload.question,
+            sql=payload.sql,
+            results=None,
+            source_id=payload.source_id,
+            thread_id=payload.thread_id,
+        )
+        return _resp(success=True, message="Evaluation complete", data=scores)
+    except Exception as e:
+        logger.exception("Evaluation failed")
+        return _resp(success=False, message=f"Evaluation failed: {str(e)}", data=None)

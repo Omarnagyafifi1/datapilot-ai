@@ -178,3 +178,55 @@ class SchemaResponse(BaseModel):
     success: bool
     message: str
     data: List[TableSchema]
+
+
+class TrendDataPoint(BaseModel):
+    day: str
+    total: int
+    success: int
+    with_viz: int
+
+
+class VizUsageItem(BaseModel):
+    chart_type: str
+    count: int
+
+
+class EvaluationMetrics(BaseModel):
+    total_sources: int
+    total_queries: int
+    avg_latency: float
+    success_rate: float
+    total_visualizations: int
+    visualization_rate: float
+    trends: List[TrendDataPoint]
+    visualization_breakdown: List[VizUsageItem]
+
+
+class MetricsResponse(BaseModel):
+    success: bool
+    message: str
+    data: EvaluationMetrics
+
+
+class EvalScore(BaseModel):
+    syntax_valid: bool
+    syntax_error: str | None = None
+    correctness: float = 0.0
+    completeness: float = 0.0
+    efficiency: float = 0.0
+    schema_score: float = 0.0
+    overall: float = 0.0
+
+
+class EvalRequest(BaseModel):
+    question: str
+    sql: str
+    source_id: str = ""
+    thread_id: str = ""
+
+
+class EvalResponse(BaseModel):
+    success: bool
+    message: str
+    data: EvalScore

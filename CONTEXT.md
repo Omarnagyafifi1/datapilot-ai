@@ -1,10 +1,10 @@
 # Project Context (Quick Resume)
 
-Last updated: 2026-04-26
+Last updated: 2026-07-01
 
 ## Repository
 - Name: datapilot-ai
-- Branch: feature/fr-02-datasource-management
+- Branch: main
 - Default branch: main
 
 ## Current Implementation Status
@@ -54,6 +54,32 @@ Last updated: 2026-04-26
 - Logs full document as JSON at INFO level.
 - Saves document to state.documentation.
 - /api/query returns answer + documentation.
+
+### EV-01: LangSmith Evaluation Integration
+- **Chosen platform**: LangSmith (over Langfuse) for Text-to-SQL evaluation.
+- **Rationale**: Project already uses LangChain/LangGraph extensively; LangSmith provides native tracing without additional SDKs, built-in dataset management for SQL regression testing, and both offline/online evaluation modes.
+- Implemented `app/services/evaluation_service.py` with 3 evaluators:
+  - **SQL Syntax Check**: Validates SQL structure via `sqlite3.EXPLAIN` (for SQLite) or regex patterns for other dialects; blocks DDL/DML keywords.
+  - **SQL Correctness (LLM-as-judge)**: Evaluates correctness, completeness, and efficiency scores (0.0-1.0 each) using an LLM.
+  - **Schema Relevance**: LLM judges if the SQL uses correct tables/columns for the user's question.
+- Aggregated **overall score** = correctness*0.4 + completeness*0.25 + efficiency*0.15 + schema*0.1 + syntax*0.1.
+- **Auto-evaluation** runs after every graph query (in `graph.py:run()`) and posts 8 feedback keys to LangSmith.
+- `POST /api/evaluate` endpoint for manual SQL evaluation.
+- Requires `LANGCHAIN_API_KEY` env var to enable; silently skips if not configured.
+
+### EV-02: Evaluation Metrics Dashboard
+- `GET /api/system/metrics` returns comprehensive evaluation metrics:
+  - `total_queries`, `total_sources`, `success_rate`, `avg_latency`
+  - `total_visualizations`, `visualization_rate`
+  - `trends[]`: daily query counts over 14 days (total, success, with_viz)
+  - `visualization_breakdown[]`: chart_type usage counts
+- Frontend dashboard (`Dashboard.jsx`) displays:
+  - Summary metric cards (5 columns)
+  - SVG donut chart for query success distribution
+  - SVG bar chart for 14-day query trends
+  - Visualization usage stacked bar
+  - Active feed + feature cards
+- History tracking extended with `has_visualization` and `chart_type` columns.
 
 ## API Contract Snapshot
 

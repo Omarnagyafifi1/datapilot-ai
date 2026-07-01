@@ -19,6 +19,12 @@ class Settings(BaseSettings):
     GROQ_MODEL: str = "llama-3.3-70b-versatile"
     OPENROUTER_API_KEY: Optional[str] = None
 
+    # LangSmith Tracing & Evaluation
+    LANGCHAIN_TRACING_V2: bool = os.getenv("LANGCHAIN_TRACING_V2", "false").lower() == "true"
+    LANGCHAIN_API_KEY: Optional[str] = None
+    LANGCHAIN_PROJECT: str = os.getenv("LANGCHAIN_PROJECT", "datapilot-ai")
+    LANGCHAIN_ENDPOINT: str = os.getenv("LANGCHAIN_ENDPOINT", "https://api.smith.langchain.com")
+
     # App Settings
     APP_NAME: str = "DataPilot AI"
     DEBUG: bool = False

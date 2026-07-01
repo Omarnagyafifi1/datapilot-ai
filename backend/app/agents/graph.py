@@ -9,6 +9,14 @@ from typing import Any, Literal
 from uuid import uuid4
 from app.services.visualization_service import generate_visualization
 
+try:
+    from app.services.evaluation_service import evaluate_sql, post_evaluation_to_langsmith
+    _EVAL_AVAILABLE = True
+except Exception:
+    _EVAL_AVAILABLE = False
+    evaluate_sql = None
+    post_evaluation_to_langsmith = None
+
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import StateGraph, START, END
 from langgraph.store.memory import InMemoryStore
@@ -750,7 +758,36 @@ class AgentGraph:
         config = {"configurable": {"thread_id": resolved_thread_id}}
         config["configurable"]["user_id"] = source_id
         final_state = self.graph.invoke(initial_state, config=config)
-        return self._format_output(final_state, resolved_thread_id)
+        output = self._format_output(final_state, resolved_thread_id)
+
+        if _EVAL_AVAILABLE and not preview_only:
+            try:
+                generated_sql = final_state.get("sql", output.get("sql", ""))
+                results = final_state.get("query_results", output.get("results", []))
+                dialect = (final_state.get("documentation") or {}).get("dialect", "sqlite")
+                eval_scores = evaluate_sql(
+                    question=question,
+                    sql=generated_sql,
+                    results=results,
+                    dialect=dialect,
+                    llm=self.llm,
+                )
+                output["evaluation"] = eval_scores
+                post_evaluation_to_langsmith(
+                    question=question,
+                    sql=generated_sql,
+                    source_id=source_id,
+                    thread_id=resolved_thread_id,
+                    scores=eval_scores,
+                    latency=0.0,
+                    results_count=len(results),
+                    has_visualization=output.get("visualization") is not None,
+                    insight_count=len(output.get("insights", [])),
+                )
+            except Exception as exc:
+                logger.warning("Evaluation failed: %s", exc)
+
+        return output
 
     def resume(self, thread_id: str, approved: bool) -> dict[str, Any]:
         config = {"configurable": {"thread_id": thread_id}}

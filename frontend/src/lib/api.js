@@ -48,11 +48,18 @@ export const api = {
   system: {
     stats: () => client.get('/system/stats'),
     feed: () => client.get('/system/feed'),
+    metrics: () => client.get('/system/metrics'),
   },
 
   uploads: {
     uploadCsv: (formData) => client.post('/data/csv', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   },
+
+  evaluate: (question, sql, sourceId) => client.post('/evaluate', {
+    question,
+    sql,
+    source_id: sourceId,
+  }),
 };
 
 export default api;
