@@ -99,11 +99,20 @@ def _llm_eval(prompt: str, llm: BaseLLM | None) -> dict[str, Any] | None:
     try:
         response = llm.generate(prompt)
         cleaned = response.strip()
-        if cleaned.startswith("```"):
-            lines = cleaned.splitlines()
-            if len(lines) >= 3:
-                cleaned = "\n".join(lines[1:-1]).strip()
+        import re
         import json
+        
+        # Try to find JSON block if markdown formatting is used
+        json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', cleaned, re.DOTALL)
+        if json_match:
+            cleaned = json_match.group(1)
+        else:
+            # Fallback to finding the first { and last }
+            start_idx = cleaned.find('{')
+            end_idx = cleaned.rfind('}')
+            if start_idx != -1 and end_idx != -1:
+                cleaned = cleaned[start_idx:end_idx+1]
+                
         return json.loads(cleaned)
     except Exception as e:
         logger.warning("LLM evaluation failed: %s", e)
@@ -146,14 +155,21 @@ def evaluate_sql(
             sql=sql,
             results=results_preview,
         )
-        eval_result = _llm_eval(correctness_prompt, llm)
+        schema_prompt = SCHEMA_RELEVANCE_PROMPT.format(question=question, sql=sql)
+        
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            future_correctness = executor.submit(_llm_eval, correctness_prompt, llm)
+            future_schema = executor.submit(_llm_eval, schema_prompt, llm)
+            
+            eval_result = future_correctness.result()
+            schema_result = future_schema.result()
+
         if eval_result:
             scores["correctness"] = float(eval_result.get("correctness", 0.0))
             scores["completeness"] = float(eval_result.get("completeness", 0.0))
             scores["efficiency"] = float(eval_result.get("efficiency", 0.0))
 
-        schema_prompt = SCHEMA_RELEVANCE_PROMPT.format(question=question, sql=sql)
-        schema_result = _llm_eval(schema_prompt, llm)
         if schema_result:
             scores["schema_score"] = float(schema_result.get("score", 0.0))
 
@@ -188,50 +204,42 @@ def post_evaluation_to_langsmith(
 
     try:
         _LS_CLIENT.create_feedback(
-            project_id=settings.LANGCHAIN_PROJECT,
             run_id=thread_id,
             key="sql_syntax_valid",
             score=1.0 if scores.get("syntax_valid") else 0.0,
             comment=scores.get("syntax_error"),
         )
         _LS_CLIENT.create_feedback(
-            project_id=settings.LANGCHAIN_PROJECT,
             run_id=thread_id,
             key="overall_quality",
             score=scores.get("overall", 0.0),
         )
         _LS_CLIENT.create_feedback(
-            project_id=settings.LANGCHAIN_PROJECT,
             run_id=thread_id,
             key="correctness",
             score=scores.get("correctness", 0.0),
         )
         _LS_CLIENT.create_feedback(
-            project_id=settings.LANGCHAIN_PROJECT,
             run_id=thread_id,
             key="completeness",
             score=scores.get("completeness", 0.0),
         )
         _LS_CLIENT.create_feedback(
-            project_id=settings.LANGCHAIN_PROJECT,
             run_id=thread_id,
             key="latency",
             score=min(latency / 30.0, 1.0),
         )
         _LS_CLIENT.create_feedback(
-            project_id=settings.LANGCHAIN_PROJECT,
             run_id=thread_id,
             key="has_visualization",
             score=1.0 if has_visualization else 0.0,
         )
         _LS_CLIENT.create_feedback(
-            project_id=settings.LANGCHAIN_PROJECT,
             run_id=thread_id,
             key="results_count",
             score=min(results_count / 1000.0, 1.0),
         )
         _LS_CLIENT.create_feedback(
-            project_id=settings.LANGCHAIN_PROJECT,
             run_id=thread_id,
             key="insight_count",
             score=min(insight_count / 5.0, 1.0),

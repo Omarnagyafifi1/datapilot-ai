@@ -3,6 +3,7 @@ SQL_SYSTEM_MESSAGE = """You are an expert SQLite database engineer. You write pr
 SQL_GENERATION_PROMPT = """
 ### Database Schema
 {schema}
+{scenario_context}
 
 ### User Question
 {question}
@@ -30,12 +31,14 @@ SQL_GENERATION_PROMPT = """
 17. NEVER use T1/T2/T3 aliases. Use meaningful first-letter aliases (c for customers, p for products, o for orders, s for suppliers, etc.).
 18. For 3-table JOINs: the table with the most relevant condition data is the anchor. Always JOIN it first, then add related tables. E.g., for "products with inventory and supplier info": FROM inventory i JOIN products p ON i.product_id = p.product_id JOIN suppliers s ON p.supplier_id = s.supplier_id.
 19. For JOIN queries, only include columns from the joined tables that directly answer the question. No extra columns.
-20. For IDs: include FK ID columns only if they help answer the question (e.g., "which department" = include dept_name, not dept_id).
-21. ARABIC QUESTIONS - follow these EXACT steps:
-    Step 1: Translate the full Arabic question to English in your mind.
-    Step 2: Identify the SQL technique from the English translation (JOIN, GROUP BY, WHERE, HAVING, aggregate).
-    Step 3: Generate the SQL exactly as you would for the English question — same tables, same JOINs, same filters.
-    Step 4: Replace English display column names with their _ar counterparts (e.g. dept_name → dept_name_ar).
+21. For IDs: include FK ID columns only if they help answer the question (e.g., "which department" = include dept_name, not dept_id).
+22. STRICT SCHEMA MATCHING: If the user asks for data, metrics, concepts, or tables (e.g., 'profit', 'sales', 'customers', 'orders') that DO NOT exist in the provided schema, DO NOT guess or substitute them with unrelated columns or tables. You MUST NOT continue generating a query. You must output exactly: SELECT 'ERROR: Requested data or table not found in schema' AS error;
+23. ARABIC QUESTIONS - follow these EXACT steps:
+    Step 1: Detect if question contains Arabic characters (Unicode \u0600-\u06FF).
+    Step 2: Translate the full Arabic question to English in your mind.
+    Step 3: Identify the SQL technique from the English translation (JOIN, GROUP BY, WHERE, HAVING, aggregate).
+    Step 4: Generate the SQL exactly as you would for the English question — same tables, same JOINs, same filters.
+    Step 5 — CRITICAL: After generating SQL, SCAN every column in the SELECT/JOIN/WHERE/GROUP BY/HAVING clause. For EVERY column that has a *_ar counterpart visible in the schema (e.g. dept_name_ar, name_ar, title_ar, description_ar, location_ar), replace the English column with the *_ar variant. This is the MOST IMPORTANT step and MUST NOT be skipped.
     Never skip tables, JOINs, or filters just because the question is Arabic.
     Arabic→English mappings for key phrases:
     - "متوسط الراتب" = average salary → AVG(salary)
@@ -57,9 +60,20 @@ SQL_GENERATION_PROMPT = """
     - "و" between two nouns = AND → both aggregates/columns required in SELECT (e.g. "عدد المشاريع وإجمالي ميزانيتها" = COUNT of projects AND SUM of budget)
     - "في قسم" = in department → WHERE filter, requires JOIN to departments table
     - "التي تحتاج" = that need (restocking) → WHERE condition filter
+    - "اسم القسم" / "أسماء الأقسام" = department name(s) → SELECT dept_name_ar
+    - "الرواتب" = salaries → salary column
+    - "إجمالي الراتب" / "مجموع الرواتب" = total salary → SUM(salary)
+    - "عدد الموظفين" = number of employees → COUNT(*)
+    - "المشاريع" = projects → projects table
+    - "الميزانية" / "الميزانيات" = budget(s) → budget column
+    - "قيد التنفيذ" = in progress / ongoing → WHERE status = 'In Progress'
+    - "كل" = each/per/every → GROUP BY
+    - "أعلى/أكبر/أكثر" = highest/most → ORDER BY DESC LIMIT
+    - "أقل/أدنى" = lowest/least → ORDER BY ASC LIMIT
 22. NEVER output incomplete SQL. The query must be syntactically complete (SELECT, FROM, WHERE/GROUP BY/ORDER BY fully formed).
-23. If the schema has NO tables that can answer the question, return: ERROR: Insufficient schema context.
-24. Output must be a single line or multiple lines with ; at the end."""
+23. If the user uses generic terms (like "users", "people", "items"), try to map them to the closest logical table (e.g. "employees", "sales", "inventory"). ONLY return "ERROR: Insufficient schema context." if the question is completely unrelated to the entire database.
+24. Output must be a single line or multiple lines with ; at the end.
+25. LEARN FROM PAST EXAMPLES: Review the "Past Query Examples" section above. Study both successful and failed examples to avoid repeating past mistakes. If you see a failed example for a question similar to the current one, make sure to fix the error pattern described."""
 
 # Specialized prompts for Modification operations
 SQL_ADD_PROMPT = """
@@ -114,14 +128,15 @@ You are an expert {dialect} database engineer tasked with debugging and fixing a
 - User Goal: {question}
 - Failed Query: {failed_query}
 - Error Message Returned: {error_message}
-
+{scenario_context}
 ### Database Schema
 {schema}
 
 ### Task Instructions
 1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.
-2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.
-3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.
+2. REVIEW PAST EXAMPLES above — they contain similar queries that succeeded or failed. Learn from them.
+3. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.
+4. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.
 """
 
 ANSWER_PROMPT = """
@@ -224,4 +239,35 @@ You are an expert data architect. Your task is to analyze the user's question an
 
 ### Output Format
 Return ONLY the raw JSON. No markdown blocks, no explanations.
+"""
+
+SCENARIO_LESSON_PROMPT = """
+You are a senior SQL instructor. A query failed and you must document the lesson so the agent never repeats the same mistake.
+
+### Context
+- User Question: {question}
+- Failed SQL: {failed_sql}
+- Error Message: {error_message}
+- Database Schema: {schema}
+
+### Your Task
+Generate a structured lesson with these EXACT sections. Use the exact markdown headings shown below:
+
+### What Went Wrong
+Explain the root cause of the failure in 2-3 sentences. Be specific about the SQL mistake (wrong column, missing JOIN, incorrect syntax, wrong aggregate, etc.).
+
+### Correct Approach
+Explain step-by-step how to think through this query correctly. What tables to use, what columns, what JOIN conditions, what filters. Write this as a clear reasoning chain.
+
+### Correct SQL
+Write the correct, working SQL query that answers the user's question. Wrap it in ```sql ... ```.
+
+### Key Lesson
+One concise, actionable sentence summarizing the takeaway. Start with "Always" or "Never".
+
+### Output Rules
+1. Include ALL four sections with the exact headings shown.
+2. Do NOT add any text before or after the four sections.
+3. If the question is in Arabic, write the lesson sections in Arabic too.
+4. For the Correct SQL, use the proper column names from the schema — including _ar variants for Arabic questions.
 """

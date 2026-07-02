@@ -47,6 +47,7 @@ export function ChatInterface({ selectedSourceId }) {
         type: 'bot',
         content: resp.data.answer,
         doc: resp.data.documentation,
+        eval: resp.data.evaluation,
         timestamp: new Date().toISOString()
       };
       
@@ -115,6 +116,32 @@ export function ChatInterface({ selectedSourceId }) {
                         <ChevronDown size={14} /> Expand SQL Synthesis
                       </div>
                       <ResultVisualizer doc={msg.doc} />
+                    </div>
+                  )}
+                  
+                  {msg.eval && (
+                    <div className="mt-8 border-t border-white/5 pt-8">
+                      <div className="flex items-center gap-2 text-[10px] font-mono text-cyber-cyan uppercase tracking-[0.2em] mb-4">
+                        <Activity size={14} /> AI Quality Evaluation
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="bg-black/30 p-4 rounded-lg border border-cyber-cyan/10">
+                          <div className="text-[10px] font-mono text-muted uppercase tracking-widest mb-1">Overall</div>
+                          <div className="text-2xl font-mono font-bold text-cyber-cyan">{(msg.eval.overall * 100).toFixed(0)}%</div>
+                        </div>
+                        <div className="bg-black/30 p-4 rounded-lg border border-white/5">
+                          <div className="text-[10px] font-mono text-muted uppercase tracking-widest mb-1">Correctness</div>
+                          <div className="text-xl font-mono text-white">{(msg.eval.correctness * 100).toFixed(0)}%</div>
+                        </div>
+                        <div className="bg-black/30 p-4 rounded-lg border border-white/5">
+                          <div className="text-[10px] font-mono text-muted uppercase tracking-widest mb-1">Schema</div>
+                          <div className="text-xl font-mono text-white">{(msg.eval.schema_score * 100).toFixed(0)}%</div>
+                        </div>
+                        <div className="bg-black/30 p-4 rounded-lg border border-white/5">
+                          <div className="text-[10px] font-mono text-muted uppercase tracking-widest mb-1">Efficiency</div>
+                          <div className="text-xl font-mono text-white">{(msg.eval.efficiency * 100).toFixed(0)}%</div>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>

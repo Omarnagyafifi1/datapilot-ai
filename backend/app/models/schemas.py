@@ -230,3 +230,10 @@ class EvalResponse(BaseModel):
     success: bool
     message: str
     data: EvalScore
+
+
+class SettingsRequest(BaseModel):
+    llm_provider: str | None = None
+    api_keys: dict[str, str] | None = None
+    visualization: dict[str, Any] | None = None
+    features: dict[str, bool] | None = None

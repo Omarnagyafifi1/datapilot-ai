@@ -14,12 +14,14 @@ from app.models.schemas import (
     QueryApprovalRequest,
     QueryRequest,
     QueryPageRequest,
-    QueryResponse,
     QueryHistoryResponse,
-    SystemStatsResponse,
-    ActivityFeedResponse,
+    QueryResponse,
+    DataSourceResponse,
+    DataSourceConfig,
     MetricsResponse,
     SchemaResponse,
+    EvalScore,
+    SettingsRequest,
 )
 from app.services.data_source_service import DataSourceService
 from app.services.history_service import HistoryService
@@ -247,7 +249,7 @@ def get_datasource_suggestions(
     return _resp(success=True, message="Suggestions fetched", data=suggestions[:4])
 
 
-@router.get("/system/stats", response_model=SystemStatsResponse)
+@router.get("/system/stats")
 def get_system_stats(
     data_source_service: DataSourceService = Depends(get_data_source_service),
     history_service: HistoryService = Depends(get_history_service),
@@ -258,7 +260,7 @@ def get_system_stats(
     return _resp(success=True, message="System stats fetched", data=stats)
 
 
-@router.get("/system/feed", response_model=ActivityFeedResponse)
+@router.get("/system/feed")
 def get_system_feed(
     history_service: HistoryService = Depends(get_history_service),
 ) -> dict[str, Any]:
@@ -367,3 +369,25 @@ def evaluate_query_endpoint(
     except Exception as e:
         logger.exception("Evaluation failed")
         return _resp(success=False, message=f"Evaluation failed: {str(e)}", data=None)
+
+
+@router.get("/settings")
+def get_settings_endpoint() -> dict[str, Any]:
+    from app.services.settings_service import get_public_settings
+    return _resp(success=True, message="Settings retrieved", data=get_public_settings())
+
+
+@router.post("/settings")
+def update_settings_endpoint(payload: SettingsRequest) -> dict[str, Any]:
+    from app.services.settings_service import update_settings
+    updates = {}
+    if payload.llm_provider is not None:
+        updates["llm_provider"] = payload.llm_provider
+    if payload.api_keys is not None:
+        updates["api_keys"] = {k: v for k, v in payload.api_keys.items() if v}
+    if payload.visualization is not None:
+        updates["visualization"] = payload.visualization
+    if payload.features is not None:
+        updates["features"] = payload.features
+    result = update_settings(updates)
+    return _resp(success=True, message="Settings updated", data=result)

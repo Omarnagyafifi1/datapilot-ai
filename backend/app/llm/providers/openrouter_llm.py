@@ -20,7 +20,7 @@ class OpenRouterLLM(BaseLLM):
         if system_message:
             messages.append({"role": "system", "content": system_message})
         messages.append({"role": "user", "content": prompt})
-        kwargs = {"model": self.model, "messages": messages}
+        kwargs = {"model": self.model, "messages": messages, "temperature": 0.0}
         if max_tokens:
             kwargs["max_tokens"] = max_tokens
         response = self.client.chat.completions.create(**kwargs)

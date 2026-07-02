@@ -172,10 +172,10 @@ def get_engine(source_id: str, conn_string: str) -> Engine:
     _SOURCE_CONN_STRINGS[source_id] = normalized_conn_string
     return engine
 
-def execute_query(sql: str, source_id: str) -> list[dict]:
+def execute_query(sql: str, source_id: str, timeout: int = 30) -> list[dict]:
     conn_string = _SOURCE_CONN_STRINGS.get(source_id)
     if conn_string is None:
-        raise HTTPException(status_code=404, detail="Data source not found")
+        raise ValueError("Data source not found or not initialized")
 
     try:
         dialect = _dialect_from_conn_string(conn_string)
@@ -187,10 +187,10 @@ def execute_query(sql: str, source_id: str) -> list[dict]:
             result = connection.execute(text(rewritten_sql))
             if not result.returns_rows:
                 return []
-            return [dict(row) for row in result.mappings().all()]
+            return [dict(row) for row in result.mappings().fetchmany(1000)]
     except Exception as exc:
         logger.exception("Failed query execution for source_id=%s", source_id)
-        raise HTTPException(status_code=500, detail=f"Failed to execute query: {str(exc)}")
+        raise ValueError(f"Failed to execute query: {str(exc)}") from exc
 
 
 def test_connection(params: dict) -> dict:
@@ -243,12 +243,18 @@ def close_engine(source_id: str) -> None:
         except Exception:
             logger.exception("Failed to dispose engine for source_id=%s", source_id)
     _SOURCE_CONN_STRINGS.pop(source_id, None)
+    _SCHEMA_CACHE.pop(source_id, None)
 
+
+_SCHEMA_CACHE: dict[str, dict] = {}
 
 def get_source_schema(source_id: str) -> dict:
     conn_string = _SOURCE_CONN_STRINGS.get(source_id)
     if conn_string is None:
         raise HTTPException(status_code=404, detail="Data source not found")
+        
+    if source_id in _SCHEMA_CACHE:
+        return _SCHEMA_CACHE[source_id]
 
     try:
         engine = get_engine(source_id=source_id, conn_string=conn_string)
@@ -273,7 +279,9 @@ def get_source_schema(source_id: str) -> dict:
                     }
                 )
 
-            return {"tables": tables}
+            result = {"tables": tables}
+            _SCHEMA_CACHE[source_id] = result
+            return result
     except Exception as exc:
         logger.exception("Failed schema fetch for source_id=%s", source_id)
         raise HTTPException(status_code=500, detail=f"Failed to fetch schema: {str(exc)}")

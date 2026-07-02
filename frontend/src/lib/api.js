@@ -60,6 +60,11 @@ export const api = {
     sql,
     source_id: sourceId,
   }),
+
+  settings: {
+    get: () => client.get('/settings'),
+    update: (data) => client.post('/settings', data),
+  },
 };
 
 export default api;

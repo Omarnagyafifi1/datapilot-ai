@@ -14,7 +14,8 @@ class GeminiLLM(BaseLLM):
         self.api_key = api_key
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-2.5-flash",
-            google_api_key=api_key
+            google_api_key=api_key,
+            temperature=0.0
         )
 
     def generate(self, prompt: str, system_message: Optional[str] = None, max_tokens: Optional[int] = None) -> str:

@@ -40,14 +40,19 @@ _init_langsmith()
 def get_graph_orchestrator() -> AgentGraph:
     global _graph_orchestrator
     if _graph_orchestrator is None:
-        llm = get_llm(provider=settings.LLM_PROVIDER)
-        _graph_orchestrator = AgentGraph(
-            llm=llm,
-            db_service=_db_service,
-            schema_service=_schema_service,
-            checkpointer=_memory_backends.checkpointer,
-            store=_memory_backends.store,
-        )
+        try:
+            llm = get_llm(provider=settings.LLM_PROVIDER)
+            _graph_orchestrator = AgentGraph(
+                llm=llm,
+                db_service=_db_service,
+                schema_service=_schema_service,
+                checkpointer=_memory_backends.checkpointer,
+                store=_memory_backends.store,
+            )
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            raise e
     return _graph_orchestrator
 
 

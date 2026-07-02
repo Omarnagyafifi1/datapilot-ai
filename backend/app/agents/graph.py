@@ -29,7 +29,8 @@ from app.agents.prompts import (
     VALIDATION_PROMPT,
     SQL_ADD_PROMPT,
     SQL_UPDATE_PROMPT,
-    SQL_DELETE_PROMPT
+    SQL_DELETE_PROMPT,
+    SCENARIO_LESSON_PROMPT,
 )
 from app.agents.state.agent_state import AgentState
 from app.agents.tools.schema_tools import fetch_schema_context
@@ -229,19 +230,18 @@ def _open_visualization_in_browser(result: dict[str, Any]) -> bool:
 
 
 def intent_router_node(state: AgentState, llm: BaseLLM) -> dict:
-    prompt = INTENT_ROUTER_PROMPT.format(question=state.question)
-    intent = llm.generate(prompt).strip().upper()
-    for valid_intent in ["GENERAL", "ADD", "DELETE", "UPDATE", "INQUIRE"]:
-        if valid_intent in intent:
-            return {"intent": valid_intent}
-
     normalized_question = state.question.strip().lower()
-    if any(token in normalized_question for token in ["insert", "add", "create"]):
+    
+    # Fast heuristic checks to bypass LLM latency
+    if any(token in normalized_question for token in ["hi", "hello", "hey", "who are you", "what are you"]):
+        return {"intent": "GENERAL"}
+    if any(token in normalized_question for token in ["insert", "add", "create", "new "]):
         return {"intent": "ADD"}
-    if any(token in normalized_question for token in ["update", "set ", "edit", "change"]):
+    if any(token in normalized_question for token in ["update", "set ", "edit", "change", "modify"]):
         return {"intent": "UPDATE"}
-    if any(token in normalized_question for token in ["delete", "remove", "drop"]):
+    if any(token in normalized_question for token in ["delete", "remove", "drop", "destroy"]):
         return {"intent": "DELETE"}
+        
     return {"intent": "INQUIRE"}
 
 
@@ -259,18 +259,24 @@ def schema_node(state: AgentState, schema_service: SchemaService, llm: BaseLLM) 
 
 def scenario_lookup_node(state: AgentState) -> dict:
     matched = SCENARIO_MEMORY.find_similar_solution(state.question)
-    if not matched:
-        return {"scenario_matched": False, "scenario_similarity": 0.0}
+    scenario_context = SCENARIO_MEMORY.get_recent_context(n=10)
 
-    return {
-        "sql": matched["sql"],
-        "scenario_matched": True,
-        "scenario_similarity": float(matched["score"]),
+    result: dict = {
+        "scenario_matched": False,
+        "scenario_similarity": 0.0,
         "documentation": {
             **state.documentation,
-            "scenario_reference_question": matched["question"],
+            "scenario_context": f"\n### Past Query Examples (Learn from these)\n{scenario_context}\n",
         },
     }
+
+    if matched:
+        result["sql"] = matched["sql"]
+        result["scenario_matched"] = True
+        result["scenario_similarity"] = float(matched["score"])
+        result["documentation"]["scenario_reference_question"] = matched["question"]
+
+    return result
 
 
 def modification_sql_node(state: AgentState, llm: BaseLLM, schema_service: SchemaService) -> dict:
@@ -348,7 +354,17 @@ def _validate_sql_keywords(sql: str, intent: str) -> str | None:
     return None
 
 
+_STALE_CACHE: dict[str, list[dict]] = {}
+_STALE_CACHE_MAX = 50
+
+
+def _cache_key(sql: str, source_id: str) -> str:
+    return f"{source_id}:::{sql.strip().lower()}"
+
+
 def sql_execution_node(state: AgentState, db_service: DBService) -> dict:
+    current_retry = state.retry_count
+
     if _is_error_sql(state.sql):
         return {
             "query_results": [],
@@ -368,12 +384,27 @@ def sql_execution_node(state: AgentState, db_service: DBService) -> dict:
             "retry_count": MAX_RETRIES,
         }
 
+    # Check cache
+    ck = _cache_key(state.sql, state.source_id)
+    if ck in _STALE_CACHE:
+        logger.debug("SQL cache hit for: %s", state.sql[:60])
+        return {"query_results": list(_STALE_CACHE[ck]), "success": True}
+
     try:
         results = execute_sql(db_service, state.sql, state.source_id) or []
+        # Cache result
+        if len(_STALE_CACHE) >= _STALE_CACHE_MAX:
+            _STALE_CACHE.pop(next(iter(_STALE_CACHE)))
+        _STALE_CACHE[ck] = list(results)
         return {"query_results": results, "success": True}
     except Exception as e:
         logger.error("SQL execution failed: %s", e)
-        return {"query_results": [], "success": False, "error": str(e)}
+        return {
+            "query_results": [],
+            "success": False,
+            "error": str(e),
+            "retry_count": current_retry + 1,
+        }
 
 
 
@@ -393,12 +424,15 @@ def fix_sql_node(state: AgentState, llm: BaseLLM, schema_service: SchemaService,
     schema = fetch_schema_context(schema_service, state.source_id)
     from app.agents.prompts import SQL_FIX_PROMPT
     
+    scenario_context = state.documentation.get("scenario_context", "")
+    
     prompt = SQL_FIX_PROMPT.format(
         dialect=db_service.get_dialect(),
         question=state.question,
         failed_query=state.sql,
         error_message=state.error or "Unknown error",
         schema=schema,
+        scenario_context=scenario_context,
     )
     
     fixed_sql = llm.generate(prompt)
@@ -497,14 +531,50 @@ def scenario_success_node(state: AgentState) -> dict:
 
 
 def scenario_failure_node(state: AgentState) -> dict:
+    # Store the failure details in the documentation so the lesson node can use them
+    return {
+        "success": False,
+        "documentation": {
+            **state.documentation,
+            "_failure_question": state.question,
+            "_failure_sql": state.sql,
+            "_failure_error": state.error or state.validation_reason or "Unknown failure",
+            "_failure_validation": state.validation_reason,
+        },
+    }
+
+
+def scenario_lesson_node(state: AgentState, llm: BaseLLM, schema_service: SchemaService) -> dict:
+    failure_question = state.documentation.get("_failure_question") or state.question
+    failure_sql = state.documentation.get("_failure_sql") or state.sql
+    failure_error = state.documentation.get("_failure_error") or "Unknown failure"
+    schema = fetch_schema_context(schema_service, state.source_id)
+
+    prompt = SCENARIO_LESSON_PROMPT.format(
+        question=failure_question,
+        failed_sql=failure_sql,
+        error_message=failure_error,
+        schema=schema,
+    )
+
+    try:
+        lesson_text = llm.generate(prompt)
+    except Exception:
+        lesson_text = None
+
     SCENARIO_MEMORY.append_entry(
         status="failed",
-        question=state.question,
-        sql=state.sql,
-        error=state.error or state.validation_reason or "Unknown failure",
-        validation_reason=state.validation_reason,
+        question=failure_question,
+        sql=failure_sql,
+        error=failure_error,
+        validation_reason=state.documentation.get("_failure_validation"),
+        lesson=lesson_text,
     )
-    return {"success": False}
+
+    if lesson_text:
+        logger.info("Lesson documented for failed query: %s", failure_question[:80])
+
+    return {}
 
 
 def visualization_node(state: AgentState) -> dict:
@@ -627,6 +697,7 @@ class AgentGraph:
         workflow.add_node("validate_result", lambda s: validation_node(s, self.llm))
         workflow.add_node("scenario_success", scenario_success_node)
         workflow.add_node("scenario_failure", scenario_failure_node)
+        workflow.add_node("scenario_lesson", lambda s: scenario_lesson_node(s, self.llm, self.schema_service))
         workflow.add_node("generate_visualization", visualization_node)
         workflow.add_node("generate_insights", lambda s: insight_node(s, self.llm))
         workflow.add_node("generate_suggestions", lambda s: suggestion_node(s, self.llm))
@@ -653,11 +724,7 @@ class AgentGraph:
         workflow.add_conditional_edges("load_memory", route_sql_gen, ["lookup_scenario", "generate_mod_sql", "execute_sql", "approval"])
         
         def route_scenario(state: AgentState) -> Literal["execute_sql", "generate_sql", "persist_memory"]:
-            if state.documentation.get("preview_only"):
-                if state.scenario_matched and bool(state.sql.strip()):
-                    return "persist_memory"
-                return "generate_sql"
-            return "execute_sql" if state.scenario_matched and bool(state.sql.strip()) else "generate_sql"
+            return "generate_sql"
 
         workflow.add_conditional_edges("lookup_scenario", route_scenario, ["execute_sql", "generate_sql", "persist_memory"])
         
@@ -699,10 +766,11 @@ class AgentGraph:
 
         workflow.add_conditional_edges("fix_sql", route_fix, ["scenario_success", "execute_sql", "scenario_failure"])
         workflow.add_edge("scenario_success", "generate_visualization")
-        workflow.add_edge("generate_visualization", "generate_insights")
-        workflow.add_edge("generate_insights", "generate_suggestions")
-        workflow.add_edge("generate_suggestions", "document")
-        workflow.add_edge("scenario_failure", "document")
+        workflow.add_edge("scenario_success", "generate_insights")
+        workflow.add_edge("scenario_success", "generate_suggestions")
+        workflow.add_edge(["generate_visualization", "generate_insights", "generate_suggestions"], "document")
+        workflow.add_edge("scenario_failure", "scenario_lesson")
+        workflow.add_edge("scenario_lesson", "document")
         workflow.add_edge("document", "persist_memory")
         workflow.add_edge("persist_memory", END)
 
@@ -765,27 +833,34 @@ class AgentGraph:
                 generated_sql = final_state.get("sql", output.get("sql", ""))
                 results = final_state.get("query_results", output.get("results", []))
                 dialect = (final_state.get("documentation") or {}).get("dialect", "sqlite")
-                eval_scores = evaluate_sql(
-                    question=question,
-                    sql=generated_sql,
-                    results=results,
-                    dialect=dialect,
-                    llm=self.llm,
-                )
-                output["evaluation"] = eval_scores
-                post_evaluation_to_langsmith(
-                    question=question,
-                    sql=generated_sql,
-                    source_id=source_id,
-                    thread_id=resolved_thread_id,
-                    scores=eval_scores,
-                    latency=0.0,
-                    results_count=len(results),
-                    has_visualization=output.get("visualization") is not None,
-                    insight_count=len(output.get("insights", [])),
-                )
+                
+                def _run_eval():
+                    try:
+                        eval_scores = evaluate_sql(
+                            question=question,
+                            sql=generated_sql,
+                            results=results,
+                            dialect=dialect,
+                            llm=self.llm,
+                        )
+                        post_evaluation_to_langsmith(
+                            question=question,
+                            sql=generated_sql,
+                            source_id=source_id,
+                            thread_id=resolved_thread_id,
+                            scores=eval_scores,
+                            latency=0.0,
+                            results_count=len(results),
+                            has_visualization=output.get("visualization") is not None,
+                            insight_count=len(output.get("insights", [])),
+                        )
+                    except Exception as exc:
+                        logger.warning("Background evaluation failed: %s", exc)
+
+                import threading
+                threading.Thread(target=_run_eval, daemon=True).start()
             except Exception as exc:
-                logger.warning("Evaluation failed: %s", exc)
+                logger.warning("Failed to start background evaluation: %s", exc)
 
         return output
 

@@ -21,6 +21,7 @@ class ScenarioEntry:
     sql: str
     error: str | None = None
     validation_reason: str | None = None
+    lesson: str | None = None
 
 
 class ScenarioMemory:
@@ -49,6 +50,8 @@ class ScenarioMemory:
             parts.append(entry.error)
         if entry.validation_reason:
             parts.append(entry.validation_reason)
+        if entry.lesson:
+            parts.append(entry.lesson)
         return " ".join(parts)
 
     def _load_entries(self) -> list[ScenarioEntry]:
@@ -68,6 +71,7 @@ class ScenarioMemory:
                         validation_reason=str(payload.get("validation_reason"))
                         if payload.get("validation_reason") is not None
                         else None,
+                        lesson=str(payload.get("lesson")) if payload.get("lesson") is not None else None,
                     )
                 )
             except Exception:
@@ -82,6 +86,7 @@ class ScenarioMemory:
         sql: str,
         error: str | None = None,
         validation_reason: str | None = None,
+        lesson: str | None = None,
     ) -> None:
         entry = ScenarioEntry(
             created_at=datetime.now(timezone.utc).isoformat(),
@@ -90,6 +95,7 @@ class ScenarioMemory:
             sql=sql,
             error=error,
             validation_reason=validation_reason,
+            lesson=lesson,
         )
         payload = {
             "created_at": entry.created_at,
@@ -98,12 +104,37 @@ class ScenarioMemory:
             "sql": entry.sql,
             "error": entry.error,
             "validation_reason": entry.validation_reason,
+            "lesson": entry.lesson,
         }
         with self.scenarios_path.open("a", encoding="utf-8") as f:
             f.write(f"## {entry.created_at} - {status}\n\n")
+            if lesson:
+                f.write(f"{lesson}\n\n")
             f.write("```json\n")
             f.write(json.dumps(payload, ensure_ascii=False, default=str, indent=2))
             f.write("\n```\n\n")
+
+    def get_recent_context(self, n: int = 10) -> str:
+        entries = self._load_entries()
+        if not entries:
+            return ""
+
+        recent = entries[-n:]
+        lines: list[str] = []
+        for i, entry in enumerate(recent, 1):
+            lines.append(f"Example {i}:")
+            lines.append(f"  Question: {entry.question}")
+            lines.append(f"  SQL: {entry.sql}")
+            if entry.error:
+                lines.append(f"  Error: {entry.error}")
+            if entry.validation_reason:
+                lines.append(f"  Validation: {entry.validation_reason}")
+            if entry.lesson:
+                lesson_text = entry.lesson.replace("\n", "\n  ")
+                lines.append(f"  Lesson: {lesson_text}")
+            lines.append(f"  Status: {entry.status}")
+            lines.append("")
+        return "\n".join(lines)
 
     def find_similar_solution(self, question: str) -> dict[str, Any] | None:
         entries = [e for e in self._load_entries() if e.status == "resolved" and e.sql.strip()]
