@@ -7,17 +7,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: "#050505",
-        foreground: "#ffffff",
-        card: "#0a0a0a",
+        background: "var(--background)",
+        foreground: "var(--foreground)",
+        card: "var(--card)",
         cyber: {
-          cyan: "#00f2ff",
-          pink: "#ff00ff",
-          lime: "#ccff00",
-          blue: "#0070ff",
+          cyan: "var(--cyber-cyan)",
+          pink: "var(--cyber-pink)",
+          lime: "var(--cyber-lime)",
+          blue: "var(--cyber-blue)",
         },
-        border: "#1a1a1a",
-        muted: "#666666",
+        border: "var(--border)",
+        muted: "var(--muted)",
       },
       fontFamily: {
         mono: ['JetBrains Mono', 'Roboto Mono', 'monospace'],

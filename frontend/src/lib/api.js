@@ -19,14 +19,14 @@ export const api = {
     delete: (id) => client.delete(`/datasources/${id}`),
   },
   
-  query: (question, sourceId, threadId, previewOnly = false, sql = null) => client.post('/query', {
+  query: (question, sourceId, threadId, previewOnly = false, sql = null, config = {}) => client.post('/query', {
     question,
     source_id: sourceId,
     thread_id: threadId,
     preview_only: previewOnly,
     sql: sql
-  }),
-  queryApproval: (threadId, approved) => client.post('/query/approval', { thread_id: threadId, approved }),
+  }, config),
+  queryApproval: (threadId, approved, config = {}) => client.post('/query/approval', { thread_id: threadId, approved }, config),
   queryPage: ({ sql, sourceId, page, pageSize }) => client.post('/query/page', {
     sql,
     source_id: sourceId,
