@@ -1,20 +1,65 @@
-SQL_GENERATION_PROMPT = """
-You are an expert {dialect} database engineer. Your objective is to write a highly optimized, syntactically correct SQL query that precisely answers the user's question.
+SQL_SYSTEM_MESSAGE = """You are an expert SQLite database engineer. You write precise, correct SQL queries. Your output must contain ONLY the raw SQL — no markdown, no explanations, no backticks."""
 
+SQL_GENERATION_PROMPT = """
 ### Database Schema
 {schema}
 
-### Critical Rules
-1. OUTPUT FORMAT: Return ONLY the raw SQL query. Absolutely no markdown formatting (e.g., do not use ```sql ... ```), no conversational filler, and no explanations.
-2. SAFETY: The query MUST be strictly read-only. The use of INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE, or EXEC is strictly forbidden.
-3. LIMITS: Always append a LIMIT of {max_rows} to your query unless the user's request explicitly demands all records.
-4. EFFICIENCY: Never use `SELECT *`. Explicitly select only the columns required to answer the prompt. Use table aliases where appropriate for readability.
-5. SCHEMA VALIDATION: If the user's question cannot be answered using the provided tables and columns, you must abort and return exactly this string: "ERROR: Insufficient schema context."
-6. BILINGUAL SUPPORT & ALIASING (CRITICAL): If the user's question is in Arabic, you MUST check the schema for columns with the suffix `_ar` (e.g., `name_ar` corresponding to `name`, `department_ar` to `department`, `category_ar` to `category`, `location_ar` to `location`, `job_title_ar` to `job_title`, `product_name_ar` to `product_name`, `warehouse_ar` to `warehouse`, `status_ar` to `status`, etc.). You MUST write the query using these `_ar` columns instead of their English counterparts (e.g., use `name_ar` instead of `name`). Additionally, you MUST alias every selected column in Arabic so that the query output headers are in Arabic (e.g., `SELECT name_ar AS الاسم, salary AS الراتب, department_ar AS القسم FROM employees`). If the user's question is in English, use the standard English columns and do not alias them in Arabic.
-
 ### User Question
 {question}
-"""
+
+### Rules
+1. Use ONLY table and column names from the schema above. Never invent columns.
+2. Return ONLY the raw SQL query. No markdown, no backticks, no explanations.
+3. Query must be read-only. No INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE.
+4. Append LIMIT {max_rows} only if the query has no aggregate functions (COUNT, SUM, AVG, MIN, MAX) and no ORDER BY.
+5. Never use SELECT *. Include ONLY the columns needed to answer the question. Do NOT add extra columns.
+6. Include WHERE-column values in SELECT when the question says "with X" or "above/below X" (e.g. "with salaries above 80000" → SELECT salary). Exclude filter-only columns from SELECT when they're just labels (e.g. "category = 'Electronics'" → no need to output 'Electronics').
+7. For "find/show which X" queries that could return duplicates, use DISTINCT. But NOT for "most/least/top" queries.
+8. For "top N" or "most/least/best/highest" queries, use ORDER BY + LIMIT (not DISTINCT). Include ALL descriptive columns (name, product_name, unit_price, etc.) in SELECT — not just one.
+9. For "average" calculations, use ROUND(AVG(...), 2).
+10. For GROUP BY queries, include all non-aggregated SELECT columns in GROUP BY.
+11. For "exceeding/above/more than" on aggregates, use HAVING after GROUP BY. The aggregate column MUST also appear in SELECT.
+12. For aggregate-in-SELECT rules:
+    - If SELECT uses SUM(X), include SUM(X) in SELECT.
+    - If ORDER BY uses SUM(X), include SUM(X) in SELECT.
+    - If HAVING uses SUM(X), include SUM(X) in SELECT.
+13. When a question says "show/list X with Y info", include the descriptive columns (name, title) AND the aggregate. Do NOT add contact columns (email, phone, address) unless asked.
+14. For "per something" queries (e.g. "per customer", "per department"), always join to get the name, never use the ID alone in SELECT.
+15. For subqueries, use unique aliases that don't conflict with outer query tables.
+16. For comparison queries ("more than", "less than", "above", "below", "higher than", "earn more than"), include the compared value column (e.g. salary) AND the grouping column (e.g. dept_name) in SELECT.
+17. NEVER use T1/T2/T3 aliases. Use meaningful first-letter aliases (c for customers, p for products, o for orders, s for suppliers, etc.).
+18. For 3-table JOINs: the table with the most relevant condition data is the anchor. Always JOIN it first, then add related tables. E.g., for "products with inventory and supplier info": FROM inventory i JOIN products p ON i.product_id = p.product_id JOIN suppliers s ON p.supplier_id = s.supplier_id.
+19. For JOIN queries, only include columns from the joined tables that directly answer the question. No extra columns.
+20. For IDs: include FK ID columns only if they help answer the question (e.g., "which department" = include dept_name, not dept_id).
+21. ARABIC QUESTIONS - follow these EXACT steps:
+    Step 1: Translate the full Arabic question to English in your mind.
+    Step 2: Identify the SQL technique from the English translation (JOIN, GROUP BY, WHERE, HAVING, aggregate).
+    Step 3: Generate the SQL exactly as you would for the English question — same tables, same JOINs, same filters.
+    Step 4: Replace English display column names with their _ar counterparts (e.g. dept_name → dept_name_ar).
+    Never skip tables, JOINs, or filters just because the question is Arabic.
+    Arabic→English mappings for key phrases:
+    - "متوسط الراتب" = average salary → AVG(salary)
+    - "لكل" = per → GROUP BY the entity name
+    - "إجمالي" = total → SUM(col)
+    - "عدد/كم" = count → COUNT(*)
+    - "المشاريع" = projects → projects table
+    - "الميزانية" = budget → budget column
+    - "من هم/ما هي" = who/what are → SELECT descriptive name columns
+    - "الموظفين" = employees → employees table
+    - "المكتملة" = completed → WHERE status = 'Completed'
+    - "إعادة تخزين/إعادة الطلب" = reorder/restock → WHERE quantity < reorder_level
+    - "المنتجات" = products → products table
+    - "المورد" = supplier → suppliers table
+    - "المدراء" = managers → WHERE is_manager = 1
+    - "قسم" = department → departments table
+    - "الهندسة" = Engineering
+    - "يديرونها" = they manage → show manager names AND department names
+    - "و" between two nouns = AND → both aggregates/columns required in SELECT (e.g. "عدد المشاريع وإجمالي ميزانيتها" = COUNT of projects AND SUM of budget)
+    - "في قسم" = in department → WHERE filter, requires JOIN to departments table
+    - "التي تحتاج" = that need (restocking) → WHERE condition filter
+22. NEVER output incomplete SQL. The query must be syntactically complete (SELECT, FROM, WHERE/GROUP BY/ORDER BY fully formed).
+23. If the schema has NO tables that can answer the question, return: ERROR: Insufficient schema context.
+24. Output must be a single line or multiple lines with ; at the end."""
 
 # Specialized prompts for Modification operations
 SQL_ADD_PROMPT = """

@@ -1402,3 +1402,1498 @@
 }
 ```
 
+## 2026-07-01T17:41:43.527148+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T17:41:43.527148+00:00",
+  "status": "resolved",
+  "question": "How many customers are from Egypt?",
+  "sql": "SELECT count(country) FROM customers WHERE country = 'Egypt' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T17:42:04.532728+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T17:42:04.532728+00:00",
+  "status": "resolved",
+  "question": "List all electronic products with their prices",
+  "sql": "SELECT product_name, unit_price FROM products WHERE category = 'Electronics' LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T17:42:20.991426+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T17:42:20.991426+00:00",
+  "status": "resolved",
+  "question": "What is the total revenue from completed orders?",
+  "sql": "SELECT SUM(total_amount) FROM orders WHERE status = 'Completed' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T17:42:40.298683+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T17:42:40.298683+00:00",
+  "status": "resolved",
+  "question": "Which customer has spent the most on completed orders?",
+  "sql": "SELECT SUM(total_amount) FROM orders WHERE status = 'Completed' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T17:43:01.600987+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T17:43:01.600987+00:00",
+  "status": "resolved",
+  "question": "Show the top 3 most ordered products by quantity",
+  "sql": "SELECT p.product_name, SUM(oi.quantity) AS total_quantity FROM products p JOIN order_items oi ON p.product_id = oi.product_id GROUP BY p.product_id ORDER BY total_quantity DESC LIMIT 3;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T17:43:19.699567+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T17:43:19.699567+00:00",
+  "status": "resolved",
+  "question": "What is the average order value per customer?",
+  "sql": "SELECT customer_id, AVG(total_amount) FROM orders GROUP BY customer_id LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T17:43:39.956115+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T17:43:39.956115+00:00",
+  "status": "resolved",
+  "question": "Which products have never been ordered?",
+  "sql": "SELECT p.product_name FROM products p WHERE p.product_id NOT IN (SELECT oi.product_id FROM order_items oi) LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T17:43:50.830938+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T17:43:50.830938+00:00",
+  "status": "resolved",
+  "question": "Find customers with more than one completed order",
+  "sql": "SELECT c.name\nFROM customers c\nJOIN orders o ON c.customer_id = o.customer_id\nWHERE o.status = 'Completed'\nGROUP BY c.customer_id\nHAVING COUNT(o.order_id) > 1\nLIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T17:44:09.999549+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T17:44:09.999549+00:00",
+  "status": "resolved",
+  "question": "How many employees are in the Engineering department?",
+  "sql": "SELECT count(e.emp_id) FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE d.dept_name = 'Engineering' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T17:44:27.186214+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T17:44:27.186214+00:00",
+  "status": "resolved",
+  "question": "List all employees with salaries above 80000",
+  "sql": "SELECT first_name, last_name FROM employees WHERE salary > 80000 LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T17:44:50.194848+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T17:44:50.194848+00:00",
+  "status": "resolved",
+  "question": "What is the average salary per department?",
+  "sql": "SELECT t1.dept_name, AVG(t2.salary) AS average_salary FROM departments AS t1 JOIN employees AS t2 ON t1.dept_id = t2.dept_id GROUP BY t1.dept_name LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T17:45:16.207496+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T17:45:16.207496+00:00",
+  "status": "resolved",
+  "question": "Find the department with the highest total salary budget",
+  "sql": "SELECT d.dept_name, SUM(e.salary) AS total_salary FROM employees e JOIN departments d ON e.dept_id = d.dept_id GROUP BY d.dept_name ORDER BY total_salary DESC LIMIT 1;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T17:45:38.630034+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T17:45:38.630034+00:00",
+  "status": "resolved",
+  "question": "Show departments with their project count and total project budget",
+  "sql": "SELECT d.dept_name, COUNT(p.dept_id) AS project_count, SUM(p.budget) AS total_budget FROM departments d LEFT JOIN projects p ON d.dept_id = p.dept_id GROUP BY d.dept_id LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T17:46:02.685648+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T17:46:02.685648+00:00",
+  "status": "resolved",
+  "question": "Who are the managers and which departments do they manage?",
+  "sql": "SELECT e.first_name, e.last_name, d.dept_name FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE e.is_manager = 1 LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T17:46:24.965635+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T17:46:24.965635+00:00",
+  "status": "resolved",
+  "question": "Find employees who earn more than their department average",
+  "sql": "SELECT e.first_name, e.last_name, e.salary FROM employees e WHERE e.salary > (SELECT AVG(e2.salary) FROM employees e2 WHERE e2.dept_id = e.dept_id) LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T17:46:45.981559+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T17:46:45.981559+00:00",
+  "status": "resolved",
+  "question": "Which departments have no active projects?",
+  "sql": "SELECT d.dept_name FROM departments d LEFT JOIN projects p ON d.dept_id = p.dept_id WHERE p.dept_id IS NULL LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T17:46:52.289775+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T17:46:52.289775+00:00",
+  "status": "resolved",
+  "question": "How many products are below their reorder level?",
+  "sql": "SELECT count(*) FROM inventory WHERE quantity < reorder_level LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T17:47:08.712535+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T17:47:08.712535+00:00",
+  "status": "resolved",
+  "question": "List all suppliers with reliability score above 4.0",
+  "sql": "SELECT supplier_name FROM suppliers WHERE reliability_score > 4.0 LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T17:47:31.014374+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T17:47:31.014374+00:00",
+  "status": "resolved",
+  "question": "What is the total quantity of each product across all warehouses?",
+  "sql": "SELECT p.product_name, SUM(i.quantity) AS total_quantity FROM products p JOIN inventory i ON p.product_id = i.product_id GROUP BY p.product_id LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T17:47:54.714614+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T17:47:54.714614+00:00",
+  "status": "resolved",
+  "question": "Find warehouses that have products below reorder level",
+  "sql": "SELECT w.warehouse_name FROM warehouses AS w JOIN inventory AS i ON w.warehouse_id = i.warehouse_id WHERE i.quantity < i.reorder_level LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T17:48:16.833589+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T17:48:16.833589+00:00",
+  "status": "resolved",
+  "question": "Which supplier provides the most expensive product?",
+  "sql": "SELECT s.supplier_name FROM suppliers s JOIN products p ON s.supplier_id = p.product_id ORDER BY p.unit_price DESC LIMIT 1;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T17:48:40.893716+00:00 - failed
+
+```json
+{
+  "created_at": "2026-07-01T17:48:40.893716+00:00",
+  "status": "failed",
+  "question": "Show products that need restocking (quantity below reorder level) with supplier info",
+  "sql": "ERROR: Insufficient schema context.",
+  "error": "ERROR: Insufficient schema context.",
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T17:48:55.163063+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T17:48:55.163063+00:00",
+  "status": "resolved",
+  "question": "What is the total inventory value per warehouse?",
+  "sql": "SELECT w.warehouse_name, SUM(i.quantity * p.unit_price) AS total_inventory_value FROM warehouses w JOIN inventory i ON w.warehouse_id = i.warehouse_id JOIN products p ON i.product_id = p.product_id GROUP BY w.warehouse_id LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T17:49:19.097645+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T17:49:19.097645+00:00",
+  "status": "resolved",
+  "question": "Which categories have total stock value exceeding 5000?",
+  "sql": "SELECT p.category\nFROM products p\nJOIN inventory i ON p.product_id = i.product_id\nGROUP BY p.category\nHAVING SUM(i.quantity * p.unit_price) > 5000\nLIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:20:16.325923+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:20:16.325923+00:00",
+  "status": "resolved",
+  "question": "How many customers are from Egypt?",
+  "sql": "SELECT count(country) FROM customers WHERE country = 'Egypt' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:20:34.544467+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:20:34.544467+00:00",
+  "status": "resolved",
+  "question": "List all electronic products with their prices",
+  "sql": "SELECT product_name, unit_price FROM products WHERE category = 'Electronics' LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:20:41.926757+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:20:41.926757+00:00",
+  "status": "resolved",
+  "question": "What is the total revenue from completed orders?",
+  "sql": "SELECT SUM(total_amount) FROM orders WHERE status = 'Completed' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:20:55.005888+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:20:55.005888+00:00",
+  "status": "resolved",
+  "question": "Which customer has spent the most on completed orders?",
+  "sql": "SELECT SUM(total_amount) FROM orders WHERE status = 'Completed' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:21:27.421311+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:21:27.421311+00:00",
+  "status": "resolved",
+  "question": "Show the top 3 most ordered products by quantity",
+  "sql": "SELECT p.product_name, SUM(oi.quantity) AS total_quantity FROM products p JOIN order_items oi ON p.product_id = oi.product_id GROUP BY p.product_id ORDER BY total_quantity DESC LIMIT 3;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:21:55.079553+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:21:55.079553+00:00",
+  "status": "resolved",
+  "question": "What is the average order value per customer?",
+  "sql": "SELECT customer_id, AVG(total_amount) FROM orders GROUP BY customer_id LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:22:26.406225+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:22:26.406225+00:00",
+  "status": "resolved",
+  "question": "Which products have never been ordered?",
+  "sql": "SELECT p.product_name FROM products p LEFT JOIN order_items oi ON p.product_id = oi.product_id WHERE oi.product_id IS NULL LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:22:43.827799+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:22:43.827799+00:00",
+  "status": "resolved",
+  "question": "How many employees are in the Engineering department?",
+  "sql": "SELECT count(e.emp_id) FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE d.dept_name = 'Engineering' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:23:10.041221+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:23:10.041221+00:00",
+  "status": "resolved",
+  "question": "List all employees with salaries above 80000",
+  "sql": "SELECT first_name, last_name FROM employees WHERE salary > 80000 LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:23:51.893986+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:23:51.893986+00:00",
+  "status": "resolved",
+  "question": "Which departments have no active projects?",
+  "sql": "SELECT d.dept_name FROM departments d LEFT JOIN projects p ON d.dept_id = p.dept_id WHERE p.dept_id IS NULL LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:24:05.718940+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:24:05.718940+00:00",
+  "status": "resolved",
+  "question": "How many products are below their reorder level?",
+  "sql": "SELECT count(*) FROM inventory WHERE quantity < reorder_level LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:24:29.600084+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:24:29.600084+00:00",
+  "status": "resolved",
+  "question": "List all suppliers with reliability score above 4.0",
+  "sql": "SELECT supplier_name FROM suppliers WHERE reliability_score > 4.0 LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:24:36.253911+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:24:36.253911+00:00",
+  "status": "resolved",
+  "question": "What is the total quantity of each product across all warehouses?",
+  "sql": "SELECT p.product_name, SUM(i.quantity) AS total_quantity FROM products p JOIN inventory i ON p.product_id = i.product_id GROUP BY p.product_id LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:25:01.637451+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:25:01.637451+00:00",
+  "status": "resolved",
+  "question": "What is the total inventory value per warehouse?",
+  "sql": "SELECT w.warehouse_name, SUM(i.quantity * p.unit_price) AS total_inventory_value\nFROM warehouses w\nJOIN inventory i ON w.warehouse_id = i.warehouse_id\nJOIN products p ON i.product_id = p.product_id\nGROUP BY w.warehouse_id\nLIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:25:32.408874+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:25:32.408874+00:00",
+  "status": "resolved",
+  "question": "Which categories have total stock value exceeding 5000?",
+  "sql": "SELECT p.category\nFROM products p\nJOIN inventory i ON p.product_id = i.product_id\nGROUP BY p.category\nHAVING SUM(p.unit_price * i.quantity) > 5000\nLIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:41:17.623299+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:41:17.623299+00:00",
+  "status": "resolved",
+  "question": "How many customers are from Egypt?",
+  "sql": "SELECT count(country) FROM customers WHERE country = 'Egypt' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:41:39.679120+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:41:39.679120+00:00",
+  "status": "resolved",
+  "question": "List all electronic products with their prices",
+  "sql": "SELECT product_name, unit_price FROM products WHERE category = 'Electronics' LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:41:58.245846+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:41:58.245846+00:00",
+  "status": "resolved",
+  "question": "What is the total revenue from completed orders?",
+  "sql": "SELECT SUM(total_amount) FROM orders WHERE status = 'Completed' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:42:19.538778+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:42:19.538778+00:00",
+  "status": "resolved",
+  "question": "Which customer has spent the most on completed orders?",
+  "sql": "SELECT SUM(total_amount) FROM orders WHERE status = 'Completed' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:42:49.692693+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:42:49.692693+00:00",
+  "status": "resolved",
+  "question": "How many employees are in the Engineering department?",
+  "sql": "SELECT count(e.emp_id) FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE d.dept_name = 'Engineering' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:43:08.331047+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:43:08.331047+00:00",
+  "status": "resolved",
+  "question": "List all employees with salaries above 80000",
+  "sql": "SELECT first_name, last_name FROM employees WHERE salary > 80000 LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:43:52.022309+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:43:52.022309+00:00",
+  "status": "resolved",
+  "question": "Find warehouses that have products below reorder level",
+  "sql": "SELECT w.warehouse_name FROM warehouses AS w JOIN inventory AS i ON w.warehouse_id = i.warehouse_id WHERE i.quantity < i.reorder_level LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:44:13.719616+00:00 - failed
+
+```json
+{
+  "created_at": "2026-07-01T19:44:13.719616+00:00",
+  "status": "failed",
+  "question": "Which supplier provides the most expensive product?",
+  "sql": "ERROR: Insufficient schema context.",
+  "error": "ERROR: Insufficient schema context.",
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:44:22.560911+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:44:22.560911+00:00",
+  "status": "resolved",
+  "question": "Show products that need restocking (quantity below reorder level) with supplier info",
+  "sql": "SELECT count(*) FROM inventory WHERE quantity < reorder_level LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:46:10.981276+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:46:10.981276+00:00",
+  "status": "resolved",
+  "question": "How many customers are from Egypt?",
+  "sql": "SELECT count(country) FROM customers WHERE country = 'Egypt' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:46:41.319406+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:46:41.319406+00:00",
+  "status": "resolved",
+  "question": "List all electronic products with their prices",
+  "sql": "SELECT product_name, unit_price FROM products WHERE category = 'Electronics' LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:47:11.100250+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:47:11.100250+00:00",
+  "status": "resolved",
+  "question": "What is the total revenue from completed orders?",
+  "sql": "SELECT SUM(total_amount) FROM orders WHERE status = 'Completed' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:47:45.235085+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:47:45.235085+00:00",
+  "status": "resolved",
+  "question": "Which customer has spent the most on completed orders?",
+  "sql": "SELECT SUM(total_amount) FROM orders WHERE status = 'Completed' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:48:29.578245+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:48:29.578245+00:00",
+  "status": "resolved",
+  "question": "Show the top 3 most ordered products by quantity",
+  "sql": "SELECT p.product_name, SUM(oi.quantity) AS total_quantity FROM products p JOIN order_items oi ON p.product_id = oi.product_id GROUP BY p.product_id ORDER BY total_quantity DESC LIMIT 3;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:49:00.662140+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:49:00.662140+00:00",
+  "status": "resolved",
+  "question": "What is the average order value per customer?",
+  "sql": "SELECT customer_id, AVG(total_amount) FROM orders GROUP BY customer_id LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:49:39.525579+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:49:39.525579+00:00",
+  "status": "resolved",
+  "question": "Which products have never been ordered?",
+  "sql": "SELECT p.product_name FROM products p LEFT JOIN order_items oi ON p.product_id = oi.product_id WHERE oi.product_id IS NULL LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:50:04.146098+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:50:04.146098+00:00",
+  "status": "resolved",
+  "question": "Find customers with more than one completed order",
+  "sql": "SELECT T1.name\nFROM customers AS T1\nJOIN orders AS T2 ON T1.customer_id = T2.customer_id\nWHERE T2.status = 'completed'\nGROUP BY T1.customer_id\nHAVING COUNT(T2.order_id) > 1\nLIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:50:24.148389+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:50:24.148389+00:00",
+  "status": "resolved",
+  "question": "How many employees are in the Engineering department?",
+  "sql": "SELECT count(e.emp_id) FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE d.dept_name = 'Engineering' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:51:12.222729+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:51:12.222729+00:00",
+  "status": "resolved",
+  "question": "Find employees who earn more than their department average",
+  "sql": "SELECT e.first_name, e.last_name, e.salary FROM employees e WHERE e.salary > (SELECT AVG(e2.salary) FROM employees e2 WHERE e2.dept_id = e.dept_id) LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:51:54.517595+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:51:54.517595+00:00",
+  "status": "resolved",
+  "question": "Which departments have no active projects?",
+  "sql": "SELECT d.dept_name FROM departments d LEFT JOIN projects p ON d.dept_id = p.dept_id WHERE p.dept_id IS NULL LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:52:10.845695+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:52:10.845695+00:00",
+  "status": "resolved",
+  "question": "How many products are below their reorder level?",
+  "sql": "SELECT count(*) FROM inventory WHERE quantity < reorder_level LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:52:40.530232+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:52:40.530232+00:00",
+  "status": "resolved",
+  "question": "List all suppliers with reliability score above 4.0",
+  "sql": "SELECT supplier_name FROM suppliers WHERE reliability_score > 4.0 LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:53:13.839008+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:53:13.839008+00:00",
+  "status": "resolved",
+  "question": "What is the total quantity of each product across all warehouses?",
+  "sql": "SELECT p.product_name, SUM(i.quantity) AS total_quantity FROM products p JOIN inventory i ON p.product_id = i.product_id GROUP BY p.product_id LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:53:55.630530+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:53:55.630530+00:00",
+  "status": "resolved",
+  "question": "Find warehouses that have products below reorder level",
+  "sql": "SELECT warehouses.warehouse_name FROM warehouses JOIN inventory ON warehouses.warehouse_id = inventory.warehouse_id WHERE inventory.quantity < inventory.reorder_level LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:54:33.757939+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:54:33.757939+00:00",
+  "status": "resolved",
+  "question": "Which supplier provides the most expensive product?",
+  "sql": "SELECT T1.supplier_name FROM suppliers AS T1 JOIN products AS T2 ON T1.supplier_id = T2.product_id ORDER BY T2.unit_price DESC LIMIT 1;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T19:55:13.115768+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T19:55:13.115768+00:00",
+  "status": "resolved",
+  "question": "Show products that need restocking (quantity below reorder level) with supplier info",
+  "sql": "SELECT count(*) FROM inventory WHERE quantity < reorder_level LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T20:15:43.125667+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T20:15:43.125667+00:00",
+  "status": "resolved",
+  "question": "How many customers are from Egypt?",
+  "sql": "SELECT count(country) FROM customers WHERE country = 'Egypt' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T20:16:27.592469+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T20:16:27.592469+00:00",
+  "status": "resolved",
+  "question": "List all electronic products with their prices",
+  "sql": "SELECT product_name, unit_price FROM products WHERE category = 'Electronics' LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T20:17:06.574648+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T20:17:06.574648+00:00",
+  "status": "resolved",
+  "question": "What is the total revenue from completed orders?",
+  "sql": "SELECT SUM(total_amount) FROM orders WHERE status = 'Completed' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T20:17:45.371334+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T20:17:45.371334+00:00",
+  "status": "resolved",
+  "question": "Which customer has spent the most on completed orders?",
+  "sql": "SELECT SUM(total_amount) FROM orders WHERE status = 'Completed' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T20:18:05.181228+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T20:18:05.181228+00:00",
+  "status": "resolved",
+  "question": "What is the average order value per customer?",
+  "sql": "SELECT customer_id, AVG(total_amount) FROM orders GROUP BY customer_id LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T20:18:42.298726+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T20:18:42.298726+00:00",
+  "status": "resolved",
+  "question": "How many employees are in the Engineering department?",
+  "sql": "SELECT count(e.emp_id) FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE d.dept_name = 'Engineering' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T20:19:18.038113+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T20:19:18.038113+00:00",
+  "status": "resolved",
+  "question": "List all employees with salaries above 80000",
+  "sql": "SELECT first_name, last_name FROM employees WHERE salary > 80000 LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T20:19:59.345894+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T20:19:59.345894+00:00",
+  "status": "resolved",
+  "question": "What is the average salary per department?",
+  "sql": "SELECT d.dept_name, AVG(e.salary) AS average_salary FROM employees e JOIN departments d ON e.dept_id = d.dept_id GROUP BY d.dept_name LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T20:56:44.326384+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T20:56:44.326384+00:00",
+  "status": "resolved",
+  "question": "How many customers are from Egypt?",
+  "sql": "SELECT count(country) FROM customers WHERE country = 'Egypt' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T20:56:51.202164+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T20:56:51.202164+00:00",
+  "status": "resolved",
+  "question": "List all electronic products with their prices",
+  "sql": "SELECT product_name, unit_price FROM products WHERE category = 'Electronics' LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T20:56:55.752673+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T20:56:55.752673+00:00",
+  "status": "resolved",
+  "question": "What is the total revenue from completed orders?",
+  "sql": "SELECT SUM(total_amount) FROM orders WHERE status = 'Completed' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T20:57:00.416326+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T20:57:00.416326+00:00",
+  "status": "resolved",
+  "question": "Which customer has spent the most on completed orders?",
+  "sql": "SELECT SUM(total_amount) FROM orders WHERE status = 'Completed' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T20:57:05.439506+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T20:57:05.439506+00:00",
+  "status": "resolved",
+  "question": "Show the top 3 most ordered products by quantity",
+  "sql": "SELECT p.product_name, SUM(oi.quantity) AS total_quantity FROM products p JOIN order_items oi ON p.product_id = oi.product_id GROUP BY p.product_id ORDER BY total_quantity DESC LIMIT 3;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T20:57:20.678972+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T20:57:20.678972+00:00",
+  "status": "resolved",
+  "question": "What is the average order value per customer?",
+  "sql": "SELECT customer_id, AVG(total_amount) FROM orders GROUP BY customer_id LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T20:57:42.730819+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T20:57:42.730819+00:00",
+  "status": "resolved",
+  "question": "Which products have never been ordered?",
+  "sql": "SELECT p.product_id, p.product_name \nFROM products p \nWHERE p.product_id NOT IN (SELECT oi.product_id FROM order_items oi) \nLIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T20:57:55.866024+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T20:57:55.866024+00:00",
+  "status": "resolved",
+  "question": "Find customers with more than one completed order",
+  "sql": "SELECT c.name\nFROM customers c\nJOIN orders o ON c.customer_id = o.customer_id\nWHERE o.status = 'Completed'\nGROUP BY c.customer_id\nHAVING COUNT(o.order_id) > 1\nLIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T20:58:14.826192+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T20:58:14.826192+00:00",
+  "status": "resolved",
+  "question": "How many employees are in the Engineering department?",
+  "sql": "SELECT count(e.emp_id) FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE d.dept_name = 'Engineering' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T20:58:33.828254+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T20:58:33.828254+00:00",
+  "status": "resolved",
+  "question": "List all employees with salaries above 80000",
+  "sql": "SELECT first_name, last_name FROM employees WHERE salary > 80000 LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T20:58:55.292172+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T20:58:55.292172+00:00",
+  "status": "resolved",
+  "question": "What is the average salary per department?",
+  "sql": "SELECT T2.dept_name, AVG(T1.salary) AS average_salary \nFROM employees T1 \nINNER JOIN departments T2 \nON T1.dept_id = T2.dept_id \nGROUP BY T2.dept_name",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T20:59:16.862967+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T20:59:16.862967+00:00",
+  "status": "resolved",
+  "question": "Find the department with the highest total salary budget",
+  "sql": "SELECT T1.dept_name, SUM(T2.salary) AS total_salary \nFROM departments T1 \nJOIN employees T2 \nON T1.dept_id = T2.dept_id \nGROUP BY T1.dept_name \nORDER BY SUM(T2.salary) DESC \nLIMIT 1",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T20:59:36.899050+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T20:59:36.899050+00:00",
+  "status": "resolved",
+  "question": "Show departments with their project count and total project budget",
+  "sql": "SELECT d.dept_name, COUNT(p.dept_id) AS project_count, SUM(p.budget) AS total_budget FROM departments d LEFT JOIN projects p ON d.dept_id = p.dept_id GROUP BY d.dept_id LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T20:59:58.862395+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T20:59:58.862395+00:00",
+  "status": "resolved",
+  "question": "Who are the managers and which departments do they manage?",
+  "sql": "SELECT e.first_name, e.last_name, d.dept_name \nFROM employees e \nJOIN departments d ON e.dept_id = d.dept_id \nWHERE e.is_manager = 1 \nLIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:00:24.057882+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:00:24.057882+00:00",
+  "status": "resolved",
+  "question": "Find employees who earn more than their department average",
+  "sql": "SELECT e.emp_id, e.first_name, e.last_name, e.salary, e.dept_id, dd.dept_name \nFROM employees e \nJOIN (\n  SELECT dept_id, AVG(salary) AS avg_salary \n  FROM employees \n  GROUP BY dept_id\n) d ON e.dept_id = d.dept_id \nJOIN departments dd ON e.dept_id = dd.dept_id \nWHERE e.salary > d.avg_salary \nLIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:00:43.751489+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:00:43.751489+00:00",
+  "status": "resolved",
+  "question": "Which departments have no active projects?",
+  "sql": "SELECT d.dept_name FROM departments d LEFT JOIN projects p ON d.dept_id = p.dept_id WHERE p.dept_id IS NULL LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:00:57.698057+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:00:57.698057+00:00",
+  "status": "resolved",
+  "question": "How many products are below their reorder level?",
+  "sql": "SELECT count(*) FROM inventory WHERE quantity < reorder_level LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:01:17.246131+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:01:17.246131+00:00",
+  "status": "resolved",
+  "question": "List all suppliers with reliability score above 4.0",
+  "sql": "SELECT supplier_name FROM suppliers WHERE reliability_score > 4.0 LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:01:36.736514+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:01:36.736514+00:00",
+  "status": "resolved",
+  "question": "What is the total quantity of each product across all warehouses?",
+  "sql": "SELECT p.product_name, SUM(i.quantity) AS total_quantity FROM products p JOIN inventory i ON p.product_id = i.product_id GROUP BY p.product_id LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:01:56.901680+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:01:56.901680+00:00",
+  "status": "resolved",
+  "question": "Find warehouses that have products below reorder level",
+  "sql": "SELECT warehouses.warehouse_name FROM warehouses JOIN inventory ON warehouses.warehouse_id = inventory.warehouse_id WHERE inventory.quantity < inventory.reorder_level LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:02:19.109255+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:02:19.109255+00:00",
+  "status": "resolved",
+  "question": "Which supplier provides the most expensive product?",
+  "sql": "SELECT p.supplier_id, s.supplier_name, p.product_name, p.unit_price \nFROM products p \nJOIN suppliers s ON p.supplier_id = s.supplier_id \nORDER BY p.unit_price DESC \nLIMIT 1",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:02:38.810417+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:02:38.810417+00:00",
+  "status": "resolved",
+  "question": "Show products that need restocking (quantity below reorder level) with supplier info",
+  "sql": "SELECT count(*) FROM inventory WHERE quantity < reorder_level LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:03:01.232896+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:03:01.232896+00:00",
+  "status": "resolved",
+  "question": "What is the total inventory value per warehouse?",
+  "sql": "SELECT w.warehouse_id, w.warehouse_name, SUM(i.quantity * p.unit_price) as total_value\nFROM warehouses w\nJOIN inventory i ON w.warehouse_id = i.warehouse_id\nJOIN products p ON i.product_id = p.product_id\nGROUP BY w.warehouse_id, w.warehouse_name\nLIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:03:22.985032+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:03:22.985032+00:00",
+  "status": "resolved",
+  "question": "Which categories have total stock value exceeding 5000?",
+  "sql": "SELECT p.category \nFROM products p \nJOIN inventory i ON p.product_id = i.product_id \nGROUP BY p.category \nHAVING SUM(i.quantity * p.unit_price) > 5000 \nLIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:05:45.388392+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:05:45.388392+00:00",
+  "status": "resolved",
+  "question": "How many customers are from Egypt?",
+  "sql": "SELECT count(country) FROM customers WHERE country = 'Egypt' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:05:53.926044+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:05:53.926044+00:00",
+  "status": "resolved",
+  "question": "List all electronic products with their prices",
+  "sql": "SELECT product_name, unit_price FROM products WHERE category = 'Electronics' LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:05:58.723935+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:05:58.723935+00:00",
+  "status": "resolved",
+  "question": "What is the total revenue from completed orders?",
+  "sql": "SELECT SUM(total_amount) FROM orders WHERE status = 'Completed' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:06:02.531317+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:06:02.531317+00:00",
+  "status": "resolved",
+  "question": "Which customer has spent the most on completed orders?",
+  "sql": "SELECT SUM(total_amount) FROM orders WHERE status = 'Completed' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:06:07.636681+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:06:07.636681+00:00",
+  "status": "resolved",
+  "question": "Show the top 3 most ordered products by quantity",
+  "sql": "SELECT p.product_name, SUM(oi.quantity) AS total_quantity FROM products p JOIN order_items oi ON p.product_id = oi.product_id GROUP BY p.product_id ORDER BY total_quantity DESC LIMIT 3;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:06:24.034093+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:06:24.034093+00:00",
+  "status": "resolved",
+  "question": "What is the average order value per customer?",
+  "sql": "SELECT customer_id, AVG(total_amount) FROM orders GROUP BY customer_id LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:06:46.064717+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:06:46.064717+00:00",
+  "status": "resolved",
+  "question": "Which products have never been ordered?",
+  "sql": "SELECT p.product_name, p.category, p.unit_price, p.stock_quantity, p.supplier \nFROM products p \nWHERE p.product_id NOT IN (SELECT oi.product_id FROM order_items oi) \nLIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:06:59.924593+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:06:59.924593+00:00",
+  "status": "resolved",
+  "question": "Find customers with more than one completed order",
+  "sql": "SELECT c.name\nFROM customers c\nJOIN orders o ON c.customer_id = o.customer_id\nWHERE o.status = 'Completed'\nGROUP BY c.customer_id\nHAVING COUNT(o.order_id) > 1\nLIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:07:19.542595+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:07:19.542595+00:00",
+  "status": "resolved",
+  "question": "How many employees are in the Engineering department?",
+  "sql": "SELECT count(e.emp_id) FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE d.dept_name = 'Engineering' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:07:38.474214+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:07:38.474214+00:00",
+  "status": "resolved",
+  "question": "List all employees with salaries above 80000",
+  "sql": "SELECT first_name, last_name FROM employees WHERE salary > 80000 LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:08:00.206287+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:08:00.206287+00:00",
+  "status": "resolved",
+  "question": "What is the average salary per department?",
+  "sql": "SELECT d.dept_name, AVG(e.salary) AS average_salary \nFROM employees e \nJOIN departments d ON e.dept_id = d.dept_id \nGROUP BY d.dept_name \nLIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:08:22.671160+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:08:22.671160+00:00",
+  "status": "resolved",
+  "question": "Find the department with the highest total salary budget",
+  "sql": "SELECT T1.dept_name, SUM(T2.salary) AS total_salary \nFROM departments T1 \nJOIN employees T2 ON T1.dept_id = T2.dept_id \nGROUP BY T1.dept_name \nORDER BY total_salary DESC \nLIMIT 1",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:08:42.330557+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:08:42.330557+00:00",
+  "status": "resolved",
+  "question": "Show departments with their project count and total project budget",
+  "sql": "SELECT d.dept_name, COUNT(p.dept_id) AS project_count, SUM(p.budget) AS total_budget FROM departments d LEFT JOIN projects p ON d.dept_id = p.dept_id GROUP BY d.dept_id LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:09:05.242753+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:09:05.242753+00:00",
+  "status": "resolved",
+  "question": "Who are the managers and which departments do they manage?",
+  "sql": "SELECT e.first_name, e.last_name, d.dept_name \nFROM employees e \nJOIN departments d ON e.dept_id = d.dept_id \nWHERE e.is_manager = 1 \nLIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:34:30.605575+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:34:30.605575+00:00",
+  "status": "resolved",
+  "question": "How many customers are from Egypt?",
+  "sql": "SELECT count(country) FROM customers WHERE country = 'Egypt' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:39:06.681969+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:39:06.681969+00:00",
+  "status": "resolved",
+  "question": "How many customers are from Egypt?",
+  "sql": "SELECT count(country) FROM customers WHERE country = 'Egypt' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:39:45.237369+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:39:45.237369+00:00",
+  "status": "resolved",
+  "question": "List all electronic products with their prices",
+  "sql": "SELECT product_name, unit_price FROM products WHERE category = 'Electronics' LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-01T21:40:57.634019+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-01T21:40:57.634019+00:00",
+  "status": "resolved",
+  "question": "What is the total revenue from completed orders?",
+  "sql": "SELECT SUM(total_amount) FROM orders WHERE status = 'Completed' LIMIT 1000;",
+  "error": null,
+  "validation_reason": null
+}
+```
+

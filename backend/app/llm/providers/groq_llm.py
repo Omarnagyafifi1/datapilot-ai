@@ -1,25 +1,28 @@
 from app.llm.base_llm import BaseLLM
 from app.core.config import settings
-
-try:
-    from langchain_groq import ChatGroq
-except Exception:
-    ChatGroq = None
+from typing import Optional
+from openai import OpenAI
 
 
 class GroqLLM(BaseLLM):
     def __init__(self, api_key: str = "") -> None:
-        if ChatGroq is None:
-            raise RuntimeError("Groq LLM provider is not installed in this environment")
         self.api_key = api_key
         model_name = settings.GROQ_MODEL or "llama-3.3-70b-versatile"
-        self.llm = ChatGroq(
-            model=model_name,
-            groq_api_key=api_key
+        self.model = model_name
+        self.client = OpenAI(
+            api_key=api_key,
+            base_url="https://api.groq.com/openai/v1",
         )
 
-    def generate(self, prompt: str) -> str:
-        response = self.llm.invoke(prompt)
-        return response.content
+    def generate(self, prompt: str, system_message: Optional[str] = None, max_tokens: Optional[int] = None) -> str:
+        messages = []
+        if system_message:
+            messages.append({"role": "system", "content": system_message})
+        messages.append({"role": "user", "content": prompt})
+        kwargs = {"model": self.model, "messages": messages}
+        if max_tokens:
+            kwargs["max_tokens"] = max_tokens
+        response = self.client.chat.completions.create(**kwargs)
+        return response.choices[0].message.content or ""
 
 

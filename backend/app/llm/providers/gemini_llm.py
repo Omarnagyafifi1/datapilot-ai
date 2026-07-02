@@ -1,4 +1,5 @@
 from app.llm.base_llm import BaseLLM
+from typing import Optional
 
 try:
     from langchain_google_genai import ChatGoogleGenerativeAI
@@ -16,6 +17,11 @@ class GeminiLLM(BaseLLM):
             google_api_key=api_key
         )
 
-    def generate(self, prompt: str) -> str:
-        response = self.llm.invoke(prompt)
+    def generate(self, prompt: str, system_message: Optional[str] = None, max_tokens: Optional[int] = None) -> str:
+        from langchain_core.messages import SystemMessage, HumanMessage
+        messages = []
+        if system_message:
+            messages.append(SystemMessage(content=system_message))
+        messages.append(HumanMessage(content=prompt))
+        response = self.llm.invoke(messages)
         return response.content

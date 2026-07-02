@@ -4,7 +4,7 @@ from typing import Optional
 
 from langchain.tools import tool
 
-from app.agents.prompts import SQL_GENERATION_PROMPT, SQL_FIX_PROMPT
+from app.agents.prompts import SQL_GENERATION_PROMPT, SQL_SYSTEM_MESSAGE, SQL_FIX_PROMPT
 from app.agents.tools.schema_tools import fetch_schema_context
 from app.services.db_service import DBService
 from app.services.schema_service import SchemaService
@@ -92,12 +92,11 @@ def execute_sql_query(question: str) -> str:
     while retry_count < MAX_RETRIES and not success:
         try:
             prompt = SQL_GENERATION_PROMPT.format(
-                dialect=_db_service.get_dialect(),
                 schema=schema_context,
                 max_rows=MAX_ROWS,
                 question=question,
             )
-            sql = _llm.generate(prompt)
+            sql = _llm.generate(prompt, system_message=SQL_SYSTEM_MESSAGE)
 
             if sql.startswith("ERROR:"):
                 error = sql

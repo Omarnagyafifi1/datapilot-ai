@@ -1,0 +1,182 @@
+[
+  {
+    "db_id": "sales_db",
+    "question": "How many customers are from Egypt?",
+    "sql": "SELECT COUNT(*) FROM customers WHERE country = 'Egypt'",
+    "difficulty": "easy"
+  },
+  {
+    "db_id": "sales_db",
+    "question": "List all electronic products with their prices",
+    "sql": "SELECT product_name, unit_price FROM products WHERE category = 'Electronics'",
+    "difficulty": "easy"
+  },
+  {
+    "db_id": "sales_db",
+    "question": "What is the total revenue from completed orders?",
+    "sql": "SELECT SUM(total_amount) FROM orders WHERE status = 'Completed'",
+    "difficulty": "easy"
+  },
+  {
+    "db_id": "sales_db",
+    "question": "Which customer has spent the most on completed orders?",
+    "sql": "SELECT c.name, SUM(o.total_amount) as total_spent FROM customers c JOIN orders o ON c.customer_id = o.customer_id WHERE o.status = 'Completed' GROUP BY c.name ORDER BY total_spent DESC LIMIT 1",
+    "difficulty": "medium"
+  },
+  {
+    "db_id": "sales_db",
+    "question": "Show the top 3 most ordered products by quantity",
+    "sql": "SELECT p.product_name, SUM(oi.quantity) as total_qty FROM products p JOIN order_items oi ON p.product_id = oi.product_id GROUP BY p.product_name ORDER BY total_qty DESC LIMIT 3",
+    "difficulty": "medium"
+  },
+  {
+    "db_id": "sales_db",
+    "question": "What is the average order value per customer?",
+    "sql": "SELECT c.name, ROUND(AVG(o.total_amount), 2) as avg_order FROM customers c JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.name",
+    "difficulty": "medium"
+  },
+  {
+    "db_id": "sales_db",
+    "question": "Which products have never been ordered?",
+    "sql": "SELECT p.product_name FROM products p LEFT JOIN order_items oi ON p.product_id = oi.product_id WHERE oi.product_id IS NULL",
+    "difficulty": "hard"
+  },
+  {
+    "db_id": "sales_db",
+    "question": "Find customers with more than one completed order",
+    "sql": "SELECT c.name, COUNT(o.order_id) as order_count FROM customers c JOIN orders o ON c.customer_id = o.customer_id WHERE o.status = 'Completed' GROUP BY c.name HAVING order_count > 1",
+    "difficulty": "medium"
+  },
+  {
+    "db_id": "employees_db",
+    "question": "How many employees are in the Engineering department?",
+    "sql": "SELECT COUNT(*) FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE d.dept_name = 'Engineering'",
+    "difficulty": "easy"
+  },
+  {
+    "db_id": "employees_db",
+    "question": "List all employees with salaries above 80000",
+    "sql": "SELECT first_name, last_name, salary FROM employees WHERE salary > 80000",
+    "difficulty": "easy"
+  },
+  {
+    "db_id": "employees_db",
+    "question": "What is the average salary per department?",
+    "sql": "SELECT d.dept_name, ROUND(AVG(e.salary), 2) as avg_salary FROM employees e JOIN departments d ON e.dept_id = d.dept_id GROUP BY d.dept_name",
+    "difficulty": "easy"
+  },
+  {
+    "db_id": "employees_db",
+    "question": "Find the department with the highest total salary budget",
+    "sql": "SELECT d.dept_name, SUM(e.salary) as total_salary FROM employees e JOIN departments d ON e.dept_id = d.dept_id GROUP BY d.dept_name ORDER BY total_salary DESC LIMIT 1",
+    "difficulty": "easy"
+  },
+  {
+    "db_id": "employees_db",
+    "question": "Show departments with their project count and total project budget",
+    "sql": "SELECT d.dept_name, COUNT(p.project_id) as project_count, SUM(p.budget) as total_budget FROM departments d LEFT JOIN projects p ON d.dept_id = p.dept_id GROUP BY d.dept_name",
+    "difficulty": "medium"
+  },
+  {
+    "db_id": "employees_db",
+    "question": "Who are the managers and which departments do they manage?",
+    "sql": "SELECT e.first_name, e.last_name, d.dept_name FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE e.is_manager = 1",
+    "difficulty": "easy"
+  },
+  {
+    "db_id": "employees_db",
+    "question": "Find employees who earn more than their department average",
+    "sql": "SELECT e.first_name, e.last_name, e.salary, d.dept_name FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE e.salary > (SELECT AVG(e2.salary) FROM employees e2 WHERE e2.dept_id = e.dept_id)",
+    "difficulty": "hard"
+  },
+  {
+    "db_id": "employees_db",
+    "question": "Which departments have no active projects?",
+    "sql": "SELECT d.dept_name FROM departments d LEFT JOIN projects p ON d.dept_id = p.dept_id WHERE p.project_id IS NULL",
+    "difficulty": "medium"
+  },
+  {
+    "db_id": "employees_ar_db",
+    "question": "ما هو متوسط الراتب لكل قسم؟",
+    "sql": "SELECT d.dept_name_ar AS 'القسم', ROUND(AVG(e.salary), 2) AS 'متوسط الراتب' FROM employees e JOIN departments d ON e.dept_id = d.dept_id GROUP BY d.dept_name_ar",
+    "difficulty": "easy"
+  },
+  {
+    "db_id": "employees_ar_db",
+    "question": "اعرض الأقسام مع عدد المشاريع وإجمالي ميزانيتها",
+    "sql": "SELECT d.dept_name_ar AS 'القسم', COUNT(p.project_id) AS 'عدد المشاريع', SUM(p.budget) AS 'إجمالي الميزانية' FROM departments d LEFT JOIN projects p ON d.dept_id = p.dept_id GROUP BY d.dept_name_ar",
+    "difficulty": "medium"
+  },
+  {
+    "db_id": "employees_ar_db",
+    "question": "من هم المدراء وما هي الأقسام التي يديرونها؟",
+    "sql": "SELECT e.first_name AS 'الاسم الأول', e.last_name AS 'اسم العائلة', d.dept_name_ar AS 'القسم' FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE e.is_manager = 1",
+    "difficulty": "easy"
+  },
+  {
+    "db_id": "employees_ar_db",
+    "question": "كم عدد الموظفين في قسم الهندسة؟",
+    "sql": "SELECT COUNT(*) FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE d.dept_name_ar = 'الهندسة'",
+    "difficulty": "easy"
+  },
+  {
+    "db_id": "sales_ar_db",
+    "question": "ما إجمالي الإيرادات من الطلبات المكتملة؟",
+    "sql": "SELECT SUM(total_amount) FROM orders WHERE status = 'Completed'",
+    "difficulty": "easy"
+  },
+  {
+    "db_id": "inventory_ar_db",
+    "question": "اعرض المنتجات التي تحتاج إعادة تخزين مع معلومات المورد",
+    "sql": "SELECT p.product_name AS 'اسم المنتج', i.quantity AS 'الكمية', i.reorder_level AS 'مستوى إعادة الطلب', s.supplier_name AS 'المورد' FROM products p JOIN inventory i ON p.product_id = i.product_id JOIN suppliers s ON p.supplier_id = s.supplier_id WHERE i.quantity < i.reorder_level",
+    "difficulty": "medium"
+  },
+  {
+    "db_id": "inventory_db",
+    "question": "How many products are below their reorder level?",
+    "sql": "SELECT COUNT(*) FROM inventory WHERE quantity < reorder_level",
+    "difficulty": "easy"
+  },
+  {
+    "db_id": "inventory_db",
+    "question": "List all suppliers with reliability score above 4.0",
+    "sql": "SELECT supplier_name, reliability_score FROM suppliers WHERE reliability_score > 4.0",
+    "difficulty": "easy"
+  },
+  {
+    "db_id": "inventory_db",
+    "question": "What is the total quantity of each product across all warehouses?",
+    "sql": "SELECT p.product_name, SUM(i.quantity) as total_qty FROM products p JOIN inventory i ON p.product_id = i.product_id GROUP BY p.product_name",
+    "difficulty": "easy"
+  },
+  {
+    "db_id": "inventory_db",
+    "question": "Find warehouses that have products below reorder level",
+    "sql": "SELECT DISTINCT w.warehouse_name FROM warehouses w JOIN inventory i ON w.warehouse_id = i.warehouse_id WHERE i.quantity < i.reorder_level",
+    "difficulty": "medium"
+  },
+  {
+    "db_id": "inventory_db",
+    "question": "Which supplier provides the most expensive product?",
+    "sql": "SELECT s.supplier_name, p.product_name, p.unit_price FROM suppliers s JOIN products p ON s.supplier_id = p.supplier_id ORDER BY p.unit_price DESC LIMIT 1",
+    "difficulty": "medium"
+  },
+  {
+    "db_id": "inventory_db",
+    "question": "Show products that need restocking (quantity below reorder level) with supplier info",
+    "sql": "SELECT p.product_name, s.supplier_name, i.quantity, i.reorder_level FROM products p JOIN inventory i ON p.product_id = i.product_id JOIN suppliers s ON p.supplier_id = s.supplier_id WHERE i.quantity < i.reorder_level",
+    "difficulty": "medium"
+  },
+  {
+    "db_id": "inventory_db",
+    "question": "What is the total inventory value per warehouse?",
+    "sql": "SELECT w.warehouse_name, SUM(i.quantity * p.unit_price) as total_value FROM warehouses w JOIN inventory i ON w.warehouse_id = i.warehouse_id JOIN products p ON i.product_id = p.product_id GROUP BY w.warehouse_name",
+    "difficulty": "medium"
+  },
+  {
+    "db_id": "inventory_db",
+    "question": "Which categories have total stock value exceeding 5000?",
+    "sql": "SELECT p.category, SUM(i.quantity * p.unit_price) as total_value FROM products p JOIN inventory i ON p.product_id = i.product_id GROUP BY p.category HAVING total_value > 5000",
+    "difficulty": "hard"
+  }
+]

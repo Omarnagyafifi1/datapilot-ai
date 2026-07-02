@@ -1,6 +1,6 @@
 # Project Context (Quick Resume)
 
-Last updated: 2026-07-01
+Last updated: 2026-07-02
 
 ## Repository
 - Name: datapilot-ai
@@ -127,10 +127,40 @@ router -> fetch_and_filter_schema -> lookup_scenario -> generate_sql -> execute_
 ## Known Environment Note
 - If analyzer shows unresolved imports for fastapi/sqlalchemy, verify the selected Python environment and installed dependencies.
 
+## BIRD Evaluation Results
+
+### Latest: 26/30 (86.7%) execution accuracy — 2026-07-02
+
+- **Provider**: OpenRouter (`google/gemma-4-31b-it:free`)
+- **Eval**: `scripts/eval_lightweight.py` (1 LLM call per query, no graph overhead)
+- **Per difficulty**: Easy 13/15, Medium 10/12, Hard 3/3
+- **English accuracy**: 22/24 (91.7%, 2 failures due to rate-limit truncation)
+- **Arabic accuracy**: 4/6 (66.7%) — Arabic questions improved from 0/6 with structured 4-step prompt rule
+- **Avg latency**: 6.4s per query
+
+### Key improvements that got from 4/24 → 26/30:
+1. **Structured 4-step Arabic rule** (rule 21): translate → identify pattern → generate SQL → replace with _ar columns
+2. **Arabic→English keyword mappings** covering 15+ phrases
+3. **SQL prompt** (`app/agents/prompts.py`): 24 explicit rules covering DISTINCT, HAVING, ORDER BY + LIMIT, aggregate-in-SELECT enforcement, WHERE-column SELECT behavior, 3-JOIN order, alias rules, column parsimony
+4. **Lightweight eval script** avoids graph overhead (6-10 LLM calls/query → 1)
+5. **Retry logic** for provider errors (429/502/truncation)
+
+### Arabic question results
+- **4/6 pass consistently**: avg salary per dept (Q17), managers+depts (Q19), depts+projects+budget (Q18), sales completed revenue (Q21 intermittent)
+- **2/6 still fail**: Engineering dept count (Q20 — uses `dept_name` instead of `dept_name_ar`), products needing restock with supplier info (Q22 — AVG instead of filter)
+
+### Remaining failure patterns
+- **Rate-limit truncation** (~2 English questions occasionally fail due to OpenRouter 502/429 errors)
+- **Arabic column mapping**: Model sometimes uses `dept_name` instead of `dept_name_ar`
+- **Complex Arabic queries**: 3-table JOINs with conditions in Arabic still unreliable
+
+## Prompt Engineering Notes
+- `SQL_GENERATION_PROMPT` in `app/agents/prompts.py` is the single most impactful file
+- System message emphasizes raw SQL only (no markdown, no backticks)
+- 24 numbered rules enforce specific SQL patterns
+
 ## Next Recommended Steps
-1. Run /api/query with a real valid source_id from connected data sources.
-2. Add unit tests for:
-   - _normalize_insights and _parse_insights
-   - _normalize_suggestions and _parse_suggestions
-   - documentation_node output contract
-3. Add integration tests for /api/query request/response contract.
+1. Test Arabic question support (rule 21 covers Arabic column handling with 4-step approach)
+2. Test with the full AgentGraph (not just lightweight) now that SQL gen is reliable
+3. Add unit tests for SQL generation prompt edge cases
+4. Add integration tests for /api/query request/response contract

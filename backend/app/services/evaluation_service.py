@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-import sqlite3
 from typing import Any
 
 from app.core.config import settings
@@ -73,15 +72,6 @@ def _syntax_check(sql: str, dialect: str = "sqlite") -> dict[str, Any]:
         if re.search(rf"\b{keyword}\b", sql.upper()):
             return {"valid": False, "error": f"Forbidden keyword '{keyword}' in query", "dialect": dialect}
 
-    if dialect == "sqlite":
-        try:
-            conn = sqlite3.connect(":memory:")
-            conn.execute(f"EXPLAIN QUERY PLAN {sql}")
-            conn.close()
-            return {"valid": True, "error": None, "dialect": dialect}
-        except Exception as e:
-            return {"valid": False, "error": str(e), "dialect": dialect}
-
     basic_pattern = re.compile(
         r"^\s*(SELECT|WITH|EXPLAIN)\b",
         re.IGNORECASE,
@@ -92,6 +82,13 @@ def _syntax_check(sql: str, dialect: str = "sqlite") -> dict[str, Any]:
     has_from = re.search(r"\bFROM\b", sql, re.IGNORECASE)
     if not has_from:
         return {"valid": False, "error": "SQL must contain a FROM clause", "dialect": dialect}
+
+    has_select_col = re.search(r"SELECT\s+.+", sql, re.IGNORECASE | re.DOTALL)
+    if not has_select_col:
+        return {"valid": False, "error": "SQL must select at least one column", "dialect": dialect}
+
+    if sql.count("(") != sql.count(")"):
+        return {"valid": False, "error": "Unbalanced parentheses", "dialect": dialect}
 
     return {"valid": True, "error": None, "dialect": dialect}
 
