@@ -1,64 +1,60 @@
-import React from 'react';
-import { 
-  LayoutGrid, 
-  Database, 
-  Binary, 
-  History, 
-  BarChart3, 
-  Settings, 
-  HelpCircle,
-  Cpu,
-  Terminal
-} from 'lucide-react';
+import { MessageSquare, BarChart3, Award, Settings, Cpu, Clock, Sun, Moon, Archive } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const navItems = [
-  { id: 'query', icon: Terminal, label: 'Query' },
-  { id: 'dashboard', icon: LayoutGrid, label: 'Dashboard' },
-  { id: 'datasources', icon: Database, label: 'Data Sources' },
-  { id: 'schema', icon: Binary, label: 'Schema' },
-  { id: 'history', icon: History, label: 'History' },
-  { id: 'reports', icon: BarChart3, label: 'Reports' },
-  { id: 'documentation', icon: HelpCircle, label: 'Documentation' },
-  { id: 'settings', icon: Settings, label: 'Settings' },
+  { id: 'chat', icon: MessageSquare, label: 'Chats' },
+  { id: 'history', icon: Clock, label: 'History' },
+  { id: 'analytics', icon: BarChart3, label: 'Analytics' },
+  { id: 'evaluation', icon: Award, label: 'Evaluation' },
+  { id: 'datasets', icon: Archive, label: 'Datasets' },
+  { id: 'settings', icon: Settings, label: 'Settings' }
 ];
 
-export function Sidebar({ activeView, setActiveView }) {
+export function Sidebar({ activeView, setActiveView, themeMode, onChangeTheme }) {
   return (
-    <aside className="w-24 border-r border-border flex flex-col items-center py-8 bg-background z-40">
-      <div className="mb-12">
-        <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-cyber-cyan shadow-glow-cyan/20">
+    <aside className="w-24 border-r border-border flex flex-col items-center py-6 bg-background/80 backdrop-blur-md z-40">
+      <div className="mb-8">
+        <div className="w-10 h-10 rounded-xl bg-foreground/5 border border-border flex items-center justify-center text-cyber-cyan shadow-glow-cyan/20">
           <Cpu size={24} />
         </div>
       </div>
 
-      <nav className="flex-1 flex flex-col gap-6">
+      <nav className="flex-1 flex flex-col gap-3.5 w-full px-2">
         {navItems.map((item) => (
           <button
             key={item.id}
             onClick={() => setActiveView(item.id)}
             className={cn(
-              "group relative p-3 rounded-xl transition-all duration-300",
+              "group relative w-full py-3.5 rounded-xl flex flex-col items-center justify-center transition-all duration-300",
               activeView === item.id 
-                ? "bg-cyber-cyan/10 text-cyber-cyan border border-cyber-cyan/20 glow-cyan" 
-                : "text-muted hover:text-white hover:bg-white/5"
+                ? "bg-cyber-cyan/10 text-cyber-cyan border border-cyber-cyan/20 shadow-glow-cyan/5" 
+                : "text-muted hover:text-foreground hover:bg-foreground/5"
             )}
             title={item.label}
           >
-            <item.icon size={22} />
+            <item.icon size={20} />
             {activeView === item.id && (
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-cyber-cyan rounded-r-full" />
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-cyber-cyan rounded-r-full" />
             )}
-            <div className="mt-2 text-[10px] text-center font-mono uppercase tracking-widest">{item.label}</div>
+            <span className="mt-1.5 text-[9px] font-mono text-center font-bold uppercase tracking-widest leading-none scale-90 group-hover:scale-100 transition-all">
+              {item.label}
+            </span>
           </button>
         ))}
       </nav>
 
-      <div className="flex flex-col gap-6 text-muted mt-auto">
-        <button className="hover:text-white transition-colors">
-          <HelpCircle size={22} />
+      {/* Theme Toggle Button at bottom */}
+      <div className="mt-auto pt-4 border-t border-border w-full px-4 flex justify-center">
+        <button
+          onClick={() => onChangeTheme(themeMode === 'dark' ? 'light' : 'dark')}
+          className="w-10 h-10 rounded-xl bg-foreground/5 border border-border flex items-center justify-center text-muted hover:text-foreground transition-all duration-300 active:scale-95"
+          title={`Switch to ${themeMode === 'dark' ? 'Light' : 'Dark'} Mode`}
+        >
+          {themeMode === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
       </div>
     </aside>
   );
 }
+
+export default Sidebar;

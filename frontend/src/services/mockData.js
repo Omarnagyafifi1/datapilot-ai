@@ -17,7 +17,7 @@ export const mock = {
     ];
     return {
       results,
-      insights: ['Executed in mock mode. Sample results returned.'],
+      insights: [`Executed in mock mode for ${sql ? 'provided SQL' : 'mock SQL'}. Sample results returned.`],
     };
   }
 };

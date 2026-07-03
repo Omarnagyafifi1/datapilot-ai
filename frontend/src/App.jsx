@@ -1,23 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Layout } from './components/Layout';
 import { ChatInterface } from './components/ChatInterface';
-import { DataSourceManager } from './components/DataSourceManager';
-import { Dashboard } from './components/pages/Dashboard';
-import { SchemaViewer } from './components/pages/SchemaViewer';
-import { QueryHistory } from './components/pages/QueryHistory';
-import { Reports } from './components/pages/Reports';
-import { Documentation } from './components/pages/Documentation';
+import { Analytics } from './components/pages/Analytics';
+import { Evaluation } from './components/pages/Evaluation';
 import { Settings } from './components/pages/Settings';
-import QueryPage from './query/QueryPage';
+import { QueryHistory } from './components/pages/QueryHistory';
+import { Datasets } from './components/pages/Datasets';
 import { api } from './lib/api';
 
 function App() {
-  const [activeView, setActiveView] = useState('query'); 
+  const [activeView, setActiveView] = useState('chat'); 
   const [dataSources, setDataSources] = useState([]);
   const [selectedSourceId, setSelectedSourceId] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [themeMode, setThemeMode] = useState(() => {
+    const saved = localStorage.getItem('dp_theme_mode');
+    if (saved) return saved;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
 
-  const fetchSources = async () => {
+  useEffect(() => {
+    const root = document.documentElement;
+    if (themeMode === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    localStorage.setItem('dp_theme_mode', themeMode);
+  }, [themeMode]);
+
+  const fetchSources = useCallback(async () => {
     try {
       const resp = await api.datasources.list();
       if (resp.data.success) {
@@ -29,46 +40,56 @@ function App() {
     } catch (err) {
       console.error("Failed to fetch sources", err);
     }
-  };
+  }, [selectedSourceId]);
 
   useEffect(() => {
     fetchSources();
-  }, []);
+  }, [fetchSources]);
 
   const selectedSource = dataSources.find(s => s.id === selectedSourceId) || null;
 
   const renderView = () => {
     switch (activeView) {
-      case 'query':
-        return <QueryPage selectedSourceId={selectedSourceId} selectedSource={selectedSource} />;
-      case 'dashboard':
-        return <Dashboard 
-          onStartAnalyst={() => setActiveView('chat')} 
-          onManageSources={() => setActiveView('datasources')}
-          onViewHistory={() => setActiveView('history')}
-        />;
       case 'chat':
-        return <ChatInterface selectedSourceId={selectedSourceId} selectedSource={selectedSource} />;
-      case 'datasources':
         return (
-          <DataSourceManager 
-            onUpdate={fetchSources} 
+          <ChatInterface 
             selectedSourceId={selectedSourceId} 
-            onSelectSource={setSelectedSourceId} 
+            selectedSource={selectedSource} 
+            dataSources={dataSources}
+            onUpdateSources={fetchSources}
+            onSelectSource={setSelectedSourceId}
           />
         );
-      case 'schema':
-        return <SchemaViewer selectedSourceId={selectedSourceId} selectedSource={selectedSource} />;
       case 'history':
         return <QueryHistory />;
-      case 'reports':
-        return <Reports />;
-      case 'documentation':
-        return <Documentation />;
+      case 'analytics':
+        return <Analytics />;
+      case 'evaluation':
+        return <Evaluation />;
       case 'settings':
-        return <Settings />;
+        return (
+          <Settings 
+            themeMode={themeMode} 
+            onChangeTheme={setThemeMode} 
+          />
+        );
+      case 'datasets':
+        return (
+          <Datasets 
+            onSelectSource={setSelectedSourceId}
+            onNavigate={setActiveView}
+          />
+        );
       default:
-        return <Dashboard onStartAnalyst={() => setActiveView('chat')} />;
+        return (
+          <ChatInterface 
+            selectedSourceId={selectedSourceId} 
+            selectedSource={selectedSource} 
+            dataSources={dataSources}
+            onUpdateSources={fetchSources}
+            onSelectSource={setSelectedSourceId}
+          />
+        );
     }
   };
 
@@ -80,6 +101,8 @@ function App() {
       selectedSourceId={selectedSourceId}
       dataSources={dataSources}
       onSelectSource={setSelectedSourceId}
+      themeMode={themeMode}
+      onChangeTheme={setThemeMode}
     >
       {renderView()}
     </Layout>

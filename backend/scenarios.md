@@ -1402,3 +1402,94 @@
 }
 ```
 
+## 2026-07-02T12:57:55.728114+00:00 - failed
+
+```json
+{
+  "created_at": "2026-07-02T12:57:55.728114+00:00",
+  "status": "failed",
+  "question": "Top 5 customers by revenue",
+  "sql": "SELECT customer_name AS الاسم, SUM(order_total) AS الإيراد FROM orders GROUP BY customer_name ORDER BY SUM(order_total) DESC LIMIT 5",
+  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: orders\n[SQL: SELECT customer_name AS الاسم, SUM(order_total) AS الإيراد FROM orders GROUP BY customer_name ORDER BY SUM(order_total) DESC LIMIT 5]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+  "validation_reason": null
+}
+```
+
+## 2026-07-02T12:58:01.940310+00:00 - failed
+
+```json
+{
+  "created_at": "2026-07-02T12:58:01.940310+00:00",
+  "status": "failed",
+  "question": "Top 5 customers by revenue",
+  "sql": "SELECT name_ar AS الاسم, salary AS الراتب FROM employees ORDER BY salary DESC LIMIT 5",
+  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: employees\n[SQL: SELECT name_ar AS الاسم, salary AS الراتب FROM employees ORDER BY salary DESC LIMIT 5]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+  "validation_reason": null
+}
+```
+
+## 2026-07-02T13:45:38.754770+00:00 - failed
+
+```json
+{
+  "created_at": "2026-07-02T13:45:38.754770+00:00",
+  "status": "failed",
+  "question": "Aggregate monthly revenue logs",
+  "sql": "ERROR: Insufficient schema context.",
+  "error": "ERROR: Insufficient schema context.",
+  "validation_reason": null
+}
+```
+
+## 2026-07-02T13:45:50.636122+00:00 - failed
+
+```json
+{
+  "created_at": "2026-07-02T13:45:50.636122+00:00",
+  "status": "failed",
+  "question": "Show top 5 active customer counts",
+  "sql": "ERROR: Insufficient schema context.",
+  "error": "ERROR: Insufficient schema context.",
+  "validation_reason": null
+}
+```
+
+## 2026-07-03T14:46:54.056548+00:00 - failed
+
+```json
+{
+  "created_at": "2026-07-03T14:46:54.056548+00:00",
+  "status": "failed",
+  "question": "Show top 5 active customer counts",
+  "sql": "ERROR: Insufficient schema context.",
+  "error": "ERROR: Insufficient schema context.",
+  "validation_reason": null
+}
+```
+
+## 2026-07-03T15:01:11.004491+00:00 - failed
+
+```json
+{
+  "created_at": "2026-07-03T15:01:11.004491+00:00",
+  "status": "failed",
+  "question": "Aggregate monthly revenue logs",
+  "sql": "ERROR: Insufficient schema context.",
+  "error": "ERROR: Insufficient schema context.",
+  "validation_reason": null
+}
+```
+
+## 2026-07-03T15:03:07.038815+00:00 - failed
+
+```json
+{
+  "created_at": "2026-07-03T15:03:07.038815+00:00",
+  "status": "failed",
+  "question": "Aggregate monthly revenue logs",
+  "sql": "ERROR: Insufficient schema context.",
+  "error": "ERROR: Insufficient schema context.",
+  "validation_reason": null
+}
+```
+

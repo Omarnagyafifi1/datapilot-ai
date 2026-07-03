@@ -1,7 +1,8 @@
 import axios from 'axios';
 
-// Use 127.0.0.1 to avoid localhost/IPv6 resolution issues in dev
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+// When running in Vite dev server, requests to /api will be proxied to backend
+// In production, the backend serves the frontend and handles /api directly
+const API_BASE_URL = '/api';
 
 const client = axios.create({
   baseURL: API_BASE_URL,
@@ -19,14 +20,19 @@ export const api = {
     delete: (id) => client.delete(`/datasources/${id}`),
   },
   
-  query: (question, sourceId, threadId, previewOnly = false, sql = null) => client.post('/query', {
+  query: (question, sourceId, threadId, previewOnly = false, sql = null, config = {}, llmConfig = {}) => client.post('/query', {
     question,
     source_id: sourceId,
     thread_id: threadId,
     preview_only: previewOnly,
-    sql: sql
-  }),
-  queryApproval: (threadId, approved) => client.post('/query/approval', { thread_id: threadId, approved }),
+    sql: sql,
+    // LLM config override
+    provider: llmConfig.provider,
+    model: llmConfig.model,
+    temperature: llmConfig.temperature,
+    max_tokens: llmConfig.maxTokens,
+  }, config),
+  queryApproval: (threadId, approved, config = {}) => client.post('/query/approval', { thread_id: threadId, approved }, config),
   queryPage: ({ sql, sourceId, page, pageSize }) => client.post('/query/page', {
     sql,
     source_id: sourceId,
@@ -52,6 +58,26 @@ export const api = {
 
   uploads: {
     uploadCsv: (formData) => client.post('/data/csv', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+    preview: (formData) => client.post('/upload/preview', formData, { 
+      headers: { 'Content-Type': 'multipart/form-data' } 
+    }),
+    import: (formData) => client.post('/upload/import', formData, { 
+      headers: { 'Content-Type': 'multipart/form-data' } 
+    }),
+  },
+  
+  datasets: {
+    list: (search, sourceType) => client.get('/datasets', { 
+      params: { search, source_type: sourceType } 
+    }),
+    get: (id) => client.get(`/datasets/${id}`),
+    delete: (id) => client.delete(`/datasets/${id}`),
+    update: (id, data) => client.patch(`/datasets/${id}`, data),
+  },
+
+  settings: {
+    get: () => client.get('/settings/llm'),
+    update: (data) => client.put('/settings/llm', data),
   },
 };
 

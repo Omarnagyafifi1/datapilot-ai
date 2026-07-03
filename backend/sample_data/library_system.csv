@@ -1,0 +1,4 @@
+id,member_id,book_id,loan_date,due_date,status
+1,1,1,2023-05-01,2023-05-15,returned
+2,2,2,2023-05-10,2023-05-24,returned
+3,3,3,2023-06-01,2023-06-15,active
