@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Optional
 from urllib.parse import quote_plus
 from uuid import UUID, uuid4
 import uuid
+import json
 
 from cryptography.fernet import Fernet
 from fastapi import HTTPException
-from sqlalchemy import Column, DateTime, Integer, MetaData, String, Table, create_engine, delete, insert, select
+from sqlalchemy import Column, DateTime, Integer, MetaData, String, Table, create_engine, delete, insert, select, Text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -31,6 +33,26 @@ _DATA_SOURCES = Table(
     Column("username", String(255), nullable=False, default=""),
     Column("enc_password", String(2048), nullable=False),
     Column("created_at", DateTime, nullable=False),
+)
+
+_DATASET_METADATA = Table(
+    "dataset_metadata",
+    _METADATA,
+    Column("id", String(36), primary_key=True),
+    Column("source_id", String(36), nullable=False),
+    Column("name", String(255), nullable=False),
+    Column("source_type", String(32), nullable=False),
+    Column("original_filename", String(255), nullable=False),
+    Column("file_size", Integer, nullable=False),
+    Column("file_hash", String(64), nullable=False),
+    Column("import_timestamp", DateTime, nullable=False),
+    Column("table_count", Integer, nullable=False),
+    Column("total_row_count", Integer, nullable=False),
+    Column("column_count", Integer, nullable=False),
+    Column("tables_json", Text, nullable=True),
+    Column("relationships_json", Text, nullable=True),
+    Column("quality_report_json", Text, nullable=True),
+    Column("ai_summary", Text, nullable=True),
 )
 
 _REGISTRY_ENGINE: Engine | None = None
@@ -64,7 +86,7 @@ def _get_store_engine() -> Engine:
         pool_pre_ping=True,
         connect_args=connect_args,
     )
-    _METADATA.create_all(_REGISTRY_ENGINE, tables=[_DATA_SOURCES])
+    _METADATA.create_all(_REGISTRY_ENGINE, tables=[_DATA_SOURCES, _DATASET_METADATA])
     return _REGISTRY_ENGINE
 
 
@@ -206,6 +228,182 @@ def get_conn_string(id: str) -> str:
     return conn_string
 
 
+# Dataset Metadata Methods
+def save_dataset_metadata(
+    source_id: str,
+    name: str,
+    source_type: str,
+    original_filename: str,
+    file_size: int,
+    file_hash: str,
+    tables: list,
+    relationships: list,
+    quality_report: dict,
+    ai_summary: str = None,
+) -> str:
+    """Save dataset metadata to the registry."""
+    dataset_uuid = str(uuid4())
+    
+    # Calculate summary stats
+    table_count = len(tables)
+    total_row_count = sum(t.get("row_count", 0) for t in tables)
+    column_count = sum(len(t.get("columns", [])) for t in tables)
+    
+    payload = {
+        "id": dataset_uuid,
+        "source_id": source_id,
+        "name": name,
+        "source_type": source_type,
+        "original_filename": original_filename,
+        "file_size": file_size,
+        "file_hash": file_hash,
+        "import_timestamp": datetime.utcnow(),
+        "table_count": table_count,
+        "total_row_count": total_row_count,
+        "column_count": column_count,
+        "tables_json": json.dumps(tables) if tables else None,
+        "relationships_json": json.dumps(relationships) if relationships else None,
+        "quality_report_json": json.dumps(quality_report) if quality_report else None,
+        "ai_summary": ai_summary,
+    }
+    
+    session_local = _get_session_factory()
+    session: Session = session_local()
+    try:
+        session.execute(insert(_DATASET_METADATA).values(**payload))
+        session.commit()
+    except Exception as exc:
+        session.rollback()
+        logger.exception("Failed to save dataset metadata")
+        raise HTTPException(status_code=500, detail="Failed to save dataset metadata") from exc
+    finally:
+        session.close()
+    
+    return dataset_uuid
+
+
+def get_dataset_by_hash(file_hash: str) -> Optional[dict]:
+    """Check if a dataset with the same file hash already exists."""
+    session_local = _get_session_factory()
+    session: Session = session_local()
+    try:
+        row = session.execute(
+            select(_DATASET_METADATA).where(_DATASET_METADATA.c.file_hash == file_hash)
+        ).mappings().first()
+        if row:
+            return dict(row)
+        return None
+    finally:
+        session.close()
+
+
+def list_datasets(search_query: str = None, source_type: str = None) -> list[dict]:
+    """List all datasets with optional filtering."""
+    session_local = _get_session_factory()
+    session: Session = session_local()
+    try:
+        stmt = select(
+            _DATASET_METADATA.c.id,
+            _DATASET_METADATA.c.source_id,
+            _DATASET_METADATA.c.name,
+            _DATASET_METADATA.c.source_type,
+            _DATASET_METADATA.c.original_filename,
+            _DATASET_METADATA.c.file_size,
+            _DATASET_METADATA.c.file_hash,
+            _DATASET_METADATA.c.import_timestamp,
+            _DATASET_METADATA.c.table_count,
+            _DATASET_METADATA.c.total_row_count,
+            _DATASET_METADATA.c.column_count,
+            _DATASET_METADATA.c.ai_summary,
+        )
+        
+        if search_query:
+            stmt = stmt.where(_DATASET_METADATA.c.name.ilike(f"%{search_query}%"))
+        if source_type:
+            stmt = stmt.where(_DATASET_METADATA.c.source_type == source_type)
+        
+        rows = session.execute(stmt).mappings().all()
+        result = []
+        for row in rows:
+            item = dict(row)
+            if hasattr(item.get("import_timestamp"), "isoformat"):
+                item["import_timestamp"] = item["import_timestamp"].isoformat()
+            result.append(item)
+        return result
+    finally:
+        session.close()
+
+
+def get_dataset(id: str) -> Optional[dict]:
+    """Get a single dataset by ID."""
+    session_local = _get_session_factory()
+    session: Session = session_local()
+    try:
+        row = session.execute(
+            select(_DATASET_METADATA).where(_DATASET_METADATA.c.id == id)
+        ).mappings().first()
+        if row:
+            return dict(row)
+        return None
+    finally:
+        session.close()
+
+
+def delete_dataset(id: str) -> None:
+    """Delete a dataset and its associated datasource."""
+    session_local = _get_session_factory()
+    session: Session = session_local()
+    try:
+        # Get source_id first
+        row = session.execute(
+            select(_DATASET_METADATA.c.source_id).where(_DATASET_METADATA.c.id == id)
+        ).mappings().first()
+        
+        if row:
+            # Delete dataset metadata
+            session.execute(delete(_DATASET_METADATA).where(_DATASET_METADATA.c.id == id))
+            # Delete the source
+            session.execute(delete(_DATA_SOURCES).where(_DATA_SOURCES.c.id == row["source_id"]))
+            session.commit()
+        else:
+            session.rollback()
+            raise HTTPException(status_code=404, detail="Dataset not found")
+    finally:
+        session.close()
+
+
+def update_dataset_name(id: str, name: str) -> None:
+    """Update the name of a dataset."""
+    session_local = _get_session_factory()
+    session: Session = session_local()
+    try:
+        session.execute(
+            _DATASET_METADATA.update().where(_DATASET_METADATA.c.id == id).values(name=name)
+        )
+        session.commit()
+    except Exception as exc:
+        session.rollback()
+        raise HTTPException(status_code=500, detail="Failed to update dataset") from exc
+    finally:
+        session.close()
+
+
+def update_ai_summary(id: str, summary: str) -> None:
+    """Update the AI summary for a dataset."""
+    session_local = _get_session_factory()
+    session: Session = session_local()
+    try:
+        session.execute(
+            _DATASET_METADATA.update().where(_DATASET_METADATA.c.id == id).values(ai_summary=summary)
+        )
+        session.commit()
+    except Exception as exc:
+        session.rollback()
+        raise HTTPException(status_code=500, detail="Failed to update AI summary") from exc
+    finally:
+        session.close()
+
+
 class DataSourceService:
     def save_source(self, params: dict) -> dict:
         return save_source(params)
@@ -218,3 +416,24 @@ class DataSourceService:
 
     def get_conn_string(self, id: str) -> str:
         return get_conn_string(id)
+
+    def save_dataset_metadata(self, **kwargs) -> str:
+        return save_dataset_metadata(**kwargs)
+
+    def get_dataset_by_hash(self, file_hash: str) -> Optional[dict]:
+        return get_dataset_by_hash(file_hash)
+
+    def list_datasets(self, search_query: str = None, source_type: str = None) -> list[dict]:
+        return list_datasets(search_query=search_query, source_type=source_type)
+
+    def get_dataset(self, id: str) -> Optional[dict]:
+        return get_dataset(id)
+
+    def delete_dataset(self, id: str) -> None:
+        delete_dataset(id)
+
+    def update_dataset_name(self, id: str, name: str) -> None:
+        update_dataset_name(id, name)
+
+    def update_ai_summary(self, id: str, summary: str) -> None:
+        update_ai_summary(id, summary)

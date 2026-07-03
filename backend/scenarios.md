@@ -1454,3 +1454,42 @@
 }
 ```
 
+## 2026-07-03T14:46:54.056548+00:00 - failed
+
+```json
+{
+  "created_at": "2026-07-03T14:46:54.056548+00:00",
+  "status": "failed",
+  "question": "Show top 5 active customer counts",
+  "sql": "ERROR: Insufficient schema context.",
+  "error": "ERROR: Insufficient schema context.",
+  "validation_reason": null
+}
+```
+
+## 2026-07-03T15:01:11.004491+00:00 - failed
+
+```json
+{
+  "created_at": "2026-07-03T15:01:11.004491+00:00",
+  "status": "failed",
+  "question": "Aggregate monthly revenue logs",
+  "sql": "ERROR: Insufficient schema context.",
+  "error": "ERROR: Insufficient schema context.",
+  "validation_reason": null
+}
+```
+
+## 2026-07-03T15:03:07.038815+00:00 - failed
+
+```json
+{
+  "created_at": "2026-07-03T15:03:07.038815+00:00",
+  "status": "failed",
+  "question": "Aggregate monthly revenue logs",
+  "sql": "ERROR: Insufficient schema context.",
+  "error": "ERROR: Insufficient schema context.",
+  "validation_reason": null
+}
+```
+

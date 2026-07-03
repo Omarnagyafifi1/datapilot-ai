@@ -4,8 +4,8 @@ import { ChatInterface } from './components/ChatInterface';
 import { Analytics } from './components/pages/Analytics';
 import { Evaluation } from './components/pages/Evaluation';
 import { Settings } from './components/pages/Settings';
-import { SchemaViewer } from './components/pages/SchemaViewer';
 import { QueryHistory } from './components/pages/QueryHistory';
+import { Datasets } from './components/pages/Datasets';
 import { api } from './lib/api';
 
 function App() {
@@ -60,13 +60,6 @@ function App() {
             onSelectSource={setSelectedSourceId}
           />
         );
-      case 'schema':
-        return (
-          <SchemaViewer 
-            selectedSourceId={selectedSourceId} 
-            selectedSource={selectedSource} 
-          />
-        );
       case 'history':
         return <QueryHistory />;
       case 'analytics':
@@ -78,6 +71,13 @@ function App() {
           <Settings 
             themeMode={themeMode} 
             onChangeTheme={setThemeMode} 
+          />
+        );
+      case 'datasets':
+        return (
+          <Datasets 
+            onSelectSource={setSelectedSourceId}
+            onNavigate={setActiveView}
           />
         );
       default:

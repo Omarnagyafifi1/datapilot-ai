@@ -1,12 +1,12 @@
-import { MessageSquare, BarChart3, Award, Settings, Cpu, Database, Clock, Sun, Moon } from 'lucide-react';
+import { MessageSquare, BarChart3, Award, Settings, Cpu, Clock, Sun, Moon, Archive } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 const navItems = [
   { id: 'chat', icon: MessageSquare, label: 'Chats' },
-  { id: 'schema', icon: Database, label: 'Schema' },
   { id: 'history', icon: Clock, label: 'History' },
   { id: 'analytics', icon: BarChart3, label: 'Analytics' },
   { id: 'evaluation', icon: Award, label: 'Evaluation' },
+  { id: 'datasets', icon: Archive, label: 'Datasets' },
   { id: 'settings', icon: Settings, label: 'Settings' }
 ];
 

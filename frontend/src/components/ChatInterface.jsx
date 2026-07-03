@@ -101,11 +101,34 @@ export function ChatInterface({
     name: '', db_type: 'sqlite', host: '', port: 5432, db_name: '', username: '', password: ''
   });
 
-  // Providers dropdown state
-  const [provider, setProvider] = useState(() => localStorage.getItem('dp_provider') || 'groq');
-  const [model] = useState(() => localStorage.getItem('dp_model') || 'llama-3.3-70b-versatile');
+  // LLM settings state - loaded from backend
+  const [llmSettings, setLlmSettings] = useState({
+    provider: 'groq',
+    model: 'llama-3.3-70b-versatile',
+    temperature: 0.2,
+    maxTokens: 2048
+  });
 
   const scrollRef = useRef(null);
+
+  // Load LLM settings from backend on mount
+  useEffect(() => {
+    api.settings.get()
+      .then(resp => {
+        if (resp.data?.success && resp.data?.data) {
+          const settings = resp.data.data;
+          setLlmSettings({
+            provider: settings.provider || 'groq',
+            model: settings.model || 'llama-3.3-70b-versatile',
+            temperature: settings.temperature ?? 0.2,
+            maxTokens: settings.max_tokens ?? 2048
+          });
+        }
+      })
+      .catch(err => {
+        console.warn('Could not load LLM settings from backend:', err);
+      });
+  }, []);
 
   // Load current messages when activeChatId changes
   useEffect(() => {
@@ -177,10 +200,10 @@ export function ChatInterface({
     }
   }, [messages, loading, loadingStage]);
 
-  // Sync preferences
+  // Sync preferences - update provider in llmSettings
   const handleProviderChange = (e) => {
     const val = e.target.value;
-    setProvider(val);
+    setLlmSettings(prev => ({ ...prev, provider: val }));
     localStorage.setItem('dp_provider', val);
   };
 
@@ -192,8 +215,8 @@ export function ChatInterface({
       title: 'New conversation ' + new Date().toLocaleDateString(),
       messages: [],
       selectedSourceId: initialSelectedSourceId,
-      provider,
-      model,
+      provider: llmSettings.provider,
+      model: llmSettings.model,
       timestamp: new Date().toISOString()
     };
     setConversations(prev => [newChat, ...prev]);
@@ -267,7 +290,7 @@ export function ChatInterface({
 
       const resp = await api.query(queryText, initialSelectedSourceId, chatSessionId, false, null, {
         signal: controller.signal,
-      });
+      }, llmSettings);
 
       const payload = resp.data?.data ?? resp.data ?? {};
       const derivedDoc = {
@@ -305,8 +328,8 @@ export function ChatInterface({
           title: queryText.slice(0, 30) + (queryText.length > 30 ? '...' : ''),
           messages: updatedMsgs,
           selectedSourceId: initialSelectedSourceId,
-          provider,
-          model,
+          provider: llmSettings.provider,
+          model: llmSettings.model,
           timestamp: new Date().toISOString()
         };
         setConversations(prev => [newChat, ...prev]);
@@ -521,7 +544,7 @@ export function ChatInterface({
           <div className="flex items-center gap-3">
             <span className="text-[9px] font-mono text-muted uppercase">ENGINE:</span>
             <select
-              value={provider}
+              value={llmSettings.provider}
               onChange={handleProviderChange}
               className="bg-foreground/5 border border-border rounded-lg px-2.5 py-1 text-[10px] font-mono outline-none text-foreground cursor-pointer"
             >

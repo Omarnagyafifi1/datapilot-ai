@@ -1,10 +1,9 @@
 import { api } from '../lib/api';
-import { mock } from './mockData';
 
 export const queryService = {
-  generate: async (question, sourceId) => {
+  generate: async (question, sourceId, llmConfig = {}) => {
     try {
-      const resp = await api.query(question, sourceId, null, true);
+      const resp = await api.query(question, sourceId, null, true, null, {}, llmConfig);
       if (resp && resp.data) {
         const data = resp.data.data ?? resp.data;
         if (data.success === false) {
@@ -22,7 +21,6 @@ export const queryService = {
       if (e.response?.data?.detail) throw new Error(e.response.data.detail, { cause: e });
       throw e;
     }
-    return mock.generate(question);
   },
 
   execute: async (question, sql, sourceId, threadId) => {
@@ -44,7 +42,6 @@ export const queryService = {
       if (e.response?.data?.detail) throw new Error(e.response.data.detail, { cause: e });
       throw e;
     }
-    return mock.execute(sql);
   },
 
   approve: async (threadId, approved) => {

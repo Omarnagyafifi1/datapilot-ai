@@ -51,36 +51,79 @@ export function Settings({ themeMode, onChangeTheme }) {
 
   // Settings state
   const [apiKeys, setApiKeys] = useState({
-    openai: localStorage.getItem('dp_key_openai') || '',
-    anthropic: localStorage.getItem('dp_key_anthropic') || '',
-    gemini: localStorage.getItem('dp_key_gemini') || '',
-    groq: localStorage.getItem('dp_key_groq') || '',
-    deepseek: localStorage.getItem('dp_key_deepseek') || '',
-    openrouter: localStorage.getItem('dp_key_openrouter') || '',
-    together: localStorage.getItem('dp_key_together') || '',
-    ollama: localStorage.getItem('dp_key_ollama') || ''
+    openai: '',
+    anthropic: '',
+    gemini: '',
+    groq: '',
+    deepseek: '',
+    openrouter: '',
+    together: '',
+    ollama: ''
   });
 
-  const [selectedProvider, setSelectedProvider] = useState(localStorage.getItem('dp_provider') || 'groq');
-  const [selectedModel, setSelectedModel] = useState(localStorage.getItem('dp_model') || 'llama-3.3-70b-versatile');
+  const [selectedProvider, setSelectedProvider] = useState('groq');
+  const [selectedModel, setSelectedModel] = useState('llama-3.3-70b-versatile');
 
   const [appPrefs, setAppPrefs] = useState({
-    interfaceScale: localStorage.getItem('dp_scale') || 'medium',
-    autoExecute: localStorage.getItem('dp_auto_execute') === 'true',
-    enterToSend: localStorage.getItem('dp_enter_to_send') !== 'false',
-    streamResponse: localStorage.getItem('dp_stream_response') !== 'false'
+    interfaceScale: 'medium',
+    autoExecute: false,
+    enterToSend: true,
+    streamResponse: true
   });
 
   const [advanced, setAdvanced] = useState({
-    temperature: parseFloat(localStorage.getItem('dp_temperature') || '0.2'),
-    maxTokens: parseInt(localStorage.getItem('dp_max_tokens') || '2048'),
-    developerMode: localStorage.getItem('dp_dev_mode') === 'true'
+    temperature: 0.2,
+    maxTokens: 2048,
+    developerMode: false
   });
 
+  // Load settings from backend on mount
   useEffect(() => {
     api.health()
       .then(resp => setHealthStatus(resp.data?.status === 'ok' ? 'online' : 'offline'))
       .catch(() => setHealthStatus('offline'));
+
+    // Load LLM settings from backend
+    api.settings.get()
+      .then(resp => {
+        if (resp.data?.success && resp.data?.data) {
+          const settings = resp.data.data;
+          setSelectedProvider(settings.provider || 'groq');
+          setSelectedModel(settings.model || 'llama-3.3-70b-versatile');
+          setAdvanced(prev => ({
+            ...prev,
+            temperature: settings.temperature ?? prev.temperature,
+            maxTokens: settings.max_tokens ?? prev.maxTokens,
+          }));
+        }
+      })
+      .catch(err => {
+        console.warn('Could not load LLM settings from backend, using localStorage fallback:', err);
+        // Fallback to localStorage if backend unavailable
+        const storedApiKeys = {
+          openai: localStorage.getItem('dp_key_openai') || '',
+          anthropic: localStorage.getItem('dp_key_anthropic') || '',
+          gemini: localStorage.getItem('dp_key_gemini') || '',
+          groq: localStorage.getItem('dp_key_groq') || '',
+          deepseek: localStorage.getItem('dp_key_deepseek') || '',
+          openrouter: localStorage.getItem('dp_key_openrouter') || '',
+          together: localStorage.getItem('dp_key_together') || '',
+          ollama: localStorage.getItem('dp_key_ollama') || ''
+        };
+        const storedProvider = localStorage.getItem('dp_provider') || 'groq';
+        const storedModel = localStorage.getItem('dp_model') || 'llama-3.3-70b-versatile';
+        const storedTemp = parseFloat(localStorage.getItem('dp_temperature') || '0.2');
+        const storedMaxTokens = parseInt(localStorage.getItem('dp_max_tokens') || '2048');
+        
+        setApiKeys(storedApiKeys);
+        setSelectedProvider(storedProvider);
+        setSelectedModel(storedModel);
+        setAdvanced(prev => ({
+          ...prev,
+          temperature: storedTemp,
+          maxTokens: storedMaxTokens
+        }));
+      });
   }, []);
 
   // Update default model if provider changes and current model is not compatible
@@ -92,8 +135,8 @@ export function Settings({ themeMode, onChangeTheme }) {
     }
   }, [selectedProvider, selectedModel]);
 
-  const handleSave = () => {
-    // Save API keys
+  const handleSave = async () => {
+    // Save API keys to localStorage (for frontend use)
     Object.entries(apiKeys).forEach(([provider, key]) => {
       localStorage.setItem(`dp_key_${provider}`, key);
     });
@@ -112,6 +155,19 @@ export function Settings({ themeMode, onChangeTheme }) {
     localStorage.setItem('dp_temperature', String(advanced.temperature));
     localStorage.setItem('dp_max_tokens', String(advanced.maxTokens));
     localStorage.setItem('dp_dev_mode', String(advanced.developerMode));
+
+    // Save LLM settings to backend
+    try {
+      await api.settings.update({
+        provider: selectedProvider,
+        model: selectedModel,
+        temperature: advanced.temperature,
+        maxTokens: advanced.maxTokens,
+        apiKeys: apiKeys,
+      });
+    } catch (err) {
+      console.warn('Could not save LLM settings to backend:', err);
+    }
 
     setSavedStatus(true);
     setTimeout(() => setSavedStatus(false), 2000);
