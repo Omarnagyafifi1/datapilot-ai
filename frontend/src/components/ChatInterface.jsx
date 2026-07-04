@@ -638,6 +638,7 @@ export function ChatInterface({
                         </div>
                       </div>
                     )}
+                  </div>
                 </div>
               );
             })}
