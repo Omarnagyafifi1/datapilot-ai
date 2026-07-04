@@ -1493,3 +1493,211 @@
 }
 ```
 
+## 2026-07-04T13:18:13.480190+00:00 - failed
+
+```json
+{
+  "created_at": "2026-07-04T13:18:13.480190+00:00",
+  "status": "failed",
+  "question": "Show top 5 active customer counts",
+  "sql": "ERROR: Insufficient schema context.",
+  "error": "ERROR: Insufficient schema context.",
+  "validation_reason": null
+}
+```
+
+## 2026-07-04T13:32:49.832539+00:00 - failed
+
+```json
+{
+  "created_at": "2026-07-04T13:32:49.832539+00:00",
+  "status": "failed",
+  "question": "Show top 5 active customer counts",
+  "sql": "ERROR: Insufficient schema context.",
+  "error": "ERROR: Insufficient schema context.",
+  "validation_reason": null
+}
+```
+
+## 2026-07-04T13:48:56.050251+00:00 - failed
+
+```json
+{
+  "created_at": "2026-07-04T13:48:56.050251+00:00",
+  "status": "failed",
+  "question": "Show top 5 active customer counts",
+  "sql": "ERROR: Insufficient schema context.",
+  "error": "ERROR: Insufficient schema context.",
+  "validation_reason": null
+}
+```
+
+## 2026-07-04T13:50:05.264939+00:00 - failed
+
+```json
+{
+  "created_at": "2026-07-04T13:50:05.264939+00:00",
+  "status": "failed",
+  "question": "Show top 5 active customer counts",
+  "sql": "ERROR: Insufficient schema context.",
+  "error": "ERROR: Insufficient schema context.",
+  "validation_reason": null
+}
+```
+
+## 2026-07-04T13:54:39.300380+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T13:54:39.300380+00:00",
+  "status": "resolved",
+  "question": "Show top 5 employees by salary",
+  "sql": "SELECT name, salary FROM employees ORDER BY salary DESC LIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-04T13:56:44.834901+00:00 - failed
+
+```json
+{
+  "created_at": "2026-07-04T13:56:44.834901+00:00",
+  "status": "failed",
+  "question": "Show average salary by department",
+  "sql": "SELECT department, SUM(salary) AS total_salary FROM test_data GROUP BY department LIMIT 1000",
+  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: test_data\n[SQL: SELECT department, SUM(salary) AS total_salary FROM test_data GROUP BY department LIMIT 1000]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+  "validation_reason": null
+}
+```
+
+## 2026-07-04T13:57:01.993045+00:00 - failed
+
+```json
+{
+  "created_at": "2026-07-04T13:57:01.993045+00:00",
+  "status": "failed",
+  "question": "Show average salary by department",
+  "sql": "SELECT department, SUM(salary) AS total_salary FROM test_data GROUP BY department LIMIT 1000",
+  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: test_data\n[SQL: SELECT department, SUM(salary) AS total_salary FROM test_data GROUP BY department LIMIT 1000]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+  "validation_reason": null
+}
+```
+
+## 2026-07-04T14:45:45.740180+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T14:45:45.740180+00:00",
+  "status": "resolved",
+  "question": "List employees with performance score above 4.5",
+  "sql": "SELECT id, name, department, salary, performance_score \nFROM employees \nWHERE performance_score > 4.5 \nLIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-04T14:49:30.771538+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T14:49:30.771538+00:00",
+  "status": "resolved",
+  "question": "List employees with performance score above 4.5",
+  "sql": "SELECT id, name, department, salary, performance_score \nFROM employees \nWHERE performance_score > 4.5 \nLIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-04T15:04:15.697004+00:00 - failed
+
+```json
+{
+  "created_at": "2026-07-04T15:04:15.697004+00:00",
+  "status": "failed",
+  "question": "List employees with performance score above 4.5",
+  "sql": "SELECT id, name, department, salary, performance_score \nFROM employees \nWHERE performance_score > 4.5 \nLIMIT 1000",
+  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: employees\n[SQL: SELECT id, name, department, salary, performance_score \nFROM employees \nWHERE performance_score > 4.5 \nLIMIT 1000]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+  "validation_reason": null
+}
+```
+
+## 2026-07-04T15:04:29.925007+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T15:04:29.925007+00:00",
+  "status": "resolved",
+  "question": "List employees with performance score above 4.5",
+  "sql": "SELECT id, name, department, salary, performance_score \nFROM employees \nWHERE performance_score > 4.5 \nLIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+
+## 2026-07-04T15:04:55.252262+00:00 - failed
+
+```json
+{
+  "created_at": "2026-07-04T15:04:55.252262+00:00",
+  "status": "failed",
+  "question": "Show average salary by department",
+  "sql": "SELECT department, SUM(salary) AS total_salary FROM test_data GROUP BY department LIMIT 1000",
+  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: test_data\n[SQL: SELECT department, SUM(salary) AS total_salary FROM test_data GROUP BY department LIMIT 1000]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+  "validation_reason": null
+}
+```
+
+## 2026-07-04T15:06:08.576607+00:00 - failed
+
+```json
+{
+  "created_at": "2026-07-04T15:06:08.576607+00:00",
+  "status": "failed",
+  "question": "Show average salary by department",
+  "sql": "SELECT department, SUM(salary) AS total_salary FROM test_data GROUP BY department LIMIT 1000",
+  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: test_data\n[SQL: SELECT department, SUM(salary) AS total_salary FROM test_data GROUP BY department LIMIT 1000]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+  "validation_reason": null
+}
+```
+
+## 2026-07-04T15:10:20.926603+00:00 - failed
+
+```json
+{
+  "created_at": "2026-07-04T15:10:20.926603+00:00",
+  "status": "failed",
+  "question": "Show average salary by department",
+  "sql": "SELECT department, SUM(salary) AS total_salary FROM test_data GROUP BY department LIMIT 1000",
+  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: test_data\n[SQL: SELECT department, SUM(salary) AS total_salary FROM test_data GROUP BY department LIMIT 1000]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+  "validation_reason": null
+}
+```
+
+## 2026-07-04T15:28:32.311778+00:00 - failed
+
+```json
+{
+  "created_at": "2026-07-04T15:28:32.311778+00:00",
+  "status": "failed",
+  "question": "Show average salary by department",
+  "sql": "SELECT department, SUM(salary) AS total_salary FROM test_data GROUP BY department LIMIT 1000",
+  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: test_data\n[SQL: SELECT department, SUM(salary) AS total_salary FROM test_data GROUP BY department LIMIT 1000]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+  "validation_reason": null
+}
+```
+
+## 2026-07-04T15:28:58.647847+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T15:28:58.647847+00:00",
+  "status": "resolved",
+  "question": "List employees with performance score above 4.5",
+  "sql": "SELECT id, name, department, salary, performance_score \nFROM employees \nWHERE performance_score > 4.5 \nLIMIT 1000",
+  "error": null,
+  "validation_reason": null
+}
+```
+

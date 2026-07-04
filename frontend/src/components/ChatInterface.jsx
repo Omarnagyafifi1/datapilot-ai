@@ -130,15 +130,12 @@ export function ChatInterface({
       });
   }, []);
 
-  // Load current messages when activeChatId changes
+// Load current messages when activeChatId changes
   useEffect(() => {
     if (activeChatId) {
       const activeChat = conversations.find(c => c.id === activeChatId);
       if (activeChat) {
         setMessages(activeChat.messages || []);
-        if (activeChat.selectedSourceId) {
-          onSelectSource(activeChat.selectedSourceId);
-        }
       }
     } else {
       setMessages([
@@ -150,7 +147,7 @@ export function ChatInterface({
         }
       ]);
     }
-  }, [activeChatId, conversations, onSelectSource]);
+  }, [activeChatId]);
 
   // Save conversations to localStorage
   useEffect(() => {
@@ -206,6 +203,7 @@ export function ChatInterface({
     setLlmSettings(prev => ({ ...prev, provider: val }));
     localStorage.setItem('dp_provider', val);
   };
+
 
   // Create new conversation session
   const startNewChat = () => {
