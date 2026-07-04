@@ -66,40 +66,164 @@ def _sanitize_key(key: str | None) -> str:
     # Strip any hidden non-ASCII characters (like zero-width spaces or directional markers)
     return key.encode("ascii", "ignore").decode("ascii").strip()
 
-def get_llm(provider: str | None = None) -> BaseLLM:
-    """Factory method to get an LLM instance based on dynamic settings or .env"""
-    dynamic_settings = _load()
-    api_keys = dynamic_settings.get("api_keys", {})
 
-    groq_key = _sanitize_key(api_keys.get("groq") or settings.GROQ_API_KEY)
-    openrouter_key = _sanitize_key(api_keys.get("openrouter") or settings.OPENROUTER_API_KEY)
-    gemini_key = _sanitize_key(api_keys.get("gemini") or settings.GEMINI_API_KEY)
+# Optional LLM providers - import only if available
+try:
+    from app.llm.providers.openai_llm import OpenAILLM
+except ImportError:
+    OpenAILLM = None
 
-    provider = provider or dynamic_settings.get("llm_provider") or settings.LLM_PROVIDER
-    if provider:
-        provider = provider.strip().lower()
-    # 'mock' is always valid; unknown providers fall back to litellm
-    if provider not in VALID_PROVIDERS:
-        logger.warning("Unknown provider '%s', falling back to litellm", provider)
-        provider = "litellm"
+try:
+    from app.llm.providers.anthropic_llm import AnthropicLLM
+except ImportError:
+    AnthropicLLM = None
 
-    if provider == "mock":
-        return _get_cached_llm("mock", groq_key, openrouter_key, gemini_key)
+try:
+    from app.llm.providers.deepseek_llm import DeepSeekLLM
+except ImportError:
+    DeepSeekLLM = None
 
-    # Build the fallback map of available configured providers
-    providers_map = {}
-    if groq_key:
-        providers_map["groq"] = _get_cached_llm("groq", groq_key, openrouter_key, gemini_key)
-    if gemini_key:
-        providers_map["gemini"] = _get_cached_llm("gemini", groq_key, openrouter_key, gemini_key)
-    if openrouter_key:
-        providers_map["openrouter"] = _get_cached_llm("openrouter", groq_key, openrouter_key, gemini_key)
+try:
+    from app.llm.providers.together_llm import TogetherLLM
+except ImportError:
+    TogetherLLM = None
 
-    primary = provider
-    if primary not in providers_map:
-        if providers_map:
-            primary = list(providers_map.keys())[0]
-        else:
-            return _get_cached_llm(provider, groq_key, openrouter_key, gemini_key)
+try:
+    from app.llm.providers.ollama_llm import OllamaLLM
+except ImportError:
+    OllamaLLM = None
 
-    return FallbackLLM(primary_provider=primary, providers_map=providers_map)
+# LLM settings service - fallback to empty settings if not available
+try:
+    from app.services.llm_settings_service import get_llm_settings
+except ImportError:
+    def get_llm_settings():
+        return {}
+
+
+def get_llm(
+    provider: str = None,
+    model: str = None,
+    temperature: float = None,
+    max_tokens: int = None,
+    api_keys: dict = None,
+) -> BaseLLM:
+    """Factory method to get an LLM instance based on dynamic settings, overrides, or .env"""
+    # If no parameters are provided, default to FallbackLLM behavior from main
+    if provider is None and model is None and temperature is None and max_tokens is None and api_keys is None:
+        dynamic_settings = _load()
+        runtime_settings = get_llm_settings()
+        
+        db_keys = dynamic_settings.get("api_keys") or runtime_settings.get("api_keys") or {}
+        groq_key = _sanitize_key(db_keys.get("groq") or settings.GROQ_API_KEY)
+        openrouter_key = _sanitize_key(db_keys.get("openrouter") or settings.OPENROUTER_API_KEY)
+        gemini_key = _sanitize_key(db_keys.get("gemini") or settings.GEMINI_API_KEY)
+
+        provider_name = dynamic_settings.get("llm_provider") or runtime_settings.get("provider") or settings.LLM_PROVIDER or settings.DEFAULT_LLM_PROVIDER
+        if provider_name:
+            provider_name = provider_name.strip().lower()
+        if provider_name not in VALID_PROVIDERS:
+            logger.warning("Unknown provider '%s', falling back to litellm", provider_name)
+            provider_name = "litellm"
+
+        if provider_name == "mock":
+            return _get_cached_llm("mock", groq_key, openrouter_key, gemini_key)
+
+        providers_map = {}
+        if groq_key:
+            providers_map["groq"] = _get_cached_llm("groq", groq_key, openrouter_key, gemini_key)
+        if gemini_key:
+            providers_map["gemini"] = _get_cached_llm("gemini", groq_key, openrouter_key, gemini_key)
+        if openrouter_key:
+            providers_map["openrouter"] = _get_cached_llm("openrouter", groq_key, openrouter_key, gemini_key)
+
+        primary = provider_name
+        if primary not in providers_map:
+            if providers_map:
+                primary = list(providers_map.keys())[0]
+            else:
+                return _get_cached_llm(provider_name, groq_key, openrouter_key, gemini_key)
+
+        return FallbackLLM(primary_provider=primary, providers_map=providers_map)
+
+    # Otherwise, instantiate a single LLM with the provided parameters
+    runtime_settings = get_llm_settings()
+    provider = provider or runtime_settings.get("provider", settings.DEFAULT_LLM_PROVIDER)
+    model = model or runtime_settings.get("model", settings.DEFAULT_LLM_MODEL)
+    temperature = temperature if temperature is not None else runtime_settings.get("temperature", 0.2)
+    max_tokens = max_tokens or runtime_settings.get("max_tokens", 2048)
+    api_keys = api_keys or runtime_settings.get("api_keys", {})
+
+    if provider == "groq":
+        return GroqLLM(
+            api_key=api_keys.get("groq") or settings.GROQ_API_KEY,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+    elif provider == "openrouter":
+        return OpenRouterLLM(
+            api_key=api_keys.get("openrouter") or settings.OPENROUTER_API_KEY,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+    elif provider == "gemini":
+        return GeminiLLM(
+            api_key=api_keys.get("gemini") or settings.GEMINI_API_KEY,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+    elif provider == "openai":
+        if OpenAILLM is None:
+            from app.llm.providers.mock_llm import MockLLM
+            return MockLLM()
+        return OpenAILLM(
+            api_key=api_keys.get("openai") or settings.OPENAI_API_KEY,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+    elif provider == "anthropic":
+        if AnthropicLLM is None:
+            from app.llm.providers.mock_llm import MockLLM
+            return MockLLM()
+        return AnthropicLLM(
+            api_key=api_keys.get("anthropic") or settings.ANTHROPIC_API_KEY,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+    elif provider == "deepseek":
+        if DeepSeekLLM is None:
+            from app.llm.providers.mock_llm import MockLLM
+            return MockLLM()
+        return DeepSeekLLM(
+            api_key=api_keys.get("deepseek") or settings.DEEPSEEK_API_KEY,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+    elif provider == "together":
+        if TogetherLLM is None:
+            from app.llm.providers.mock_llm import MockLLM
+            return MockLLM()
+        return TogetherLLM(
+            api_key=api_keys.get("together") or settings.TOGETHER_API_KEY,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+    elif provider == "ollama":
+        if OllamaLLM is None:
+            from app.llm.providers.mock_llm import MockLLM
+            return MockLLM()
+        return OllamaLLM(
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+    else:
+        from app.llm.providers.mock_llm import MockLLM
+        return MockLLM()

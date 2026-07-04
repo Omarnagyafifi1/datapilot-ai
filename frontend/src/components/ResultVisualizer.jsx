@@ -44,7 +44,8 @@ export function ResultVisualizer({ doc }) {
         page: nextPage,
         pageSize: PAGE_SIZE,
       });
-      setPageRows(resp.data.data.rows || []);
+      const payload = resp.data?.data ?? resp.data ?? {};
+      setPageRows(payload.rows || []);
     } catch {
       setPageRows(null);
     } finally {
@@ -85,16 +86,16 @@ export function ResultVisualizer({ doc }) {
         <MetricCard icon={<BarChart3 size={16} />} label="Chart" value={hasPlotlySpec ? visualization.chart_type || 'Available' : 'None'} color={hasPlotlySpec ? 'amber' : 'gray'} />
       </div>
 
-      <div className="glass rounded-2xl border-white/5 overflow-hidden">
-        <div className="bg-white/5 px-4 py-2 flex items-center justify-between border-b border-white/5">
-          <div className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase tracking-widest">
+      <div className="glass rounded-2xl border-border overflow-hidden">
+        <div className="bg-foreground/5 px-4 py-2 flex items-center justify-between border-b border-border">
+          <div className="flex items-center gap-2 text-[10px] font-bold text-foreground/40 uppercase tracking-widest">
             <Terminal size={12} /> Generated SQL
           </div>
         </div>
-        <div className="p-4 bg-black/40 font-mono text-xs text-blue-300 leading-relaxed overflow-x-auto whitespace-pre">
+        <div className="p-4 bg-background/50 font-mono text-xs text-cyber-cyan/90 leading-relaxed overflow-x-auto whitespace-pre">
           {doc.sql}
         </div>
-        <div className="p-3 flex flex-wrap items-center gap-3 bg-white/2 border-t border-white/5">
+        <div className="p-3 flex flex-wrap items-center gap-3 bg-foreground/2 border-t border-border">
           <ActionButton onClick={async () => {
             try {
               const resp = await api.explain(doc.sql);
@@ -127,16 +128,16 @@ export function ResultVisualizer({ doc }) {
       </div>
 
       {explainText && (
-        <div className="glass p-4 rounded-2xl border-white/5">
-          <div className="text-[10px] font-bold text-white/40 uppercase mb-2">Query Explanation</div>
-          <div className="text-sm text-white/80">{explainText}</div>
+        <div className="glass p-4 rounded-2xl border-border">
+          <div className="text-[10px] font-bold text-foreground/40 uppercase mb-2">Query Explanation</div>
+          <div className="text-sm text-foreground/80">{explainText}</div>
         </div>
       )}
 
       {showPreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowPreview(false)} />
-          <div className="relative bg-card p-6 rounded-2xl w-[95%] max-w-5xl h-[85vh] border border-white/10 flex flex-col">
+          <div className="relative bg-card p-6 rounded-2xl w-[95%] max-w-5xl h-[85vh] border border-border flex flex-col">
             <div className="flex items-center justify-between mb-4 gap-4 shrink-0">
               <h4 className="text-lg font-bold">
                 {hasPlotlySpec ? `Chart Preview — ${visualization.chart_type}` : 'Simple Chart Preview'}
@@ -161,13 +162,13 @@ export function ResultVisualizer({ doc }) {
       )}
 
       {visibleRows.length > 0 && (
-        <div className="glass rounded-2xl border-white/5 overflow-hidden">
-          <div className="p-3 flex items-center justify-between border-b border-white/5">
-            <div className="text-[12px] text-white/60">{totalRows} rows</div>
-            <div className="text-[12px] text-white/40">{pageLoading ? 'Loading page...' : `Page ${page} / ${totalPages}`}</div>
+        <div className="glass rounded-2xl border-border overflow-hidden">
+          <div className="p-3 flex items-center justify-between border-b border-border">
+            <div className="text-[12px] text-foreground/60">{totalRows} rows</div>
+            <div className="text-[12px] text-foreground/40">{pageLoading ? 'Loading page...' : `Page ${page} / ${totalPages}`}</div>
           </div>
           <ResultsTable rows={visibleRows} />
-          <div className="p-3 text-center bg-white/[0.02] border-t border-white/5 flex items-center justify-center gap-4">
+          <div className="p-3 text-center bg-foreground/[0.02] border-t border-border flex items-center justify-center gap-4">
             <ActionButton disabled={page <= 1 || pageLoading} onClick={() => loadPage(Math.max(1, page - 1))}>Prev</ActionButton>
             <ActionButton disabled={page >= totalPages || pageLoading} onClick={() => loadPage(Math.min(totalPages, page + 1))}>Next</ActionButton>
           </div>
@@ -188,19 +189,19 @@ function ResultsTable({ rows }) {
     <div className="overflow-x-auto">
       <table className="w-full text-left text-sm border-collapse">
         <thead>
-          <tr className="bg-white/5">
+          <tr className="bg-foreground/5">
             {columns.map((key) => (
-              <th key={key} className="px-4 py-3 font-semibold text-white/60 border-b border-white/5 uppercase text-[10px] tracking-wider">
+              <th key={key} className="px-4 py-3 font-semibold text-foreground/60 border-b border-border uppercase text-[10px] tracking-wider">
                 {key}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-white/5">
+        <tbody className="divide-y divide-border">
           {rows.map((row, i) => (
-            <tr key={i} className="hover:bg-white/[0.02] transition-colors">
+            <tr key={i} className="hover:bg-foreground/[0.02] transition-colors">
               {columns.map((key) => (
-                <td key={key} className="px-4 py-3 text-white/80 whitespace-nowrap">{String(row[key] ?? '')}</td>
+                <td key={key} className="px-4 py-3 text-foreground/80 whitespace-nowrap">{String(row[key] ?? '')}</td>
               ))}
             </tr>
           ))}
@@ -213,19 +214,19 @@ function ResultsTable({ rows }) {
 function InsightList({ title, icon, items }) {
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase tracking-widest px-1">
+      <div className="flex items-center gap-2 text-[10px] font-bold text-foreground/40 uppercase tracking-widest px-1">
         {icon} {title}
       </div>
       <div className="space-y-2">
         {items.length === 0 ? (
-          <div className="glass p-4 rounded-xl border-white/5 text-sm text-white/60">No items available.</div>
+          <div className="glass p-4 rounded-xl border-border text-sm text-foreground/60">No items available.</div>
         ) : items.map((item, i) => {
           const isObj = typeof item === 'object' && item !== null;
           const enText = isObj ? (item.en || '') : String(item);
           const arText = isObj ? (item.ar || '') : '';
           return (
-            <div key={i} className="glass p-4 rounded-xl border-white/5 flex flex-col gap-2 hover:border-white/10 transition-colors">
-              {enText && <div className="text-sm text-white/80 leading-relaxed font-sans">{enText}</div>}
+            <div key={i} className="glass p-4 rounded-xl border-border flex flex-col gap-2 hover:border-cyber-cyan/20 transition-colors">
+              {enText && <div className="text-sm text-foreground/80 leading-relaxed font-sans">{enText}</div>}
               {arText && <div className="text-sm text-cyber-cyan/95 leading-relaxed font-sans text-right" dir="rtl">{arText}</div>}
             </div>
           );
@@ -237,17 +238,17 @@ function InsightList({ title, icon, items }) {
 
 function MetricCard({ icon, label, value, color }) {
   const colors = {
-    blue: 'text-blue-400 bg-blue-400/10',
+    blue: 'text-cyber-blue bg-cyber-blue/10',
     purple: 'text-purple-400 bg-purple-400/10',
     green: 'text-emerald-400 bg-emerald-400/10',
     amber: 'text-amber-400 bg-amber-400/10',
     gray: 'text-white/30 bg-white/5',
   };
   return (
-    <div className="glass p-4 rounded-2xl border-white/5">
+    <div className="glass p-4 rounded-2xl border-border bg-card">
       <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center mb-2', colors[color] || colors.gray)}>{icon}</div>
-      <p className="text-[10px] font-bold text-white/40 uppercase tracking-wider">{label}</p>
-      <p className="text-lg font-bold text-white mt-1">{value}</p>
+      <p className="text-[10px] font-bold text-foreground/40 uppercase tracking-wider">{label}</p>
+      <p className="text-lg font-bold text-foreground mt-1">{value}</p>
     </div>
   );
 }
@@ -258,7 +259,7 @@ function ActionButton({ children, disabled, onClick }) {
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="inline-flex items-center gap-2 px-3 py-1 text-xs font-mono bg-white/5 rounded hover:bg-white/10 disabled:opacity-30 disabled:pointer-events-none"
+      className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-mono bg-foreground/5 border border-border text-foreground rounded hover:bg-foreground/10 disabled:opacity-30 disabled:pointer-events-none transition-colors"
     >
       {children}
     </button>

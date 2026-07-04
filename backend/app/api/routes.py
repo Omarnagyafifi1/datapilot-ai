@@ -1,7 +1,7 @@
 import time
-from typing import Any
+from typing import Any, Optional
 from uuid import uuid4
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query, Body
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from app.api.deps import get_data_source_service, get_graph_orchestrator, get_history_service
@@ -24,15 +24,32 @@ from app.models.schemas import (
     EvalScore,
     SettingsRequest,
 )
-from app.services.data_source_service import DataSourceService
+# LLM settings service - fallback to empty settings if not available
+try:
+    from app.services.llm_settings_service import get_llm_settings, save_llm_settings
+except ImportError:
+    def get_llm_settings():
+        return {}
+    def save_llm_settings(**kwargs):
+        return {}
+from app.services.data_source_service import DataSourceService, save_dataset_metadata, get_dataset_by_hash, list_datasets as _list_datasets_func, get_dataset as _get_dataset_func, delete_dataset as _delete_dataset_func, update_dataset_name as _update_dataset_name_func, DataSourceService as _DataSourceService
 from app.services.history_service import HistoryService
 from app.services import db_service
 from app.services.data_service import DataSourceService as CSVService
 from app.services.database import engine
+from app.services.import_providers import ImportPreview, ImportOptions
+from app.services.import_providers.csv_provider import CSVProvider
+from app.services.import_providers.sqlite_provider import SQLiteProvider
 
 
 router = APIRouter(prefix="/api", tags=["api"])
 logger = get_logger(__name__)
+
+# Provider registry
+_PROVIDERS = {
+    "csv": CSVProvider(),
+    "sqlite": SQLiteProvider(),
+}
 
 
 import json as _json
@@ -60,6 +77,22 @@ def _resp(success: bool, message: str, data: dict | list | None) -> JSONResponse
     return JSONResponse(content=_json.loads(content_str), headers=headers)
 
 
+def _get_provider(file: UploadFile) -> Optional[object]:
+    """Determine the appropriate provider based on file extension."""
+    if not file.filename:
+        return None
+    
+    ext = file.filename.lower().split('.')[-1] if '.' in file.filename else ''
+    
+    # Map extensions to providers
+    if ext == 'csv':
+        return _PROVIDERS.get('csv')
+    elif ext in ['db', 'sqlite', 'sqlite3']:
+        return _PROVIDERS.get('sqlite')
+    
+    return None
+
+
 @router.get("/health", response_model=HealthResponse)
 def health_check() -> HealthResponse:
     return HealthResponse(status="ok")
@@ -70,7 +103,6 @@ def query_endpoint(
     payload: QueryRequest,
     data_source_service: DataSourceService = Depends(get_data_source_service),
     history_service: HistoryService = Depends(get_history_service),
-    graph=Depends(get_graph_orchestrator),
 ) -> dict:
     start_time = time.time()
     status = "SUCCESS"
@@ -78,7 +110,19 @@ def query_endpoint(
     try:
         data_source_service.get_conn_string(payload.source_id)
         thread_id = payload.thread_id or str(uuid4())
-        result = graph.run(
+        
+        # Build LLM config override from payload or use saved settings
+        llm_config = {
+            "provider": payload.provider,
+            "model": payload.model,
+            "temperature": payload.temperature,
+            "max_tokens": payload.max_tokens,
+        }
+        
+        # Only pass non-None values to get_graph_orchestrator
+        graph_kwargs = {k: v for k, v in llm_config.items() if v is not None}
+        
+        result = get_graph_orchestrator(**graph_kwargs).run(
             payload.question,
             payload.source_id,
             thread_id=thread_id,
@@ -309,6 +353,219 @@ def get_system_metrics(
     return _resp(success=True, message="System metrics fetched", data=metrics)
 
 
+# ============================================================================
+# NEW: Upload Preview and Import Endpoints
+# ============================================================================
+
+@router.post("/upload/preview")
+async def upload_preview(file: UploadFile = File(...)) -> dict[str, Any]:
+    """
+    Upload a file and return a preview without importing.
+    Supports CSV and SQLite files.
+    """
+    provider = _get_provider(file)
+    if not provider:
+        raise HTTPException(status_code=400, detail="Unsupported file type. Supported: CSV, SQLite (.db, .sqlite, .sqlite3)")
+    
+    try:
+        # Validate the file
+        is_valid, error = await provider.validate(file)
+        if not is_valid:
+            raise HTTPException(status_code=400, detail=error or "Invalid file")
+        
+        # Get preview data
+        preview = await provider.preview(file)
+        
+        # Check for duplicates using module-level function
+        existing = get_dataset_by_hash(preview.file_hash)
+        
+        return _resp(
+            success=True,
+            message="File preview generated",
+            data={
+                "filename": preview.filename,
+                "file_size": preview.file_size,
+                "detected_format": preview.detected_format,
+                "file_hash": preview.file_hash,
+                "tables": [
+                    {
+                        "name": t.name,
+                        "original_name": t.original_name,
+                        "row_count": t.row_count,
+                        "columns": [
+                            {
+                                "name": c.name,
+                                "original_name": c.original_name,
+                                "data_type": c.data_type,
+                                "nullable": c.nullable,
+                                "primary_key": c.primary_key,
+                                "unique": c.unique,
+                                "is_numeric": c.is_numeric,
+                                "is_date": c.is_date,
+                            }
+                            for c in t.columns
+                        ],
+                    }
+                    for t in preview.tables
+                ],
+                "quality_report": {
+                    "total_rows": preview.quality_report.total_rows,
+                    "total_columns": preview.quality_report.total_columns,
+                    "missing_values": preview.quality_report.missing_values,
+                    "duplicate_rows": preview.quality_report.duplicate_rows,
+                    "has_nulls": preview.quality_report.has_nulls,
+                    "has_duplicates": preview.quality_report.has_duplicates,
+                },
+                "relationships": [
+                    {
+                        "column": r.column,
+                        "referenced_table": r.referenced_table,
+                        "referenced_column": r.referenced_column,
+                    }
+                    for r in preview.relationships
+                ],
+                "is_duplicate": existing is not None,
+                "existing_dataset": existing,
+            }
+        )
+    except Exception as e:
+        logger.exception("Upload preview failed")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/upload/import")
+async def upload_import(
+    file: UploadFile = File(...),
+    dataset_name: str = "",
+    selected_tables: str = "[]",
+    renamed_columns: str = "{}",
+    modified_types: str = "{}",
+) -> dict[str, Any]:
+    """
+    Import an uploaded file into the system.
+    """
+    import json as _json
+    
+    provider = _get_provider(file)
+    if not provider:
+        raise HTTPException(status_code=400, detail="Unsupported file type. Supported: CSV, SQLite (.db, .sqlite, .sqlite3)")
+    
+    try:
+        # Parse options
+        options = ImportOptions(
+            selected_tables=_json.loads(selected_tables) if selected_tables else None,
+            renamed_columns=_json.loads(renamed_columns) if renamed_columns else None,
+            modified_types=_json.loads(modified_types) if modified_types else None,
+            dataset_name=dataset_name or file.filename,
+        )
+        
+        # Import the data
+        result = await provider.import_data(file, options)
+        
+        # Get the preview for metadata storage
+        preview = await provider.preview(file)
+        
+        # Save dataset metadata
+        if preview:
+            save_dataset_metadata(
+                source_id=result.source_id,
+                name=options.dataset_name or file.filename,
+                source_type=preview.detected_format,
+                original_filename=preview.filename,
+                file_size=preview.file_size,
+                file_hash=preview.file_hash,
+                tables=[
+                    {
+                        "name": t.name,
+                        "original_name": t.original_name,
+                        "row_count": t.row_count,
+                        "columns": [{"name": c.name, "data_type": c.data_type} for c in t.columns],
+                    }
+                    for t in preview.tables
+                ],
+                relationships=[
+                    {"column": r.column, "referenced_table": r.referenced_table, "referenced_column": r.referenced_column}
+                    for r in preview.relationships
+                ],
+                quality_report={
+                    "total_rows": preview.quality_report.total_rows,
+                    "total_columns": preview.quality_report.total_columns,
+                    "missing_values": preview.quality_report.missing_values,
+                    "duplicate_rows": preview.quality_report.duplicate_rows,
+                },
+            )
+        
+        return _resp(
+            success=True,
+            message=result.message,
+            data={
+                "source_id": result.source_id,
+                "dataset_id": result.dataset_id,
+                "table_names": result.table_names,
+                "total_rows": result.total_rows,
+            }
+        )
+    except Exception as e:
+        logger.exception("Upload import failed")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Dataset Management Endpoints
+@router.get("/datasets")
+def list_datasets(
+    search: str = None,
+    source_type: str = None,
+    data_source_service: DataSourceService = Depends(get_data_source_service),
+) -> dict[str, Any]:
+    """List all imported datasets."""
+    datasets = data_source_service.list_datasets(search_query=search, source_type=source_type)
+    return _resp(success=True, message="Datasets fetched", data=datasets)
+
+
+@router.get("/datasets/{id}")
+def get_dataset(
+    id: str,
+    data_source_service: DataSourceService = Depends(get_data_source_service),
+) -> dict[str, Any]:
+    """Get a single dataset by ID."""
+    dataset = data_source_service.get_dataset(id)
+    if not dataset:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+    
+    # Parse JSON fields
+    import json as _json
+    if dataset.get("tables_json"):
+        dataset["tables"] = _json.loads(dataset["tables_json"])
+    if dataset.get("relationships_json"):
+        dataset["relationships"] = _json.loads(dataset["relationships_json"])
+    if dataset.get("quality_report_json"):
+        dataset["quality_report"] = _json.loads(dataset["quality_report_json"])
+    
+    return _resp(success=True, message="Dataset fetched", data=dataset)
+
+
+@router.delete("/datasets/{id}")
+def delete_dataset(
+    id: str,
+    data_source_service: DataSourceService = Depends(get_data_source_service),
+) -> dict[str, Any]:
+    """Delete a dataset and its associated datasource."""
+    data_source_service.delete_dataset(id)
+    return _resp(success=True, message="Dataset deleted", data=None)
+
+
+@router.patch("/datasets/{id}")
+def update_dataset(
+    id: str,
+    name: str = None,
+    data_source_service: DataSourceService = Depends(get_data_source_service),
+) -> dict[str, Any]:
+    """Update dataset metadata."""
+    if name:
+        data_source_service.update_dataset_name(id, name)
+    return _resp(success=True, message="Dataset updated", data=None)
+
+
 @router.post('/data/csv')
 async def upload_csv(file: UploadFile = File(...)) -> dict[str, Any]:
     """Upload a CSV and ingest it into the configured PostgreSQL database."""
@@ -424,3 +681,51 @@ def update_settings_endpoint(payload: SettingsRequest) -> dict[str, Any]:
     # Reset the graph orchestrator so the next request uses the new LLM provider/keys
     reset_graph_orchestrator()
     return _resp(success=True, message="Settings updated", data=result)
+
+
+# ============================================================================
+# LLM Settings Endpoints
+# ============================================================================
+
+@router.get("/settings/llm")
+def get_llm_settings_endpoint() -> dict[str, Any]:
+    """Get current LLM settings from database."""
+    settings = get_llm_settings()
+    # Sanitize API keys for response (don't expose full keys)
+    sanitized = settings.copy()
+    sanitized["api_keys"] = {
+        k: ("***" + v[-4:] if v and len(v) > 4 else "***") if v else ""
+        for k, v in settings.get("api_keys", {}).items()
+    }
+    return _resp(success=True, message="LLM settings retrieved", data=sanitized)
+
+
+@router.put("/settings/llm")
+def update_llm_settings_endpoint(
+    body: dict = Body(...)
+) -> dict[str, Any]:
+    """Update LLM settings (provider, model, temperature, max_tokens, api_keys)."""
+    provider = body.get("provider")
+    model = body.get("model")
+    temperature = body.get("temperature")
+    max_tokens = body.get("max_tokens")
+    api_keys = body.get("api_keys")
+    
+    try:
+        updated = save_llm_settings(
+            provider=provider,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            api_keys=api_keys,
+        )
+        # Sanitize response
+        sanitized = updated.copy()
+        sanitized["api_keys"] = {
+            k: ("***" + v[-4:] if v and len(v) > 4 else "***") if v else ""
+            for k, v in updated.get("api_keys", {}).items()
+        }
+        return _resp(success=True, message="LLM settings updated", data=sanitized)
+    except Exception as e:
+        logger.exception("Failed to save LLM settings")
+        return _resp(success=False, message=f"Failed to update settings: {str(e)}", data=None)

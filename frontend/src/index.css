@@ -1,15 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
-
 :root {
+  --background: #f6f7fb;
+  --foreground: #0f172a;
+  --card: rgba(255, 255, 255, 0.82);
+  --border: #d9e2ef;
+  --muted: #64748b;
+  --cyber-cyan: #0ea5e9;
+  --cyber-pink: #d946ef;
+  --cyber-lime: #84cc16;
+  --cyber-blue: #2563eb;
+  color-scheme: light;
+}
+
+.dark {
+  --background: #070b12;
+  --foreground: #f8fafc;
+  --card: rgba(17, 22, 34, 0.9);
+  --border: #1e293b;
+  --muted: #64748b;
+  --cyber-cyan: #00f2ff;
+  --cyber-pink: #ff00ff;
+  --cyber-lime: #ccff00;
+  --cyber-blue: #3b82f6;
   color-scheme: dark;
 }
 
+html {
+  background: var(--background);
+}
+
 body {
-  @apply bg-background text-foreground font-sans antialiased overflow-hidden;
+  @apply bg-background text-foreground font-sans antialiased overflow-hidden transition-colors duration-200;
+  background-image:
+    radial-gradient(circle at top left, rgba(0, 242, 255, 0.08), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(217, 70, 239, 0.06), transparent 28%);
+  background-attachment: fixed;
 }
 
 ::selection {
@@ -51,7 +81,8 @@ body {
   @apply bg-transparent;
 }
 ::-webkit-scrollbar-thumb {
-  @apply bg-white/10 rounded-full;
+  background-color: rgba(100, 116, 139, 0.25);
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background-color: rgba(0, 242, 255, 0.5);
