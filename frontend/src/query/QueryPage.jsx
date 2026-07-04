@@ -71,12 +71,10 @@ export default function QueryPage({ selectedSourceId, selectedSource }) {
     setLoading(true);
     setError(null);
     try {
-      let resp;
-      if (requiresApproval) {
-        resp = await queryService.approve(threadId, true);
-      } else {
-        resp = await queryService.execute(question, sql, selectedSourceId, threadId);
-      }
+      const tid = requiresApproval ? threadId : null;
+      const resp = requiresApproval
+        ? await queryService.approve(tid, true)
+        : await queryService.execute(question, sql, selectedSourceId, tid);
       setResults(resp.results || []);
       setInsights(resp.insights || []);
       setRequiresApproval(resp.requiresApproval || false);
@@ -114,7 +112,14 @@ export default function QueryPage({ selectedSourceId, selectedSource }) {
               onSelectExample={handleSelectExample} 
             />
           ) : (
-            <SQLViewer sql={editedSQL} onChange={setEditedSQL} onExecute={() => setConfirmOpen(true)} loading={loading} />
+            <SQLViewer
+              sql={editedSQL}
+              onChange={setEditedSQL}
+              onRun={() => handleExecute(editedSQL)}
+              onRequestApproval={() => setConfirmOpen(true)}
+              loading={loading}
+              requiresApproval={requiresApproval}
+            />
           )}
         </section>
 

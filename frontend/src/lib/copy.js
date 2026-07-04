@@ -3,6 +3,7 @@ export const COPY = {
   PLEASE_SELECT_SOURCE: 'Please select a data source',
   PREVIEW_SQL: 'Preview SQL',
   RUN_QUERY: 'Run Query',
+  APPROVE_EXECUTE: 'Approve & Execute',
   SQL_PREVIEW_TITLE: 'SQL Preview',
   QUERY_FAILED_TITLE: '❌ Query failed',
   QUERY_FAILED_TRY: 'Try: Check column names, verify table names, or rephrase your question.',

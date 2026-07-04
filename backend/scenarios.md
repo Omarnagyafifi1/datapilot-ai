@@ -335,3 +335,157 @@ Always verify the existence of tables and columns in the database schema before 
 }
 ```
 
+## 2026-07-04T14:01:29.768203+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T14:01:29.768203+00:00",
+  "status": "resolved",
+  "question": " \"Add a new employee to the database: Her name is 'Suzy Ahmed', aged 28. She was hired today as a 'Data Scientist' in the 'Engineering' department. Her salary is 95000, she reports to 'Omar', and she works in the 'Dubai' office. Status is 'Active' and her performance score is 0.0.\"",
+  "sql": "INSERT INTO employees (name, age, job_title, department, salary, manager, location, status, performance_score, hire_date) VALUES ('Suzy Ahmed', 28, 'Data Scientist', 'Engineering', 95000, 'Omar', 'Dubai', 'Active', 0.0, DATE('now'));",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-04T14:03:38.749635+00:00 - failed
+
+### What Went Wrong
+The root cause of the failure is that the SQL query attempted to execute two statements at once: creating a table and inserting data into it. This is not allowed in SQLite, as indicated by the error message. The mistake is due to incorrect syntax, specifically trying to execute multiple statements in a single query.
+
+### Correct Approach
+To think through this query correctly, we need to break it down into two separate steps. First, we need to create the `employees` table with the required columns if it does not already exist. Then, we can insert the new employee's data into the table. We should use the `CREATE TABLE IF NOT EXISTS` statement to create the table, and then use the `INSERT INTO` statement to add the new employee's data.
+
+### Correct SQL
+```sql
+CREATE TABLE IF NOT EXISTS employees (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    age INTEGER,
+    job_title TEXT,
+    department TEXT,
+    salary REAL,
+    manager TEXT,
+    office TEXT,
+    status TEXT,
+    performance_score REAL
+);
+
+INSERT INTO employees (name, age, job_title, department, salary, manager, office, status, performance_score)
+VALUES ('Salma Ahmed', 28, 'Data Scientist', 'Engineering', 95000, 'Omar', 'Dubai', 'Active', 0.0);
+```
+
+### Key Lesson
+Always execute SQL statements one at a time, separating them with semicolons or executing them as separate queries, to avoid errors caused by attempting to execute multiple statements simultaneously.
+
+```json
+{
+  "created_at": "2026-07-04T14:03:38.749635+00:00",
+  "status": "failed",
+  "question": " \"Add a new employee to the database: Her name is 'Salma Ahmed', aged 28. She was hired today as a 'Data Scientist' in the 'Engineering' department. Her salary is 95000, she reports to 'Omar', and she works in the 'Dubai' office. Status is 'Active' and her performance score is 0.0.\"",
+  "sql": "CREATE TABLE IF NOT EXISTS employees (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, age INTEGER, job_title TEXT, department TEXT, salary REAL, manager TEXT, office TEXT, status TEXT, performance_score REAL);\nINSERT INTO employees (name, age, job_title, department, salary, manager, office, status, performance_score) VALUES ('Salma Ahmed', 28, 'Data Scientist', 'Engineering', 95000, 'Omar', 'Dubai', 'Active', 0.0)",
+  "error": "Failed to execute query: (sqlite3.ProgrammingError) You can only execute one statement at a time.\n[SQL: CREATE TABLE IF NOT EXISTS employees (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, age INTEGER, job_title TEXT, department TEXT, salary REAL, manager TEXT, office TEXT, status TEXT, performance_score REAL);\nINSERT INTO employees (name, age, job_title, department, salary, manager, office, status, performance_score) VALUES ('Salma Ahmed', 28, 'Data Scientist', 'Engineering', 95000, 'Omar', 'Dubai', 'Active', 0.0)]\n(Background on this error at: https://sqlalche.me/e/20/f405)",
+  "validation_reason": null,
+  "lesson": "### What Went Wrong\nThe root cause of the failure is that the SQL query attempted to execute two statements at once: creating a table and inserting data into it. This is not allowed in SQLite, as indicated by the error message. The mistake is due to incorrect syntax, specifically trying to execute multiple statements in a single query.\n\n### Correct Approach\nTo think through this query correctly, we need to break it down into two separate steps. First, we need to create the `employees` table with the required columns if it does not already exist. Then, we can insert the new employee's data into the table. We should use the `CREATE TABLE IF NOT EXISTS` statement to create the table, and then use the `INSERT INTO` statement to add the new employee's data.\n\n### Correct SQL\n```sql\nCREATE TABLE IF NOT EXISTS employees (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    name TEXT,\n    age INTEGER,\n    job_title TEXT,\n    department TEXT,\n    salary REAL,\n    manager TEXT,\n    office TEXT,\n    status TEXT,\n    performance_score REAL\n);\n\nINSERT INTO employees (name, age, job_title, department, salary, manager, office, status, performance_score)\nVALUES ('Salma Ahmed', 28, 'Data Scientist', 'Engineering', 95000, 'Omar', 'Dubai', 'Active', 0.0);\n```\n\n### Key Lesson\nAlways execute SQL statements one at a time, separating them with semicolons or executing them as separate queries, to avoid errors caused by attempting to execute multiple statements simultaneously."
+}
+```
+
+## 2026-07-04T14:03:44.473717+00:00 - failed
+
+### What Went Wrong
+The root cause of the failure is that the SQL query attempted to insert data into a table named "employees" that does not exist in the database. The error message clearly states "no such table: employees", indicating that the table has not been created before trying to insert data into it. This mistake could have been avoided by first creating the "employees" table with the necessary columns.
+
+### Correct Approach
+To correctly insert data into the database, we first need to create the "employees" table with the required columns, such as name, age, job_title, department, salary, manager, office, status, and performance_score. Once the table is created, we can use the INSERT INTO statement to add new data to the table. We should specify the correct column names and data types to ensure that the data is inserted correctly. We also need to ensure that the data we are inserting is consistent with the column data types and any constraints that may be defined on the table.
+
+### Correct SQL
+```sql
+CREATE TABLE employees (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    age INTEGER NOT NULL,
+    job_title TEXT NOT NULL,
+    department TEXT NOT NULL,
+    salary REAL NOT NULL,
+    manager TEXT NOT NULL,
+    office TEXT NOT NULL,
+    status TEXT NOT NULL,
+    performance_score REAL NOT NULL
+);
+
+INSERT INTO employees (name, age, job_title, department, salary, manager, office, status, performance_score) 
+VALUES ('Salma Ahmed', 28, 'Data Scientist', 'Engineering', 95000, 'Omar', 'Dubai', 'Active', 0.0)
+```
+
+### Key Lesson
+Always create the necessary tables with the required columns before attempting to insert data into the database.
+
+```json
+{
+  "created_at": "2026-07-04T14:03:44.473717+00:00",
+  "status": "failed",
+  "question": " \"Add a new employee to the database: Her name is 'Salma Ahmed', aged 28. She was hired today as a 'Data Scientist' in the 'Engineering' department. Her salary is 95000, she reports to 'Omar', and she works in the 'Dubai' office. Status is 'Active' and her performance score is 0.0.\"",
+  "sql": "INSERT INTO employees (name, age, job_title, department, salary, manager, office, status, performance_score) VALUES ('Salma Ahmed', 28, 'Data Scientist', 'Engineering', 95000, 'Omar', 'Dubai', 'Active', 0.0)",
+  "error": "Failed to execute query: (sqlite3.OperationalError) no such table: employees\n[SQL: INSERT INTO employees (name, age, job_title, department, salary, manager, office, status, performance_score) VALUES ('Salma Ahmed', 28, 'Data Scientist', 'Engineering', 95000, 'Omar', 'Dubai', 'Active', 0.0)]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+  "validation_reason": null,
+  "lesson": "### What Went Wrong\nThe root cause of the failure is that the SQL query attempted to insert data into a table named \"employees\" that does not exist in the database. The error message clearly states \"no such table: employees\", indicating that the table has not been created before trying to insert data into it. This mistake could have been avoided by first creating the \"employees\" table with the necessary columns.\n\n### Correct Approach\nTo correctly insert data into the database, we first need to create the \"employees\" table with the required columns, such as name, age, job_title, department, salary, manager, office, status, and performance_score. Once the table is created, we can use the INSERT INTO statement to add new data to the table. We should specify the correct column names and data types to ensure that the data is inserted correctly. We also need to ensure that the data we are inserting is consistent with the column data types and any constraints that may be defined on the table.\n\n### Correct SQL\n```sql\nCREATE TABLE employees (\n    id INTEGER PRIMARY KEY,\n    name TEXT NOT NULL,\n    age INTEGER NOT NULL,\n    job_title TEXT NOT NULL,\n    department TEXT NOT NULL,\n    salary REAL NOT NULL,\n    manager TEXT NOT NULL,\n    office TEXT NOT NULL,\n    status TEXT NOT NULL,\n    performance_score REAL NOT NULL\n);\n\nINSERT INTO employees (name, age, job_title, department, salary, manager, office, status, performance_score) \nVALUES ('Salma Ahmed', 28, 'Data Scientist', 'Engineering', 95000, 'Omar', 'Dubai', 'Active', 0.0)\n```\n\n### Key Lesson\nAlways create the necessary tables with the required columns before attempting to insert data into the database."
+}
+```
+
+## 2026-07-04T14:09:45.637049+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T14:09:45.637049+00:00",
+  "status": "resolved",
+  "question": "Show me all employees",
+  "sql": "SELECT id, name, age, salary, department FROM employees LIMIT 10",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-04T14:10:22.453129+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T14:10:22.453129+00:00",
+  "status": "resolved",
+  "question": "Show me all employees",
+  "sql": "SELECT id, name, age, salary, department FROM employees LIMIT 10",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-04T14:13:54.597590+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T14:13:54.597590+00:00",
+  "status": "resolved",
+  "question": " \"Add a new employee to the database: Her name is 'Suzzy Ahmed', aged 28. She was hired today as a 'Data Scientist' in the 'Engineering' department. Her salary is 95000, she reports to 'Omar', and she works in the 'Dubai' office. Status is 'Active' and her performance score is 0.0.\"",
+  "sql": "INSERT INTO employees (name, age, job_title, department, salary, manager, hire_date, location, status, performance_score) VALUES ('Suzzy Ahmed', 28, 'Data Scientist', 'Engineering', 95000, 'Omar', DATE('now'), 'Dubai', 'Active', 0.0)",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-04T14:14:13.114551+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T14:14:13.114551+00:00",
+  "status": "resolved",
+  "question": "Show me the emplyees names and deparments",
+  "sql": "SELECT name, department FROM employees LIMIT 1000",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
