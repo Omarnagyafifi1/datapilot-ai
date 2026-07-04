@@ -13,7 +13,7 @@ class GroqLLM(BaseLLM):
         max_tokens: int = 2048,
     ) -> None:
         self.api_key = api_key or settings.GROQ_API_KEY
-        self.model = model or settings.GROQ_MODEL or "llama-3.3-70b-versatile"
+        self.model = model or getattr(settings, 'GROQ_MODEL', None) or "llama-3.3-70b-versatile"
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.client = OpenAI(

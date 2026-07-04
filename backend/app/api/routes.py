@@ -17,7 +17,6 @@ from app.models.schemas import (
     QueryPageRequest,
     QueryHistoryResponse,
     QueryResponse,
-    DataSourceResponse,
     DataSourceConfig,
     MetricsResponse,
     SchemaResponse,

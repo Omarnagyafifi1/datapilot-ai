@@ -9,6 +9,7 @@ venv/
 env/
 ENV/
 backend/.venv/
+backend/.venv*/
 
 # Environment and secrets
 .env
