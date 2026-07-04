@@ -848,6 +848,7 @@ export function ChatInterface({
                       <option value="postgresql" className="bg-card text-foreground">PostgreSQL</option>
                       <option value="mysql" className="bg-card text-foreground">MySQL</option>
                       <option value="mssql" className="bg-card text-foreground">SQL Server</option>
+                      <option value="oracle" className="bg-card text-foreground">Oracle Database</option>
                     </select>
 
                     {dbFormData.db_type !== 'sqlite' && (
