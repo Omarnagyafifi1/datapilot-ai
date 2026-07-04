@@ -36,7 +36,7 @@ class LiteLLMProvider(BaseLLM):
             model_list.append({
                 "model_name": "tier_3",
                 "litellm_params": {
-                    "model": "openrouter/google/gemma-2-9b-it:free",
+                    "model": "openrouter/google/gemma-4-31b-it:free",
                     "api_key": api_keys["openrouter"],
                     "extra_headers": {
                         "HTTP-Referer": "http://localhost:8000",
@@ -58,7 +58,9 @@ class LiteLLMProvider(BaseLLM):
             
         self.router = Router(
             model_list=model_list,
-            fallbacks=fallback_config
+            fallbacks=fallback_config,
+            timeout=30,
+            num_retries=0,
         )
 
     def generate(self, prompt: str, system_message: Optional[str] = None, max_tokens: Optional[int] = None) -> str:
@@ -73,10 +75,10 @@ class LiteLLMProvider(BaseLLM):
         kwargs = {
             "model": self.primary_model,
             "messages": messages,
-            "temperature": 0.0
+            "temperature": 0.0,
+            "max_tokens": max_tokens or 1024,
         }
-        if max_tokens:
-            kwargs["max_tokens"] = max_tokens
+
             
         try:
             logger.debug(f"Calling litellm latency router")

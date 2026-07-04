@@ -39,7 +39,7 @@ def run_sql_node(state: AgentState, llm: BaseLLM) -> dict:
         scenario_context=scenario_context,
     )
 
-    sql = llm.generate(prompt, system_message=SQL_SYSTEM_MESSAGE)
+    sql = llm.generate(prompt, system_message=SQL_SYSTEM_MESSAGE, max_tokens=300)
 
     if _ARABIC_PATTERN.search(state.question):
         rewritten = _rewrite_arabic_columns(sql, str(schema))

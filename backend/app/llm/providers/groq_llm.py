@@ -12,6 +12,7 @@ class GroqLLM(BaseLLM):
         self.client = OpenAI(
             api_key=api_key,
             base_url="https://api.groq.com/openai/v1",
+            timeout=30.0,
         )
 
     def generate(self, prompt: str, system_message: Optional[str] = None, max_tokens: Optional[int] = None) -> str:
@@ -19,9 +20,7 @@ class GroqLLM(BaseLLM):
         if system_message:
             messages.append({"role": "system", "content": system_message})
         messages.append({"role": "user", "content": prompt})
-        kwargs = {"model": self.model, "messages": messages, "temperature": 0.0}
-        if max_tokens:
-            kwargs["max_tokens"] = max_tokens
+        kwargs = {"model": self.model, "messages": messages, "temperature": 0.0, "max_tokens": max_tokens or 1024}
         response = self.client.chat.completions.create(**kwargs)
         return response.choices[0].message.content or ""
 

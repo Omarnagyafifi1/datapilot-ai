@@ -223,3 +223,115 @@ Always verify the existence of tables and columns in the database schema before 
 }
 ```
 
+## 2026-07-04T13:32:27.281765+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T13:32:27.281765+00:00",
+  "status": "resolved",
+  "question": "WHaast are the products sold?",
+  "sql": "SELECT DISTINCT product FROM sales LIMIT 1000;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-04T13:33:01.142453+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T13:33:01.142453+00:00",
+  "status": "resolved",
+  "question": "tell me what the deparments sold products",
+  "sql": "SELECT DISTINCT e.department \nFROM employees AS e \nINNER JOIN sales AS s \nON e.id = s.employee_id \nLIMIT 1000;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-04T13:36:01.753341+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T13:36:01.753341+00:00",
+  "status": "resolved",
+  "question": "Show me the month-over-month total revenue for 2023, broken down by region, but only for regions that had more than $50,000 in total sales.",
+  "sql": "SELECT STRFTIME('%Y-%m', s.sale_date) AS month, s.region, SUM(s.total_amount) AS total_revenue \nFROM sales s \nWHERE STRFTIME('%Y', s.sale_date) = '2023' \nGROUP BY STRFTIME('%Y-%m', s.sale_date), s.region \nHAVING SUM(s.total_amount) > 50000",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-04T13:36:07.912897+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T13:36:07.912897+00:00",
+  "status": "resolved",
+  "question": "Show me the month-over-month total revenue for 2023, broken down by region, but only for regions that had more than $50,000 in total sales.",
+  "sql": "SELECT STRFTIME('%Y-%m', s.sale_date) AS month, s.region, SUM(s.total_amount) AS total_revenue \nFROM sales s \nWHERE STRFTIME('%Y', s.sale_date) = '2023' \nGROUP BY STRFTIME('%Y-%m', s.sale_date), s.region \nHAVING SUM(s.total_amount) > 50000",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-04T13:37:35.317848+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T13:37:35.317848+00:00",
+  "status": "resolved",
+  "question": "\"Show me the month-over-month total revenue for 2024, broken down by region, but only for regions that had more than $10,000 in total sales.\"",
+  "sql": "SELECT STRFTIME('%Y-%m', s.sale_date) AS month, s.region, SUM(s.total_amount) AS total_revenue \nFROM sales s \nWHERE STRFTIME('%Y', s.sale_date) = '2024' \nGROUP BY STRFTIME('%Y-%m', s.sale_date), s.region \nHAVING SUM(s.total_amount) > 10000",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-04T13:38:59.472098+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T13:38:59.472098+00:00",
+  "status": "resolved",
+  "question": "\"أظهر إجمالي الإيرادات شهراً بشهر لعام 2024، مقسمة حسب المنطقة، ولكن فقط للمناطق التي حققت مبيعات إجمالية تزيد عن 10 آلاف دولار.\"",
+  "sql": "SELECT STRFTIME('%Y-%m', s.sale_date) AS month, s.region, SUM(s.total_amount) AS total_revenue \nFROM sales s \nWHERE STRFTIME('%Y', s.sale_date) = '2024' \nGROUP BY STRFTIME('%Y-%m', s.sale_date), s.region \nHAVING SUM(s.total_amount) > 10000",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-04T13:49:35.450257+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T13:49:35.450257+00:00",
+  "status": "resolved",
+  "question": "Update the inventory table: increase the stock quantity by 50 and decrease the unit price by 10% for all products in the 'Electronics' category that are supplied by 'TechCorp' and currently have a stock quantity below the reorder level.\"",
+  "sql": "UPDATE inventory \nSET stock_quantity = stock_quantity + 50, \n    unit_price = unit_price * 0.9 \nWHERE category = 'Electronics' \n  AND supplier = 'TechCorp' \n  AND stock_quantity < reorder_level;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-04T13:49:59.104878+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T13:49:59.104878+00:00",
+  "status": "resolved",
+  "question": " \"Add a new employee to the database: Her name is 'Sara Ahmed', aged 28. She was hired today as a 'Data Scientist' in the 'Engineering' department. Her salary is 95000, she reports to 'Omar', and she works in the 'Dubai' office. Status is 'Active' and her performance score is 0.0.\"",
+  "sql": "INSERT INTO employees (name, age, job_title, department, salary, manager, hire_date, location, status, performance_score) VALUES ('Sara Ahmed', 28, 'Data Scientist', 'Engineering', 95000, 'Omar', DATE('now'), 'Dubai', 'Active', 0.0)",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+

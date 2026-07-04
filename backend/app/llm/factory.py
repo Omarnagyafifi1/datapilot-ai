@@ -31,7 +31,7 @@ class FallbackLLM(BaseLLM):
         for provider_name in order:
             llm = self.providers_map[provider_name]
             try:
-                logger.info(f"Attempting generation with LLM provider: {provider_name}")
+                logger.debug(f"Attempting generation with LLM provider: {provider_name}")
                 return llm.generate(prompt, system_message, max_tokens)
             except Exception as exc:
                 logger.warning(

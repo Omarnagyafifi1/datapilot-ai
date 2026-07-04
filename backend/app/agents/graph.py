@@ -25,8 +25,6 @@ from app.agents.nodes.sql_node import run_sql_node
 from app.agents.prompts import (
     INSIGHT_PROMPT, 
     SUGGESTION_PROMPT, 
-    INTENT_ROUTER_PROMPT, 
-    VALIDATION_PROMPT,
     SQL_ADD_PROMPT,
     SQL_UPDATE_PROMPT,
     SQL_DELETE_PROMPT,
@@ -230,16 +228,17 @@ def _open_visualization_in_browser(result: dict[str, Any]) -> bool:
 
 
 def intent_router_node(state: AgentState, llm: BaseLLM) -> dict:
+    import re
     normalized_question = state.question.strip().lower()
     
     # Fast heuristic checks to bypass LLM latency
-    if any(token in normalized_question for token in ["hi", "hello", "hey", "who are you", "what are you"]):
+    if re.search(r'\b(hi|hello|hey|who are you|what are you)\b', normalized_question):
         return {"intent": "GENERAL"}
-    if any(token in normalized_question for token in ["insert", "add", "create", "new "]):
+    if re.search(r'\b(insert|add|create|new)\b', normalized_question):
         return {"intent": "ADD"}
-    if any(token in normalized_question for token in ["update", "set ", "edit", "change", "modify"]):
+    if re.search(r'\b(update|set|edit|change|modify)\b', normalized_question):
         return {"intent": "UPDATE"}
-    if any(token in normalized_question for token in ["delete", "remove", "drop", "destroy"]):
+    if re.search(r'\b(delete|remove|drop|destroy)\b', normalized_question):
         return {"intent": "DELETE"}
         
     return {"intent": "INQUIRE"}
@@ -247,7 +246,7 @@ def intent_router_node(state: AgentState, llm: BaseLLM) -> dict:
 
 def general_chat_node(state: AgentState, llm: BaseLLM) -> dict:
     prompt = f"The user said: {state.question}. Please respond politely as a helpful assistant."
-    answer = llm.generate(prompt)
+    answer = llm.generate(prompt, max_tokens=512)
     return {"answer": answer, "success": True}
 
 
@@ -295,7 +294,7 @@ def modification_sql_node(state: AgentState, llm: BaseLLM, schema_service: Schem
         question=state.question
     )
     
-    sql = llm.generate(prompt)
+    sql = llm.generate(prompt, max_tokens=300)
     return {"sql": sql}
 
 
@@ -435,7 +434,7 @@ def fix_sql_node(state: AgentState, llm: BaseLLM, schema_service: SchemaService,
         scenario_context=scenario_context,
     )
     
-    fixed_sql = llm.generate(prompt)
+    fixed_sql = llm.generate(prompt, max_tokens=300)
     
     try:
         results = execute_sql(db_service, fixed_sql, state.source_id) or []
@@ -461,36 +460,19 @@ def fix_sql_node(state: AgentState, llm: BaseLLM, schema_service: SchemaService,
         }
 
 
-def validation_node(state: AgentState, llm: BaseLLM) -> dict:
-    if not state.query_results:
-        return {
-            "validation_passed": False,
-            "validation_reason": "No results returned",
-            "retry_count": state.retry_count + 1,
-        }
-        
-    prompt = VALIDATION_PROMPT.format(
-        question=state.question,
-        sql=state.sql,
-        results=_json_dumps(state.query_results),
-    )
-    
-    response = llm.generate(prompt).strip()
-    if response.startswith("VALID"):
-        return {"validation_passed": True, "validation_reason": None}
-    else:
-        return {
-            "validation_passed": False,
-            "validation_reason": response,
-            "retry_count": state.retry_count + 1,
-        }
+
 
 
 def insight_node(state: AgentState, llm: BaseLLM) -> dict:
     if not state.query_results:
         return {"insights": _fallback_insights()}
 
-    truncated_results = state.query_results[:50]
+    # Truncate to 20 rows and 5 columns max to reduce input tokens
+    truncated_results = state.query_results[:20]
+    if truncated_results and len(truncated_results[0]) > 5:
+        keys = list(truncated_results[0].keys())[:5]
+        truncated_results = [{k: row.get(k) for k in keys} for row in truncated_results]
+
     prompt = (
         f"{INSIGHT_PROMPT}\n\n"
         f"Question:\n{state.question}\n\n"
@@ -498,7 +480,7 @@ def insight_node(state: AgentState, llm: BaseLLM) -> dict:
         f"{_json_dumps(truncated_results)}"
     )
 
-    raw_response = llm.generate(prompt)
+    raw_response = llm.generate(prompt, max_tokens=512)
     parsed_insights = _parse_insights(raw_response)
     return {"insights": parsed_insights if parsed_insights is not None else _fallback_insights()}
 
@@ -507,14 +489,14 @@ def suggestion_node(state: AgentState, llm: BaseLLM) -> dict:
     if not state.query_results:
         return {"suggestions": []}
 
+    # Send concise context to reduce input tokens
     prompt = (
         f"{SUGGESTION_PROMPT}\n\n"
         f"Question:\n{state.question}\n\n"
-        f"Generated SQL:\n{state.sql}\n\n"
-        f"Insights:\n{_json_dumps(state.insights)}"
+        f"Generated SQL:\n{state.sql}"
     )
 
-    raw_response = llm.generate(prompt)
+    raw_response = llm.generate(prompt, max_tokens=512)
     parsed_suggestions = _parse_suggestions(raw_response)
     return {"suggestions": parsed_suggestions if parsed_suggestions is not None else []}
 
@@ -558,7 +540,7 @@ def scenario_lesson_node(state: AgentState, llm: BaseLLM, schema_service: Schema
     )
 
     try:
-        lesson_text = llm.generate(prompt)
+        lesson_text = llm.generate(prompt, max_tokens=800)
     except Exception:
         lesson_text = None
 
@@ -694,7 +676,7 @@ class AgentGraph:
         workflow.add_node("approval", approval_node)
         workflow.add_node("execute_sql", lambda s: sql_execution_node(s, self.db_service))
         workflow.add_node("fix_sql", lambda s: fix_sql_node(s, self.llm, self.schema_service, self.db_service))
-        workflow.add_node("validate_result", lambda s: validation_node(s, self.llm))
+
         workflow.add_node("scenario_success", scenario_success_node)
         workflow.add_node("scenario_failure", scenario_failure_node)
         workflow.add_node("scenario_lesson", lambda s: scenario_lesson_node(s, self.llm, self.schema_service))

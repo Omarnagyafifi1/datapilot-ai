@@ -12,6 +12,7 @@ class OpenRouterLLM(BaseLLM):
                 "HTTP-Referer": "http://localhost:8000",
                 "X-Title": "DataPilot AI",
             },
+            timeout=30.0,
         )
         self.model = model or "google/gemma-4-31b-it:free"
 
@@ -20,8 +21,6 @@ class OpenRouterLLM(BaseLLM):
         if system_message:
             messages.append({"role": "system", "content": system_message})
         messages.append({"role": "user", "content": prompt})
-        kwargs = {"model": self.model, "messages": messages, "temperature": 0.0}
-        if max_tokens:
-            kwargs["max_tokens"] = max_tokens
+        kwargs = {"model": self.model, "messages": messages, "temperature": 0.0, "max_tokens": max_tokens or 1024}
         response = self.client.chat.completions.create(**kwargs)
         return response.choices[0].message.content or ""

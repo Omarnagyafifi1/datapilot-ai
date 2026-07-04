@@ -174,7 +174,7 @@ def get_engine(source_id: str, conn_string: str) -> Engine:
     _SOURCE_CONN_STRINGS[source_id] = normalized_conn_string
     return engine
 
-def execute_query(sql: str, source_id: str, timeout: int = 30) -> list[dict]:
+def execute_query(sql: str, source_id: str, timeout: int = 15) -> list[dict]:
     conn_string = _SOURCE_CONN_STRINGS.get(source_id)
     if conn_string is None:
         raise ValueError("Data source not found or not initialized")
@@ -186,9 +186,21 @@ def execute_query(sql: str, source_id: str, timeout: int = 30) -> list[dict]:
             rewritten_sql = _rewrite_month_extraction_filters(_rewrite_month_name_like_filters(sql))
         engine = get_engine(source_id=source_id, conn_string=conn_string)
         with engine.connect() as connection:
+            # Set dialect-specific statement timeout to prevent runaway queries
+            timeout_ms = timeout * 1000
+            if dialect == "sqlite":
+                connection.execute(text(f"PRAGMA busy_timeout = {timeout_ms}"))
+            elif dialect == "postgresql":
+                connection.execute(text(f"SET statement_timeout = {timeout_ms}"))
+            elif dialect == "mysql":
+                connection.execute(text(f"SET max_execution_time = {timeout_ms}"))
+            elif dialect == "mssql":
+                connection = connection.execution_options(timeout=timeout)
+            # Oracle: use OracleDB cancel via separate mechanism if needed
+
             result = connection.execute(text(rewritten_sql))
             if not result.returns_rows:
-                return []
+                return [{"status": "success", "rows_affected": result.rowcount}]
             return [dict(row) for row in result.mappings().fetchmany(1000)]
     except Exception as exc:
         logger.exception("Failed query execution for source_id=%s", source_id)

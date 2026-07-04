@@ -181,6 +181,15 @@ def connect_datasource(
         data_source_service.get_conn_string(source_id)
         db_service.get_source_schema(source_id)
         logger.info(f"Successfully pre-fetched schema for source_id={source_id}")
+
+        # Pre-warm suggestions cache in background so the UI gets instant suggestions
+        import threading
+        graph = get_graph_orchestrator()
+        threading.Thread(
+            target=_generate_and_cache_suggestions,
+            args=(source_id, graph),
+            daemon=True,
+        ).start()
     except Exception as e:
         logger.warning(f"Failed to pre-fetch schema for new source: {e}", exc_info=True)
 
@@ -235,27 +244,23 @@ def get_datasource_schema(
 
 _SUGGESTIONS_CACHE: dict[str, list[dict[str, str]]] = {}
 
-@router.get("/datasources/{id}/suggestions")
-def get_datasource_suggestions(
-    id: str,
-    data_source_service: DataSourceService = Depends(get_data_source_service),
-    graph=Depends(get_graph_orchestrator),
-) -> dict[str, Any]:
-    if id in _SUGGESTIONS_CACHE:
-        return _resp(success=True, message="Suggestions fetched", data=_SUGGESTIONS_CACHE[id])
 
-    data_source_service.get_conn_string(id)
-    schema = db_service.get_source_schema(id)
-    tables = schema.get("tables", [])
-
-    # Build a compact schema summary for the LLM
-    schema_lines = []
-    for t in tables:
-        cols = ", ".join(c["name"] for c in t.get("columns", []))
-        schema_lines.append(f"- {t['name']}({cols})")
-    schema_summary = "\n".join(schema_lines) if schema_lines else "No tables found."
+def _generate_and_cache_suggestions(source_id: str, graph) -> None:
+    """Generate LLM-powered suggestions and cache them. Safe to call from background threads."""
+    if source_id in _SUGGESTIONS_CACHE:
+        return
 
     try:
+        schema = db_service.get_source_schema(source_id)
+        tables = schema.get("tables", [])
+
+        # Build a compact schema summary for the LLM
+        schema_lines = []
+        for t in tables:
+            cols = ", ".join(c["name"] for c in t.get("columns", []))
+            schema_lines.append(f"- {t['name']}({cols})")
+        schema_summary = "\n".join(schema_lines) if schema_lines else "No tables found."
+
         from app.agents.prompts import INITIAL_SUGGESTION_PROMPT
         from app.agents.graph import _parse_suggestions
 
@@ -266,17 +271,35 @@ def get_datasource_suggestions(
         raw_response = graph.llm.generate(prompt)
         parsed = _parse_suggestions(raw_response)
         if parsed:
-            _SUGGESTIONS_CACHE[id] = parsed[:4]
-            return _resp(success=True, message="Suggestions fetched", data=parsed[:4])
+            _SUGGESTIONS_CACHE[source_id] = parsed[:4]
+            return
     except Exception:
         logger.warning("LLM suggestion generation failed, using fallback", exc_info=True)
 
     # Fallback: generate generic suggestions from table names
+    try:
+        schema = db_service.get_source_schema(source_id)
+        tables = schema.get("tables", [])
+    except Exception:
+        tables = []
     fallback = []
     for t in tables[:4]:
         fallback.append({"ar": f"أظهر أول 10 صفوف من {t['name']}", "en": f"Show first 10 rows from {t['name']}"})
-    _SUGGESTIONS_CACHE[id] = fallback[:4]
-    return _resp(success=True, message="Suggestions fetched", data=fallback[:4])
+    _SUGGESTIONS_CACHE[source_id] = fallback[:4]
+
+
+@router.get("/datasources/{id}/suggestions")
+def get_datasource_suggestions(
+    id: str,
+    data_source_service: DataSourceService = Depends(get_data_source_service),
+    graph=Depends(get_graph_orchestrator),
+) -> dict[str, Any]:
+    if id in _SUGGESTIONS_CACHE:
+        return _resp(success=True, message="Suggestions fetched", data=_SUGGESTIONS_CACHE[id])
+
+    data_source_service.get_conn_string(id)
+    _generate_and_cache_suggestions(id, graph)
+    return _resp(success=True, message="Suggestions fetched", data=_SUGGESTIONS_CACHE.get(id, []))
 
 
 @router.get("/system/stats")

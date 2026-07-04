@@ -17,7 +17,7 @@ def filter_schema_context(llm: BaseLLM, full_schema_str: str, question: str) -> 
             full_schema=full_schema_str,
             question=question
         )
-        response = llm.generate(prompt).strip()
+        response = llm.generate(prompt, max_tokens=1024).strip()
         
         if response.startswith("```"):
             lines = response.splitlines()
