@@ -156,6 +156,7 @@ def upload_csv_to_sqlite(csv_path: str, source_id: str) -> tuple[str, str]:
         df.to_sql(table_name, engine, if_exists="replace", index=False)
         
         _SOURCE_CONN_STRINGS[source_id] = conn_string
+        _SCHEMA_CACHE.pop(source_id, None)
         logger.info(f"Successfully uploaded {csv_path} to {db_path} as table {table_name}")
         return conn_string, table_name
     except Exception as e:
@@ -259,6 +260,10 @@ def close_engine(source_id: str) -> None:
 
 _SCHEMA_CACHE: dict[str, dict] = {}
 
+def clear_schema_cache(source_id: str) -> None:
+    _SCHEMA_CACHE.pop(source_id, None)
+
+
 def get_source_schema(source_id: str) -> dict:
     conn_string = _SOURCE_CONN_STRINGS.get(source_id)
     if conn_string is None:
@@ -339,4 +344,7 @@ class DBService:
 
     def run_query(self, sql: str, source_id: str | None = None, timeout: int | None = None) -> list[dict]:
         resolved_source_id = source_id or self.source_id
-        return execute_query(sql=sql, source_id=resolved_source_id)
+        kwargs = {}
+        if timeout is not None:
+            kwargs["timeout"] = timeout
+        return execute_query(sql=sql, source_id=resolved_source_id, **kwargs)

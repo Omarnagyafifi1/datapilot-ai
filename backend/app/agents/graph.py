@@ -723,10 +723,12 @@ class AgentGraph:
         workflow.add_edge("fetch_schema", "load_memory")
         workflow.add_conditional_edges("load_memory", route_sql_gen, ["lookup_scenario", "generate_mod_sql", "execute_sql", "approval"])
         
-        def route_scenario(state: AgentState) -> Literal["execute_sql", "generate_sql", "persist_memory"]:
+        def route_scenario(state: AgentState) -> Literal["execute_sql", "generate_sql"]:
+            if state.scenario_matched:
+                return "execute_sql"
             return "generate_sql"
 
-        workflow.add_conditional_edges("lookup_scenario", route_scenario, ["execute_sql", "generate_sql", "persist_memory"])
+        workflow.add_conditional_edges("lookup_scenario", route_scenario, ["execute_sql", "generate_sql"])
         
         def route_after_sql_gen(state: AgentState) -> Literal["execute_sql", "persist_memory"]:
             if state.documentation.get("preview_only"):
