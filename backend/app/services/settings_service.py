@@ -33,21 +33,28 @@ DEFAULT_SETTINGS: dict[str, Any] = {
 
 def _load() -> dict[str, Any]:
     if not SETTINGS_FILE.exists():
-        return dict(DEFAULT_SETTINGS)
+        return {
+            "llm_provider": DEFAULT_SETTINGS["llm_provider"],
+            "api_keys": dict(DEFAULT_SETTINGS["api_keys"]),
+            "visualization": dict(DEFAULT_SETTINGS["visualization"]),
+            "features": dict(DEFAULT_SETTINGS["features"]),
+        }
     try:
         data = json.loads(SETTINGS_FILE.read_text(encoding="utf-8"))
-        merged = dict(DEFAULT_SETTINGS)
-        merged.update(data)
-        if "api_keys" in data:
-            merged["api_keys"].update(data["api_keys"])
-        if "visualization" in data:
-            merged["visualization"].update(data["visualization"])
-        if "features" in data:
-            merged["features"].update(data["features"])
-        return merged
+        return {
+            "llm_provider": data.get("llm_provider", DEFAULT_SETTINGS["llm_provider"]),
+            "api_keys": {**DEFAULT_SETTINGS["api_keys"], **data.get("api_keys", {})},
+            "visualization": {**DEFAULT_SETTINGS["visualization"], **data.get("visualization", {})},
+            "features": {**DEFAULT_SETTINGS["features"], **data.get("features", {})},
+        }
     except Exception as exc:
         logger.warning("Failed to load settings: %s", exc)
-        return dict(DEFAULT_SETTINGS)
+        return {
+            "llm_provider": DEFAULT_SETTINGS["llm_provider"],
+            "api_keys": dict(DEFAULT_SETTINGS["api_keys"]),
+            "visualization": dict(DEFAULT_SETTINGS["visualization"]),
+            "features": dict(DEFAULT_SETTINGS["features"]),
+        }
 
 
 def _save(data: dict[str, Any]) -> None:

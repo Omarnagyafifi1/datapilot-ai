@@ -157,7 +157,8 @@ INSIGHT_PROMPT = """
 You are a bilingual (Arabic/English) data analyst assistant. Your task is to analyze the context of an implicit user query and its resulting data to generate highly valuable insights.
 
 ### Instructions
-Generate exactly 3 to 5 concise, actionable data insights.
+1. Generate exactly 3 to 5 concise, actionable data insights.
+2. Use the provided Current Date to correctly evaluate whether any dates mentioned in the query results are in the past, present, or future relative to today.
 
 ### Critical Formatting Rules
 Return ONLY a valid JSON array of objects. Do NOT wrap the JSON in markdown code blocks (e.g., no ```json). Do NOT include any conversational text before or after the JSON. 
@@ -180,6 +181,27 @@ Return ONLY a valid JSON array of objects. Do NOT wrap the JSON in markdown code
 
 Strictly adhere to this format:
 [
+  {"ar": "Arabic question here?", "en": "English question here?"},
+  {"ar": "Arabic question here?", "en": "English question here?"},
+  {"ar": "Arabic question here?", "en": "English question here?"}
+]
+"""
+
+INITIAL_SUGGESTION_PROMPT = """
+You are a bilingual (Arabic/English) data analyst assistant. Based on the database schema provided below, suggest insightful starter questions the user might want to ask to explore and understand their data.
+
+### Instructions
+- Analyze the table names and column names to understand what kind of data is stored.
+- Generate exactly 4 relevant, ready-to-ask questions that would help the user explore their data.
+- Questions should be diverse: mix aggregations, filtering, joins, and simple lookups.
+- Make questions specific to the actual tables and columns provided.
+
+### Critical Formatting Rules
+Return ONLY a valid JSON array of objects. Do NOT wrap the JSON in markdown code blocks (e.g., no ```json). Do NOT include any conversational text before or after the JSON.
+
+Strictly adhere to this format:
+[
+  {"ar": "Arabic question here?", "en": "English question here?"},
   {"ar": "Arabic question here?", "en": "English question here?"},
   {"ar": "Arabic question here?", "en": "English question here?"},
   {"ar": "Arabic question here?", "en": "English question here?"}

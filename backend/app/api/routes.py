@@ -3,6 +3,7 @@ from typing import Any
 from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from app.api.deps import get_data_source_service, get_graph_orchestrator, get_history_service
 from app.core.logger import get_logger
 from app.models.schemas import (
@@ -91,7 +92,7 @@ def query_endpoint(
             "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
             "Access-Control-Allow-Headers": "*",
         }
-        return JSONResponse(content=result, headers=headers)
+        return JSONResponse(content=jsonable_encoder(result), headers=headers)
     except Exception as e:
         status = "ERROR"
         logger.exception("Query failed")
@@ -174,6 +175,15 @@ def connect_datasource(
     if not result.get("success"):
         raise HTTPException(status_code=400, detail="Connection failed")
 
+    # Fetch and cache the schema immediately upon connection
+    try:
+        source_id = result["id"]
+        data_source_service.get_conn_string(source_id)
+        db_service.get_source_schema(source_id)
+        logger.info(f"Successfully pre-fetched schema for source_id={source_id}")
+    except Exception as e:
+        logger.warning(f"Failed to pre-fetch schema for new source: {e}", exc_info=True)
+
     return _resp(success=True, message="Data source connected", data=result)
 
 
@@ -223,30 +233,50 @@ def get_datasource_schema(
     return _resp(success=True, message="Schema fetched", data=schema.get("tables", []))
 
 
+_SUGGESTIONS_CACHE: dict[str, list[dict[str, str]]] = {}
+
 @router.get("/datasources/{id}/suggestions")
 def get_datasource_suggestions(
     id: str,
     data_source_service: DataSourceService = Depends(get_data_source_service),
+    graph=Depends(get_graph_orchestrator),
 ) -> dict[str, Any]:
+    if id in _SUGGESTIONS_CACHE:
+        return _resp(success=True, message="Suggestions fetched", data=_SUGGESTIONS_CACHE[id])
+
     data_source_service.get_conn_string(id)
     schema = db_service.get_source_schema(id)
     tables = schema.get("tables", [])
-    
-    suggestions = []
-    table_names = [t["name"].lower() for t in tables]
-    
-    if "employees" in table_names:
-        suggestions.extend(["Show all employees and their salaries", "ما هو إجمالي الرواتب لكل قسم؟", "من هم أعلى 5 موظفين راتباً؟"])
-    if "sales" in table_names:
-        suggestions.extend(["Show total sales revenue by category", "أظهر المبيعات الإجمالية حسب الفئة بالعربية", "What were total sales by month?"])
-    if "inventory" in table_names:
-        suggestions.extend(["Which products are below reorder level?", "عرض المنتجات التي نفد مخزونها"])
-        
-    if len(suggestions) < 3:
-        for t in tables:
-            suggestions.append(f"Show first 10 rows from {t['name']}")
-            
-    return _resp(success=True, message="Suggestions fetched", data=suggestions[:4])
+
+    # Build a compact schema summary for the LLM
+    schema_lines = []
+    for t in tables:
+        cols = ", ".join(c["name"] for c in t.get("columns", []))
+        schema_lines.append(f"- {t['name']}({cols})")
+    schema_summary = "\n".join(schema_lines) if schema_lines else "No tables found."
+
+    try:
+        from app.agents.prompts import INITIAL_SUGGESTION_PROMPT
+        from app.agents.graph import _parse_suggestions
+
+        prompt = (
+            f"{INITIAL_SUGGESTION_PROMPT}\n\n"
+            f"### Database Schema\n{schema_summary}"
+        )
+        raw_response = graph.llm.generate(prompt)
+        parsed = _parse_suggestions(raw_response)
+        if parsed:
+            _SUGGESTIONS_CACHE[id] = parsed[:4]
+            return _resp(success=True, message="Suggestions fetched", data=parsed[:4])
+    except Exception:
+        logger.warning("LLM suggestion generation failed, using fallback", exc_info=True)
+
+    # Fallback: generate generic suggestions from table names
+    fallback = []
+    for t in tables[:4]:
+        fallback.append({"ar": f"أظهر أول 10 صفوف من {t['name']}", "en": f"Show first 10 rows from {t['name']}"})
+    _SUGGESTIONS_CACHE[id] = fallback[:4]
+    return _resp(success=True, message="Suggestions fetched", data=fallback[:4])
 
 
 @router.get("/system/stats")
@@ -380,6 +410,7 @@ def get_settings_endpoint() -> dict[str, Any]:
 @router.post("/settings")
 def update_settings_endpoint(payload: SettingsRequest) -> dict[str, Any]:
     from app.services.settings_service import update_settings
+    from app.api.deps import reset_graph_orchestrator
     updates = {}
     if payload.llm_provider is not None:
         updates["llm_provider"] = payload.llm_provider
@@ -390,4 +421,6 @@ def update_settings_endpoint(payload: SettingsRequest) -> dict[str, Any]:
     if payload.features is not None:
         updates["features"] = payload.features
     result = update_settings(updates)
+    # Reset the graph orchestrator so the next request uses the new LLM provider/keys
+    reset_graph_orchestrator()
     return _resp(success=True, message="Settings updated", data=result)

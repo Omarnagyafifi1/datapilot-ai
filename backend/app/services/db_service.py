@@ -168,6 +168,8 @@ def get_engine(source_id: str, conn_string: str) -> Engine:
     if cached is not None and _SOURCE_CONN_STRINGS.get(source_id) == normalized_conn_string:
         return cached
     engine = create_engine(normalized_conn_string)
+    if engine.dialect.name == "oracle":
+        engine.dialect.exclude_tablespaces = ()
     _ENGINE_CACHE[source_id] = engine
     _SOURCE_CONN_STRINGS[source_id] = normalized_conn_string
     return engine
@@ -218,15 +220,24 @@ def test_connection(params: dict) -> dict:
         elif db_type == "mysql":
             conn_string = f"mysql+pymysql://{username}:{quote_plus(password)}@{host}:{port}/{db_name}"
         elif db_type == "mssql":
-            conn_string = f"mssql+pyodbc://{username}:{quote_plus(password)}@{host}:{port or '1433'}/{db_name}?driver=ODBC+Driver+17+for+SQL+Server"
+            conn_string = f"mssql+pymssql://{username}:{quote_plus(password)}@{host}:{port or '1433'}/{db_name}"
         elif db_type == "oracle":
-            conn_string = f"oracle+cx_oracle://{username}:{quote_plus(password)}@{host}:{port or '1521'}/?service_name={db_name}"
+            conn_string = f"oracle+oracledb://{username}:{quote_plus(password)}@{host}:{port or '1521'}/?service_name={db_name}"
         else:
             return {"success": False, "error": f"Unsupported database type: {db_type}"}
 
-        engine = create_engine(conn_string, connect_args={"connect_timeout": 5} if db_type != "sqlite" else {})
+        if db_type in ("mysql", "postgresql"):
+            connect_args = {"connect_timeout": 5}
+        elif db_type == "oracle":
+            connect_args = {"tcp_connect_timeout": 5}
+        elif db_type == "mssql":
+            connect_args = {"timeout": 5}
+        else:
+            connect_args = {}
+        engine = create_engine(conn_string, connect_args=connect_args)
         with engine.connect() as connection:
-            connection.execute(text("SELECT 1"))
+            test_query = "SELECT 1 FROM DUAL" if db_type == "oracle" else "SELECT 1"
+            connection.execute(text(test_query))
         engine.dispose()
         return {"success": True}
     except Exception as exc:
@@ -263,6 +274,33 @@ def get_source_schema(source_id: str) -> dict:
             tables: list[dict] = []
 
             for table_name in inspector.get_table_names():
+                if engine.dialect.name == "oracle":
+                    name_upper = table_name.upper()
+                    is_system = (
+                        name_upper.endswith('$') or
+                        name_upper.startswith('LOGMNR') or
+                        name_upper.startswith('LOGSTDBY') or
+                        name_upper.startswith('ROLLING') or
+                        name_upper.startswith('MVIEW') or
+                        name_upper.startswith('AQ$') or
+                        name_upper.startswith('SCHEDULER') or
+                        name_upper.startswith('REPL_') or
+                        name_upper.startswith('SQLPLUS_') or
+                        name_upper.startswith('HELP') or
+                        name_upper.startswith('OL$') or
+                        name_upper.startswith('REDO')
+                    )
+                    if is_system:
+                        continue
+                elif engine.dialect.name == "mssql":
+                    name_upper = table_name.upper()
+                    is_system = (
+                        name_upper.startswith('SPT_') or
+                        name_upper.startswith('MSREPLICATION_')
+                    )
+                    if is_system:
+                        continue
+
                 columns = inspector.get_columns(table_name)
                 tables.append(
                     {

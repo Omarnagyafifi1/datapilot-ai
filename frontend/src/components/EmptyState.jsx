@@ -7,15 +7,18 @@ export function EmptyState({ title, examples = COPY.EMPTY_QUERY_EXAMPLES, onSele
       <h4 className="text-lg font-bold mb-2">{title}</h4>
       <p className="text-sm text-muted mb-4">Try one of these example prompts:</p>
       <div className="flex justify-center gap-3 flex-wrap">
-        {examples.map((e) => (
-          <button 
-            key={e} 
-            onClick={() => onSelectExample && onSelectExample(e)}
-            className="px-4 py-2 bg-white/[0.03] hover:bg-cyber-cyan/10 border border-white/5 hover:border-cyber-cyan/30 rounded font-mono text-[12px] text-cyber-cyan transition-all cursor-pointer hover:scale-105 active:scale-95"
-          >
-            {e}
-          </button>
-        ))}
+        {examples.map((e) => {
+          const label = typeof e === 'object' ? (e.en || e.ar) : e;
+          return (
+            <button 
+              key={label} 
+              onClick={() => onSelectExample && onSelectExample(label)}
+              className="px-4 py-2 bg-white/[0.03] hover:bg-cyber-cyan/10 border border-white/5 hover:border-cyber-cyan/30 rounded font-mono text-[12px] text-cyber-cyan transition-all cursor-pointer hover:scale-105 active:scale-95"
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

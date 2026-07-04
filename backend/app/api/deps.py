@@ -41,7 +41,9 @@ def get_graph_orchestrator() -> AgentGraph:
     global _graph_orchestrator
     if _graph_orchestrator is None:
         try:
-            llm = get_llm(provider=settings.LLM_PROVIDER)
+            # Use dynamic settings (settings.json) as the source of truth.
+            # Falls back to .env LLM_PROVIDER only if no dynamic setting is saved.
+            llm = get_llm()
             _graph_orchestrator = AgentGraph(
                 llm=llm,
                 db_service=_db_service,
@@ -56,12 +58,22 @@ def get_graph_orchestrator() -> AgentGraph:
     return _graph_orchestrator
 
 
+def reset_graph_orchestrator() -> None:
+    """Reset the graph orchestrator so it rebuilds with updated settings on next request."""
+    from app.llm.factory import _get_cached_llm
+    global _graph_orchestrator
+    _graph_orchestrator = None
+    _get_cached_llm.cache_clear()
+    logger.info("Graph orchestrator reset — will rebuild with new settings on next request")
+
+
 def get_data_source_service() -> DataSourceService:
     return _data_source_service
 
 
 def close_graph_orchestrator() -> None:
     _memory_backends.close()
+    reset_graph_orchestrator()
 
 def get_history_service() -> HistoryService:
     return _history_service
