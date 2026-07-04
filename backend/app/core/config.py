@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     # App Settings
     APP_NAME: str = "DataPilot AI"
     DEBUG: bool = False
+    LLM_PROVIDER: str = "groq"
     # Default LLM provider (used when no provider is specified in runtime settings)
     DEFAULT_LLM_PROVIDER: str = "groq"
 

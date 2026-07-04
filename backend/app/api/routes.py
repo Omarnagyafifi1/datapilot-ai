@@ -708,8 +708,9 @@ def update_llm_settings_endpoint(
     provider = body.get("provider")
     model = body.get("model")
     temperature = body.get("temperature")
-    max_tokens = body.get("max_tokens")
-    api_keys = body.get("api_keys")
+    # Accept both camelCase (frontend) and snake_case
+    max_tokens = body.get("max_tokens") or body.get("maxTokens")
+    api_keys = body.get("api_keys") or body.get("apiKeys")
     
     try:
         updated = save_llm_settings(
@@ -719,6 +720,9 @@ def update_llm_settings_endpoint(
             max_tokens=max_tokens,
             api_keys=api_keys,
         )
+        # Reset the graph orchestrator so next request uses updated settings
+        from app.api.deps import reset_graph_orchestrator
+        reset_graph_orchestrator()
         # Sanitize response
         sanitized = updated.copy()
         sanitized["api_keys"] = {

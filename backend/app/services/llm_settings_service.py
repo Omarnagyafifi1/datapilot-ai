@@ -119,6 +119,15 @@ def save_llm_settings(
         ).mappings().first()
         
         if existing:
+            existing_keys = json.loads(existing["api_keys"]) if existing["api_keys"] else {}
+            # Merge keys: if new value starts with "***", keep the existing key
+            merged_keys = {}
+            for k, v in settings_data["api_keys"].items():
+                if v and v.startswith("***"):
+                    merged_keys[k] = existing_keys.get(k, "")
+                else:
+                    merged_keys[k] = v
+
             session.execute(
                 update(_LLM_SETTINGS)
                 .where(_LLM_SETTINGS.c.id == "default")
@@ -127,7 +136,7 @@ def save_llm_settings(
                     model=settings_data["model"],
                     temperature=settings_data["temperature"],
                     max_tokens=settings_data["max_tokens"],
-                    api_keys=json.dumps(settings_data["api_keys"]),
+                    api_keys=json.dumps(merged_keys),
                     updated_at=datetime.utcnow(),
                 )
             )
@@ -135,8 +144,12 @@ def save_llm_settings(
             session.execute(
                 insert(_LLM_SETTINGS).values(
                     id="default",
-                    **settings_data,
+                    provider=settings_data["provider"],
+                    model=settings_data["model"],
+                    temperature=settings_data["temperature"],
+                    max_tokens=settings_data["max_tokens"],
                     api_keys=json.dumps(settings_data["api_keys"]),
+                    updated_at=datetime.utcnow(),
                 )
             )
         session.commit()

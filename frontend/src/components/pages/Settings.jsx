@@ -95,6 +95,18 @@ export function Settings({ themeMode, onChangeTheme }) {
             temperature: settings.temperature ?? prev.temperature,
             maxTokens: settings.max_tokens ?? prev.maxTokens,
           }));
+          // Load API key indicators (masked from backend)
+          if (settings.api_keys) {
+            setApiKeys(prev => {
+              const updated = { ...prev };
+              Object.keys(settings.api_keys).forEach(k => {
+                if (settings.api_keys[k] && settings.api_keys[k] !== '') {
+                  updated[k] = settings.api_keys[k];
+                }
+              });
+              return updated;
+            });
+          }
         }
       })
       .catch(err => {
@@ -162,8 +174,8 @@ export function Settings({ themeMode, onChangeTheme }) {
         provider: selectedProvider,
         model: selectedModel,
         temperature: advanced.temperature,
-        maxTokens: advanced.maxTokens,
-        apiKeys: apiKeys,
+        max_tokens: advanced.maxTokens,
+        api_keys: apiKeys,
       });
     } catch (err) {
       console.warn('Could not save LLM settings to backend:', err);
