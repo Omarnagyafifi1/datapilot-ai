@@ -54,7 +54,6 @@ export const api = {
   system: {
     stats: () => client.get('/system/stats'),
     feed: () => client.get('/system/feed'),
-    metrics: () => client.get('/system/metrics'),
   },
 
   uploads: {
@@ -76,20 +75,9 @@ export const api = {
     update: (id, data) => client.patch(`/datasets/${id}`, data),
   },
 
-  llmSettings: {
+  settings: {
     get: () => client.get('/settings/llm'),
     update: (data) => client.put('/settings/llm', data),
-  },
-
-  evaluate: (question, sql, sourceId) => client.post('/evaluate', {
-    question,
-    sql,
-    source_id: sourceId,
-  }),
-
-  settings: {
-    get: () => client.get('/settings'),
-    update: (data) => client.post('/settings', data),
   },
 };
 

@@ -1,28 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Settings as SettingsIcon, Brain, Key, Server, Shield, Info,
-  CheckCircle2, Cpu, Eye, ToggleLeft, Save, AlertCircle,
-  RefreshCw, Database, BarChart3, Globe, Unlock, Sliders, Monitor, CheckCircle
-} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Settings as SettingsIcon, Key, Server, Brain, Shield, Sliders, Monitor, CheckCircle, Save } from 'lucide-react';
 import { api } from '../../lib/api';
-import { cn } from '../../lib/utils';
-
-const PROVIDERS = [
-  { id: 'litellm', label: 'LiteLLM (Latency Router)', desc: 'Dynamically routes to the fastest model among your provided keys.' },
-  { id: 'groq', label: 'Groq', desc: 'Fast inference with Llama/Mixtral models.' },
-  { id: 'openrouter', label: 'OpenRouter', desc: 'Unified API for 200+ models.' },
-  { id: 'gemini', label: 'Google Gemini', desc: 'Google\'s Gemini models.' },
-  { id: 'openai', label: 'OpenAI', desc: 'GPT-4 / GPT-3.5 models.' },
-  { id: 'mock', label: 'Mock (No LLM)', desc: 'Uses pre-defined responses for testing, no API key needed.' },
-];
-
-const FEATURES = [
-  { key: 'scenario_memory', label: 'Scenario Memory', desc: 'Log SQL failures with lessons learned for future reference.' },
-  { key: 'arabic_column_rewrite', label: 'Arabic Column Rewrite', desc: 'Auto-replace English columns with _ar variants for Arabic queries.' },
-  { key: 'context_filtering', label: 'Context-Aware Schema Filtering', desc: 'Use LLM to prune irrelevant tables/columns before SQL generation.' },
-  { key: 'auto_visualization', label: 'Auto Visualization', desc: 'Automatically generate Plotly charts from query results.' },
-  { key: 'human_approval_write', label: 'Human Approval for Writes', desc: 'Require user confirmation before executing INSERT/UPDATE/DELETE.' },
-];
 
 const PROVIDER_MODELS = {
   openai: [
@@ -63,9 +41,6 @@ const PROVIDER_MODELS = {
     { id: 'llama3', name: 'Llama 3 (Local)' },
     { id: 'mistral', name: 'Mistral (Local)' },
     { id: 'phi3', name: 'Phi-3 (Local)' }
-  ],
-  mock: [
-    { id: 'mock', name: 'Mock Engine (Local)' }
   ]
 };
 
@@ -74,7 +49,7 @@ export function Settings({ themeMode, onChangeTheme }) {
   const [healthStatus, setHealthStatus] = useState(null);
   const [savedStatus, setSavedStatus] = useState(false);
 
-  // API Keys state
+  // Settings state
   const [apiKeys, setApiKeys] = useState({
     openai: '',
     anthropic: '',
@@ -102,26 +77,19 @@ export function Settings({ themeMode, onChangeTheme }) {
     developerMode: false
   });
 
-  // Features & Visualization state from main branch
-  const [features, setFeatures] = useState({});
-  const [vizConfig, setVizConfig] = useState({ default_chart_type: 'auto', max_bars: 20, theme: 'dark' });
-
+  // Load settings from backend on mount
   useEffect(() => {
     api.health()
-      .then(r => setHealthStatus(r.data?.status === 'ok' ? 'online' : 'offline'))
+      .then(resp => setHealthStatus(resp.data?.status === 'ok' ? 'online' : 'offline'))
       .catch(() => setHealthStatus('offline'));
 
     // Load LLM settings from backend
-    api.llmSettings.get()
+    api.settings.get()
       .then(resp => {
         if (resp.data?.success && resp.data?.data) {
           const settings = resp.data.data;
           setSelectedProvider(settings.provider || 'groq');
           setSelectedModel(settings.model || 'llama-3.3-70b-versatile');
-          setApiKeys(prev => ({
-            ...prev,
-            ...settings.api_keys
-          }));
           setAdvanced(prev => ({
             ...prev,
             temperature: settings.temperature ?? prev.temperature,
@@ -155,19 +123,6 @@ export function Settings({ themeMode, onChangeTheme }) {
           temperature: storedTemp,
           maxTokens: storedMaxTokens
         }));
-      });
-
-    // Load general settings from backend
-    api.settings.get()
-      .then(resp => {
-        if (resp.data?.success && resp.data?.data) {
-          const s = resp.data.data;
-          setFeatures(s.features || {});
-          setVizConfig(s.visualization || { default_chart_type: 'auto', max_bars: 20, theme: 'dark' });
-        }
-      })
-      .catch(err => {
-        console.warn('Could not load general settings from backend:', err);
       });
   }, []);
 
@@ -203,7 +158,7 @@ export function Settings({ themeMode, onChangeTheme }) {
 
     // Save LLM settings to backend
     try {
-      await api.llmSettings.update({
+      await api.settings.update({
         provider: selectedProvider,
         model: selectedModel,
         temperature: advanced.temperature,
@@ -212,19 +167,6 @@ export function Settings({ themeMode, onChangeTheme }) {
       });
     } catch (err) {
       console.warn('Could not save LLM settings to backend:', err);
-    }
-
-    // Save general settings to backend (features & visualization)
-    try {
-      const payload = {
-        llm_provider: selectedProvider,
-        api_keys: Object.fromEntries(Object.entries(apiKeys).filter(([, v]) => v)),
-        visualization: vizConfig,
-        features,
-      };
-      await api.settings.update(payload);
-    } catch (err) {
-      console.warn('Could not save general settings to backend:', err);
     }
 
     setSavedStatus(true);
@@ -267,7 +209,6 @@ export function Settings({ themeMode, onChangeTheme }) {
         {/* Left Side Tab Navigation */}
         <aside className="w-full md:w-64 flex flex-col gap-2">
           <TabButton active={activeTab === 'providers'} onClick={() => setActiveTab('providers')} icon={<Brain size={16} />} label="AI Providers" desc="API Keys & Model Selection" />
-          <TabButton active={activeTab === 'features'} onClick={() => setActiveTab('features')} icon={<ToggleLeft size={16} />} label="Features & Charting" desc="Toggle System Capabilities" />
           <TabButton active={activeTab === 'application'} onClick={() => setActiveTab('application')} icon={<Monitor size={16} />} label="Application" desc="Theme & Chat Preferences" />
           <TabButton active={activeTab === 'advanced'} onClick={() => setActiveTab('advanced')} icon={<Sliders size={16} />} label="Advanced" desc="Developer & Temperature Options" />
           <TabButton active={activeTab === 'status'} onClick={() => setActiveTab('status')} icon={<Server size={16} />} label="System Status" desc="Network & Database Health" />
@@ -298,7 +239,6 @@ export function Settings({ themeMode, onChangeTheme }) {
                     <option value="openrouter">OpenRouter</option>
                     <option value="together">Together AI</option>
                     <option value="ollama">Ollama (Local)</option>
-                    <option value="mock">Mock (No LLM)</option>
                   </select>
                 </div>
 
@@ -335,72 +275,6 @@ export function Settings({ themeMode, onChangeTheme }) {
                       />
                     </div>
                   ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'features' && (
-            <div className="space-y-6 animate-in fade-in duration-300">
-              <div>
-                <h3 className="text-lg font-bold mb-2">System Features & Charting</h3>
-                <p className="text-xs text-muted">Toggle special compiler features, Arabic translation support, next steps generation, and Plotly visualization options.</p>
-              </div>
-
-              <div className="space-y-4 pt-4 border-t border-border">
-                <h4 className="text-sm font-mono font-bold text-foreground/80 uppercase mb-2">Feature Toggles</h4>
-                {FEATURES.map(f => (
-                  <ToggleItem
-                    key={f.key}
-                    label={f.label}
-                    desc={f.desc}
-                    checked={features[f.key] || false}
-                    onChange={(checked) => setFeatures(prev => ({ ...prev, [f.key]: checked }))}
-                  />
-                ))}
-              </div>
-
-              <div className="border-t border-border pt-6 mt-6 space-y-4">
-                <h4 className="text-sm font-mono font-bold text-foreground/80 uppercase">Visualization Preferences</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-mono font-bold text-muted uppercase">Default Chart</label>
-                    <select
-                      value={vizConfig.default_chart_type || 'auto'}
-                      onChange={e => setVizConfig(prev => ({ ...prev, default_chart_type: e.target.value }))}
-                      className="w-full bg-foreground/5 border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:border-cyber-cyan transition-colors"
-                    >
-                      <option value="auto">Auto-detect</option>
-                      <option value="bar">Bar Chart</option>
-                      <option value="line">Line Chart</option>
-                      <option value="pie">Pie Chart</option>
-                      <option value="scatter">Scatter Plot</option>
-                      <option value="histogram">Histogram</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-mono font-bold text-muted uppercase">Max Bars</label>
-                    <input
-                      type="number"
-                      min={5}
-                      max={50}
-                      value={vizConfig.max_bars || 20}
-                      onChange={e => setVizConfig(prev => ({ ...prev, max_bars: Number(e.target.value) }))}
-                      className="w-full bg-foreground/5 border border-border rounded-xl px-4 py-2.5 text-xs text-foreground focus:outline-none focus:border-cyber-cyan transition-colors font-mono"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-mono font-bold text-muted uppercase">Theme</label>
-                    <select
-                      value={vizConfig.theme || 'dark'}
-                      onChange={e => setVizConfig(prev => ({ ...prev, theme: e.target.value }))}
-                      className="w-full bg-foreground/5 border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:border-cyber-cyan transition-colors"
-                    >
-                      <option value="dark">Dark</option>
-                      <option value="light">Light</option>
-                      <option value="plotly_white">Plotly White</option>
-                    </select>
-                  </div>
                 </div>
               </div>
             </div>
@@ -545,19 +419,6 @@ export function Settings({ themeMode, onChangeTheme }) {
                   <SafetyBadge label="Database Password Storage" desc="All stored DB credentials are encrypted with AES-128-CBC." />
                 </div>
               </div>
-
-              {/* About section merged from main */}
-              <div className="border-t border-border pt-6 mt-6">
-                <h4 className="text-sm font-mono font-bold text-foreground/80 uppercase mb-4 flex items-center gap-2">
-                  <Info size={14} className="text-cyber-cyan" /> About Platform
-                </h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <AboutItem label="Version" value="1.0.0" />
-                  <AboutItem label="Frontend" value="React + Vite" />
-                  <AboutItem label="Backend" value="FastAPI" />
-                  <AboutItem label="Engine" value="LangGraph" />
-                </div>
-              </div>
             </div>
           )}
         </main>
@@ -626,15 +487,6 @@ function SafetyBadge({ label, desc }) {
         <p className="text-xs font-bold text-foreground/95">{label}</p>
         <p className="text-[10px] text-muted leading-relaxed mt-0.5">{desc}</p>
       </div>
-    </div>
-  );
-}
-
-function AboutItem({ label, value }) {
-  return (
-    <div className="p-4 bg-foreground/[0.02] border border-border rounded-xl text-center">
-      <p className="text-[10px] font-mono font-bold text-muted uppercase tracking-widest mb-2">{label}</p>
-      <p className="text-sm font-bold text-foreground">{value}</p>
     </div>
   );
 }

@@ -1,17 +1,9 @@
 import React from 'react';
-import { Calendar, CheckCircle2, Download, FileText, Lightbulb, Sparkles, Table as TableIcon, Terminal, BarChart3 } from 'lucide-react';
+import { Calendar, CheckCircle2, FileText, Lightbulb, Sparkles, Table as TableIcon, Terminal } from 'lucide-react';
 import { api } from '../lib/api';
 import { cn } from '../lib/utils';
 
 const PAGE_SIZE = 10;
-
-function loadPlotly(callback) {
-  if (window.Plotly) { callback(window.Plotly); return; }
-  const script = document.createElement('script');
-  script.src = 'https://cdn.plot.ly/plotly-2.35.2.min.js';
-  script.onload = () => callback(window.Plotly);
-  document.head.appendChild(script);
-}
 
 export function ResultVisualizer({ doc }) {
   const [explainText, setExplainText] = React.useState(null);
@@ -20,8 +12,6 @@ export function ResultVisualizer({ doc }) {
   const [page, setPage] = React.useState(1);
   const [pageRows, setPageRows] = React.useState(null);
   const [pageLoading, setPageLoading] = React.useState(false);
-  const chartRef = React.useRef(null);
-  const [chartRendered, setChartRendered] = React.useState(false);
 
   if (!doc) return null;
 
@@ -31,7 +21,6 @@ export function ResultVisualizer({ doc }) {
   const fallbackSlice = (doc.results || []).slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const visibleRows = pageRows || fallbackSlice;
   const visualization = doc.visualization || {};
-  const hasPlotlySpec = visualization && visualization.spec && visualization.spec.data;
 
   async function loadPage(nextPage) {
     setPage(nextPage);
@@ -53,37 +42,13 @@ export function ResultVisualizer({ doc }) {
     }
   }
 
-  function openChartPreview() {
-    setShowPreview(true);
-    setChartRendered(false);
-  }
-
-  React.useEffect(() => {
-    if (!showPreview || !hasPlotlySpec || chartRendered) return;
-    loadPlotly((Plotly) => {
-      if (chartRef.current && !chartRendered) {
-        Plotly.newPlot(chartRef.current, visualization.spec.data, visualization.spec.layout || {}, {
-          responsive: true,
-          displayModeBar: true,
-        });
-        setChartRendered(true);
-      }
-    });
-  }, [showPreview, hasPlotlySpec, chartRendered, visualization.spec]);
-
-  React.useEffect(() => {
-    if (!showPreview) {
-      setChartRendered(false);
-    }
-  }, [showPreview]);
-
   return (
     <div className="mt-6 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <MetricCard icon={<TableIcon size={16} />} label="Rows" value={totalRows} color="blue" />
         <MetricCard icon={<Calendar size={16} />} label="Executed" value={formatTime(doc.executed_at)} color="purple" />
         <MetricCard icon={<CheckCircle2 size={16} />} label="Status" value="Success" color="green" />
-        <MetricCard icon={<BarChart3 size={16} />} label="Chart" value={hasPlotlySpec ? visualization.chart_type || 'Available' : 'None'} color={hasPlotlySpec ? 'amber' : 'gray'} />
+        <MetricCard icon={<Sparkles size={16} />} label="Chart" value={visualization.chart_type || 'None'} color="amber" />
       </div>
 
       <div className="glass rounded-2xl border-border overflow-hidden">
@@ -107,20 +72,13 @@ export function ResultVisualizer({ doc }) {
             Explain
           </ActionButton>
           <ActionButton onClick={() => exportResultsCSV(doc.results || [])}>Export CSV</ActionButton>
-          {hasPlotlySpec && (
-            <ActionButton onClick={openChartPreview}>
-              <BarChart3 size={12} /> Plotly Chart
-            </ActionButton>
-          )}
-          {!hasPlotlySpec && (
-            <ActionButton onClick={() => {
-              const svg = buildChartSVG(doc.results || [], 'bar');
-              setChartSvg(svg);
-              setShowPreview(true);
-            }}>
-              Preview Chart
-            </ActionButton>
-          )}
+          <ActionButton onClick={() => {
+            const svg = buildChartSVG(doc.results || [], visualization.chart_type);
+            setChartSvg(svg);
+            setShowPreview(true);
+          }}>
+            Preview Chart
+          </ActionButton>
           <ActionButton onClick={() => exportReport(doc)}>
             <FileText size={12} /> Export Report
           </ActionButton>
@@ -136,27 +94,17 @@ export function ResultVisualizer({ doc }) {
 
       {showPreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setShowPreview(false)} />
-          <div className="relative bg-card p-6 rounded-2xl w-[95%] max-w-5xl h-[85vh] border border-border flex flex-col">
-            <div className="flex items-center justify-between mb-4 gap-4 shrink-0">
-              <h4 className="text-lg font-bold">
-                {hasPlotlySpec ? `Chart Preview — ${visualization.chart_type}` : 'Simple Chart Preview'}
-              </h4>
+          <div className="absolute inset-0 bg-background/60" onClick={() => setShowPreview(false)} />
+          <div className="relative bg-card p-6 rounded-2xl w-[90%] max-w-3xl border border-border">
+            <div className="flex items-center justify-between mb-4 gap-4">
+              <h4 className="text-lg font-bold">Chart Preview</h4>
               <div className="flex items-center gap-2">
-                {!hasPlotlySpec && <ActionButton onClick={() => downloadSVG(chartSvg)}>SVG</ActionButton>}
-                {!hasPlotlySpec && <ActionButton onClick={() => downloadPNGFromSVG(chartSvg)}>PNG</ActionButton>}
+                <ActionButton onClick={() => downloadSVG(chartSvg)}>SVG</ActionButton>
+                <ActionButton onClick={() => downloadPNGFromSVG(chartSvg)}>PNG</ActionButton>
                 <ActionButton onClick={() => setShowPreview(false)}>Close</ActionButton>
               </div>
             </div>
-            <div className="flex-1 overflow-auto min-h-0">
-              {hasPlotlySpec ? (
-                <div ref={chartRef} className="w-full h-full min-h-[400px]" />
-              ) : chartSvg ? (
-                <div dangerouslySetInnerHTML={{ __html: chartSvg }} />
-              ) : (
-                <p className="text-muted text-sm">No chart available.</p>
-              )}
-            </div>
+            <div className="overflow-auto">{chartSvg ? <div dangerouslySetInnerHTML={{ __html: chartSvg }} /> : <p>No chart available.</p>}</div>
           </div>
         </div>
       )}
@@ -242,11 +190,11 @@ function MetricCard({ icon, label, value, color }) {
     purple: 'text-purple-400 bg-purple-400/10',
     green: 'text-emerald-400 bg-emerald-400/10',
     amber: 'text-amber-400 bg-amber-400/10',
-    gray: 'text-white/30 bg-white/5',
   };
+
   return (
     <div className="glass p-4 rounded-2xl border-border bg-card">
-      <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center mb-2', colors[color] || colors.gray)}>{icon}</div>
+      <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center mb-2', colors[color])}>{icon}</div>
       <p className="text-[10px] font-bold text-foreground/40 uppercase tracking-wider">{label}</p>
       <p className="text-lg font-bold text-foreground mt-1">{value}</p>
     </div>

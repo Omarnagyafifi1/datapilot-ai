@@ -315,7 +315,6 @@ export function ChatInterface({
         type: 'bot',
         content: payload.answer || payload.message || (payload.requires_approval ? 'Approval required before execution.' : 'Completed execution of generated query.'),
         doc: derivedDoc,
-        eval: payload.evaluation || null,
         timestamp: new Date().toISOString()
       };
 
@@ -604,39 +603,14 @@ export function ChatInterface({
                   <div className={cn(
                     "relative p-6 rounded-2xl border border-border",
                     isBot ? "bg-card border-l-2 border-l-cyber-cyan" : "bg-foreground/[0.02] border-l-2 border-l-cyber-pink"
-                  )}>                    {renderMarkdown(msg.content)}
+                  )}>
+                    {renderMarkdown(msg.content)}
 
                     {/* Integrated Query Results - Expandable block */}
                     {isBot && msg.doc && (
                       <ExpandableDetails title="Database Execution Artifacts">
                         <ResultVisualizer doc={msg.doc} />
                       </ExpandableDetails>
-                    )}
-
-                    {isBot && msg.eval && (
-                      <div className="mt-8 border-t border-border pt-6">
-                        <div className="flex items-center gap-2 text-[10px] font-mono text-cyber-cyan uppercase tracking-[0.2em] mb-4">
-                          <Activity size={14} /> AI Quality Evaluation
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <div className="bg-foreground/[0.02] p-4 rounded-xl border border-cyber-cyan/15 bg-card">
-                            <div className="text-[10px] font-mono text-muted uppercase tracking-widest mb-1">Overall</div>
-                            <div className="text-2xl font-mono font-bold text-cyber-cyan">{(msg.eval.overall * 100).toFixed(0)}%</div>
-                          </div>
-                          <div className="bg-foreground/[0.02] p-4 rounded-xl border border-border bg-card">
-                            <div className="text-[10px] font-mono text-muted uppercase tracking-widest mb-1">Correctness</div>
-                            <div className="text-xl font-mono text-foreground font-bold">{(msg.eval.correctness * 100).toFixed(0)}%</div>
-                          </div>
-                          <div className="bg-foreground/[0.02] p-4 rounded-xl border border-border bg-card">
-                            <div className="text-[10px] font-mono text-muted uppercase tracking-widest mb-1">Schema</div>
-                            <div className="text-xl font-mono text-foreground font-bold">{(msg.eval.schema_score * 100).toFixed(0)}%</div>
-                          </div>
-                          <div className="bg-foreground/[0.02] p-4 rounded-xl border border-border bg-card">
-                            <div className="text-[10px] font-mono text-muted uppercase tracking-widest mb-1">Efficiency</div>
-                            <div className="text-xl font-mono text-foreground font-bold">{(msg.eval.efficiency * 100).toFixed(0)}%</div>
-                          </div>
-                        </div>
-                      </div>
                     )}
                   </div>
                 </div>
