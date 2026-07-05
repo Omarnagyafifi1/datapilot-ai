@@ -53,7 +53,22 @@ def _json_dumps(value: Any) -> str:
 
 
 def _is_error_sql(sql: str) -> bool:
-    return sql.strip().upper().startswith("ERROR:")
+    upper = sql.strip().upper()
+    return upper.startswith("ERROR:") or "SELECT 'ERROR:" in upper or 'SELECT "ERROR:' in upper
+
+
+def _sanitize_sql(sql: str) -> str:
+    """Strip markdown code fences that LLMs sometimes add despite instructions."""
+    cleaned = sql.strip()
+    if cleaned.startswith("```"):
+        lines = cleaned.splitlines()
+        # Remove opening fence (```sql or ```) and closing fence (```)
+        if len(lines) >= 3 and lines[-1].strip().startswith("```"):
+            lines = lines[1:-1]
+        elif len(lines) >= 2 and lines[0].strip().startswith("```"):
+            lines = lines[1:]
+        cleaned = "\n".join(lines).strip()
+    return cleaned
 
 
 def _fallback_insights() -> list[dict[str, str]]:
@@ -229,25 +244,72 @@ def _open_visualization_in_browser(result: dict[str, Any]) -> bool:
 
 def intent_router_node(state: AgentState, llm: BaseLLM) -> dict:
     import re
+    from app.agents.prompts import INTENT_ROUTER_PROMPT
+
     normalized_question = state.question.strip().lower()
-    
-    # Fast heuristic checks to bypass LLM latency
-    if re.search(r'\b(hi|hello|hey|who are you|what are you)\b', normalized_question):
-        return {"intent": "GENERAL"}
-    if re.search(r'\b(insert|add|create|new)\b', normalized_question):
+
+    # ── 1. Read / inquiry signals (check BEFORE write keywords) ──
+    # Questions starting with interrogative words or common read verbs
+    # are almost always INQUIRE, even if they contain words like "new",
+    # "change", "set", etc.
+    _READ_STARTERS = (
+        r'^(how|what|which|where|when|who|why|does|do|is|are|was|were|'
+        r'can|could|will|would|shall|should|has|have|had|did)\b'
+    )
+    _READ_VERBS = (
+        r'\b(show|list|display|find|get|fetch|count|total|average|sum|'
+        r'calculate|compare|report|describe|explain|tell|give|select|'
+        r'search|look\s*up|retrieve|check)\b'
+    )
+    # Arabic interrogatives
+    _AR_READ = (
+        r'(ما\s|من\s|كم\s|أين|متى|لماذا|هل\s|كيف|ما هي|ما هو|من هم|'
+        r'اعرض|أظهر|عرض|اذكر)'
+    )
+
+    is_read_question = bool(
+        re.search(_READ_STARTERS, normalized_question)
+        or re.search(_READ_VERBS, normalized_question)
+        or re.search(_AR_READ, state.question.strip())
+    )
+
+    if is_read_question:
+        return {"intent": "INQUIRE"}
+
+    # ── 3. Write-intent heuristics (strict patterns only) ──
+    # Only match when the verb clearly signals a write *command*,
+    # not when it appears incidentally inside a read question.
+    _ADD_PATTERNS = (
+        r'(?:^|\b)(?:insert|add|create|append)\s+'       # imperative: "add a row", "insert into"
+        r'|'
+        r'(?:^|\b)(?:i\s+want\s+to|please)\s+(?:insert|add|create)'
+    )
+    _UPDATE_PATTERNS = (
+        r'(?:^|\b)(?:update|modify|edit|change|rename|replace|set)\s+'
+        r'|'
+        r'(?:^|\b)(?:i\s+want\s+to|please)\s+(?:update|modify|edit|change|rename)'
+    )
+    _DELETE_PATTERNS = (
+        r'(?:^|\b)(?:delete|remove|destroy|purge|erase)\s+'
+        r'|'
+        r'(?:^|\b)(?:i\s+want\s+to|please)\s+(?:delete|remove|drop)'
+    )
+
+    if re.search(_ADD_PATTERNS, normalized_question):
         return {"intent": "ADD"}
-    if re.search(r'\b(update|set|edit|change|modify)\b', normalized_question):
+    if re.search(_UPDATE_PATTERNS, normalized_question):
         return {"intent": "UPDATE"}
-    if re.search(r'\b(delete|remove|drop|destroy)\b', normalized_question):
+    if re.search(_DELETE_PATTERNS, normalized_question):
         return {"intent": "DELETE"}
-        
+
+    # ── 3. Ambiguous — fall back to LLM classification ──
+    prompt = INTENT_ROUTER_PROMPT.format(question=state.question)
+    raw_intent = llm.generate(prompt, max_tokens=20).strip().upper()
+
+    # Accept only known categories; default to INQUIRE for safety
+    if raw_intent in {"ADD", "DELETE", "UPDATE", "INQUIRE"}:
+        return {"intent": raw_intent}
     return {"intent": "INQUIRE"}
-
-
-def general_chat_node(state: AgentState, llm: BaseLLM) -> dict:
-    prompt = f"The user said: {state.question}. Please respond politely as a helpful assistant."
-    answer = llm.generate(prompt, max_tokens=512)
-    return {"answer": answer, "success": True}
 
 
 def schema_node(state: AgentState, schema_service: SchemaService, llm: BaseLLM) -> dict:
@@ -294,7 +356,7 @@ def modification_sql_node(state: AgentState, llm: BaseLLM, schema_service: Schem
         question=state.question
     )
     
-    sql = llm.generate(prompt, max_tokens=300)
+    sql = _sanitize_sql(llm.generate(prompt, max_tokens=300))
     return {"sql": sql}
 
 
@@ -363,6 +425,7 @@ def _cache_key(sql: str, source_id: str) -> str:
 
 def sql_execution_node(state: AgentState, db_service: DBService) -> dict:
     current_retry = state.retry_count
+    is_write = state.intent in {"ADD", "UPDATE", "DELETE"}
 
     if _is_error_sql(state.sql):
         return {
@@ -383,18 +446,23 @@ def sql_execution_node(state: AgentState, db_service: DBService) -> dict:
             "retry_count": MAX_RETRIES,
         }
 
-    # Check cache
+    # Check cache (skip for write operations — they must always execute)
     ck = _cache_key(state.sql, state.source_id)
-    if ck in _STALE_CACHE:
+    if not is_write and ck in _STALE_CACHE:
         logger.debug("SQL cache hit for: %s", state.sql[:60])
         return {"query_results": list(_STALE_CACHE[ck]), "success": True}
 
     try:
         results = execute_sql(db_service, state.sql, state.source_id) or []
-        # Cache result
-        if len(_STALE_CACHE) >= _STALE_CACHE_MAX:
-            _STALE_CACHE.pop(next(iter(_STALE_CACHE)))
-        _STALE_CACHE[ck] = list(results)
+        # Only cache read queries
+        if not is_write:
+            if len(_STALE_CACHE) >= _STALE_CACHE_MAX:
+                _STALE_CACHE.pop(next(iter(_STALE_CACHE)))
+            _STALE_CACHE[ck] = list(results)
+        else:
+            # Invalidate schema cache after writes (new tables/columns may exist)
+            from app.services.db_service import _SCHEMA_CACHE
+            _SCHEMA_CACHE.pop(state.source_id, None)
         return {"query_results": results, "success": True}
     except Exception as e:
         logger.error("SQL execution failed: %s", e)
@@ -426,7 +494,7 @@ def fix_sql_node(state: AgentState, llm: BaseLLM, schema_service: SchemaService,
     scenario_context = state.documentation.get("scenario_context", "")
     
     prompt = SQL_FIX_PROMPT.format(
-        dialect=db_service.get_dialect(),
+        dialect=db_service.get_dialect(state.source_id),
         question=state.question,
         failed_query=state.sql,
         error_message=state.error or "Unknown error",
@@ -434,7 +502,7 @@ def fix_sql_node(state: AgentState, llm: BaseLLM, schema_service: SchemaService,
         scenario_context=scenario_context,
     )
     
-    fixed_sql = llm.generate(prompt, max_tokens=300)
+    fixed_sql = _sanitize_sql(llm.generate(prompt, max_tokens=300))
     
     try:
         results = execute_sql(db_service, fixed_sql, state.source_id) or []
@@ -667,7 +735,6 @@ class AgentGraph:
 
         # Nodes
         workflow.add_node("router", lambda s: intent_router_node(s, self.llm))
-        workflow.add_node("general_chat", lambda s: general_chat_node(s, self.llm))
         workflow.add_node("fetch_schema", lambda s: schema_node(s, self.schema_service, self.llm))
         workflow.add_node("load_memory", _make_load_long_term_memory_node(self.store))
         workflow.add_node("lookup_scenario", scenario_lookup_node)
@@ -688,12 +755,7 @@ class AgentGraph:
 
         # Edges
         workflow.add_edge(START, "router")
-        
-        def route_intent(state: AgentState) -> Literal["general_chat", "fetch_schema"]:
-            return "general_chat" if state.intent == "GENERAL" else "fetch_schema"
-            
-        workflow.add_conditional_edges("router", route_intent, ["general_chat", "fetch_schema"])
-        workflow.add_edge("general_chat", END)
+        workflow.add_edge("router", "fetch_schema")
         
         def route_sql_gen(state: AgentState) -> Literal["lookup_scenario", "generate_mod_sql", "execute_sql", "approval"]:
             if state.sql and state.sql.strip():

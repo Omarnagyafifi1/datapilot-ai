@@ -200,6 +200,7 @@ def execute_query(sql: str, source_id: str, timeout: int = 15) -> list[dict]:
 
             result = connection.execute(text(rewritten_sql))
             if not result.returns_rows:
+                connection.commit()
                 return [{"status": "success", "rows_affected": result.rowcount}]
             return [dict(row) for row in result.mappings().fetchmany(1000)]
     except Exception as exc:
@@ -351,4 +352,7 @@ class DBService:
 
     def run_query(self, sql: str, source_id: str | None = None, timeout: int | None = None) -> list[dict]:
         resolved_source_id = source_id or self.source_id
-        return execute_query(sql=sql, source_id=resolved_source_id)
+        kwargs: dict = {"sql": sql, "source_id": resolved_source_id}
+        if timeout is not None:
+            kwargs["timeout"] = timeout
+        return execute_query(**kwargs)

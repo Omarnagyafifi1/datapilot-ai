@@ -31,49 +31,30 @@ SQL_GENERATION_PROMPT = """
 17. NEVER use T1/T2/T3 aliases. Use meaningful first-letter aliases (c for customers, p for products, o for orders, s for suppliers, etc.).
 18. For 3-table JOINs: the table with the most relevant condition data is the anchor. Always JOIN it first, then add related tables. E.g., for "products with inventory and supplier info": FROM inventory i JOIN products p ON i.product_id = p.product_id JOIN suppliers s ON p.supplier_id = s.supplier_id.
 19. For JOIN queries, only include columns from the joined tables that directly answer the question. No extra columns.
-21. For IDs: include FK ID columns only if they help answer the question (e.g., "which department" = include dept_name, not dept_id).
-22. STRICT SCHEMA MATCHING: If the user asks for data, metrics, concepts, or tables (e.g., 'profit', 'sales', 'customers', 'orders') that DO NOT exist in the provided schema, DO NOT guess or substitute them with unrelated columns or tables. You MUST NOT continue generating a query. You must output exactly: SELECT 'ERROR: Requested data or table not found in schema' AS error;
-23. ARABIC QUESTIONS - follow these EXACT steps:
+20. For IDs: include FK ID columns only if they help answer the question (e.g., "which department" = include dept_name, not dept_id).
+21. STRICT SCHEMA MATCHING: If the user asks for data, metrics, concepts, or tables (e.g., 'profit', 'sales', 'customers', 'orders') that DO NOT exist in the provided schema, DO NOT guess or substitute them with unrelated columns or tables. You MUST NOT continue generating a query. You must output exactly: SELECT 'ERROR: Requested data or table not found in schema' AS error;
+22. ARABIC QUESTIONS — follow these EXACT steps:
     Step 1: Detect if question contains Arabic characters (Unicode \u0600-\u06FF).
-    Step 2: Translate the full Arabic question to English in your mind.
-    Step 3: Identify the SQL technique from the English translation (JOIN, GROUP BY, WHERE, HAVING, aggregate).
-    Step 4: Generate the SQL exactly as you would for the English question — same tables, same JOINs, same filters.
-    Step 5 — CRITICAL: After generating SQL, SCAN every column in the SELECT/JOIN/WHERE/GROUP BY/HAVING clause. For EVERY column that has a *_ar counterpart visible in the schema (e.g. dept_name_ar, name_ar, title_ar, description_ar, location_ar), replace the English column with the *_ar variant. This is the MOST IMPORTANT step and MUST NOT be skipped.
-    Never skip tables, JOINs, or filters just because the question is Arabic.
-    Arabic→English mappings for key phrases:
-    - "متوسط الراتب" = average salary → AVG(salary)
-    - "لكل" = per → GROUP BY the entity name
-    - "إجمالي" = total → SUM(col)
-    - "عدد/كم" = count → COUNT(*)
-    - "المشاريع" = projects → projects table
-    - "الميزانية" = budget → budget column
-    - "من هم/ما هي" = who/what are → SELECT descriptive name columns
-    - "الموظفين" = employees → employees table
+    Step 2: Mentally translate the full Arabic question into English.
+    Step 3: Map the translated English words to the ACTUAL table and column names in the schema above. Use ONLY the exact English column and table names that exist in the schema. NEVER invent or assume Arabic (_ar) column variants.
+    Step 4: Identify the SQL technique from the English translation (JOIN, GROUP BY, WHERE, HAVING, aggregate).
+    Step 5: Generate the SQL exactly as you would for an English question — same tables, same JOINs, same filters, same English column names.
+    Common Arabic→English mappings for SQL concepts:
+    - "متوسط" = average → AVG(col)
+    - "لكل" / "كل" = per/each → GROUP BY
+    - "إجمالي" / "مجموع" = total → SUM(col)
+    - "عدد" / "كم" = count/how many → COUNT(*)
+    - "من هم" / "ما هي" / "ما هو" = who/what → SELECT
     - "المكتملة" = completed → WHERE status = 'Completed'
-    - "إعادة تخزين/إعادة الطلب" = reorder/restock → WHERE quantity < reorder_level
-    - "المنتجات" = products → products table
-    - "المورد" = supplier → suppliers table
-    - "المدراء" = managers → WHERE is_manager = 1
-    - "قسم" = department → departments table
-    - "الهندسة" = Engineering
-    - "يديرونها" = they manage → show manager names AND department names
-    - "و" between two nouns = AND → both aggregates/columns required in SELECT (e.g. "عدد المشاريع وإجمالي ميزانيتها" = COUNT of projects AND SUM of budget)
-    - "في قسم" = in department → WHERE filter, requires JOIN to departments table
-    - "التي تحتاج" = that need (restocking) → WHERE condition filter
-    - "اسم القسم" / "أسماء الأقسام" = department name(s) → SELECT dept_name_ar
-    - "الرواتب" = salaries → salary column
-    - "إجمالي الراتب" / "مجموع الرواتب" = total salary → SUM(salary)
-    - "عدد الموظفين" = number of employees → COUNT(*)
-    - "المشاريع" = projects → projects table
-    - "الميزانية" / "الميزانيات" = budget(s) → budget column
-    - "قيد التنفيذ" = in progress / ongoing → WHERE status = 'In Progress'
-    - "كل" = each/per/every → GROUP BY
-    - "أعلى/أكبر/أكثر" = highest/most → ORDER BY DESC LIMIT
-    - "أقل/أدنى" = lowest/least → ORDER BY ASC LIMIT
-22. NEVER output incomplete SQL. The query must be syntactically complete (SELECT, FROM, WHERE/GROUP BY/ORDER BY fully formed).
-23. If the user uses generic terms (like "users", "people", "items"), try to map them to the closest logical table (e.g. "employees", "sales", "inventory"). ONLY return "ERROR: Insufficient schema context." if the question is completely unrelated to the entire database.
-24. Output must be a single line or multiple lines with ; at the end.
-25. LEARN FROM PAST EXAMPLES: Review the "Past Query Examples" section above. Study both successful and failed examples to avoid repeating past mistakes. If you see a failed example for a question similar to the current one, make sure to fix the error pattern described."""
+    - "قيد التنفيذ" = in progress → WHERE status = 'In Progress'
+    - "أعلى" / "أكبر" / "أكثر" = highest/most → ORDER BY DESC LIMIT
+    - "أقل" / "أدنى" = lowest/least → ORDER BY ASC LIMIT
+    - "إعادة تخزين" / "إعادة الطلب" = reorder/restock → WHERE quantity < reorder_level
+    CRITICAL: The SQL output must use ONLY the English column/table names from the schema. Never output Arabic text inside the SQL query itself.
+23. NEVER output incomplete SQL. The query must be syntactically complete (SELECT, FROM, WHERE/GROUP BY/ORDER BY fully formed).
+24. If the user uses generic terms (like "users", "people", "items"), try to map them to the closest logical table (e.g. "employees", "sales", "inventory"). ONLY return "ERROR: Insufficient schema context." if the question is completely unrelated to the entire database.
+25. Output must be a single line or multiple lines with ; at the end.
+26. LEARN FROM PAST EXAMPLES: Review the "Past Query Examples" section above. Study both successful and failed examples to avoid repeating past mistakes. If you see a failed example for a question similar to the current one, make sure to fix the error pattern described."""
 
 # Specialized prompts for Modification operations
 SQL_ADD_PROMPT = """
@@ -211,11 +192,10 @@ Strictly adhere to this format:
 INTENT_ROUTER_PROMPT = """
 You are a highly accurate intent classification engine. Classify the user's input into exactly one of the following exact categories based on their primary goal:
 
-- GENERAL: Greetings, casual conversation, system questions, or anything unrelated to manipulating/querying a database.
 - ADD: Requests to insert, append, or create brand new records in the database.
 - DELETE: Requests to drop, remove, or delete existing records.
 - UPDATE: Requests to modify, change, or edit existing records.
-- INQUIRE: Requests to search, read, count, aggregate, or analyze data (e.g., asking "how many", "show me", "list the"). Note: Asking about past additions/deletions is an INQUIRE, not an ADD/DELETE.
+- INQUIRE: Requests to search, read, count, aggregate, or analyze data (e.g., asking "how many", "show me", "list the"). Note: Asking about past additions/deletions is an INQUIRE, not an ADD/DELETE. Greetings or vague questions should also be classified as INQUIRE.
 
 ### Output Rule
 Return ONLY the exact category string from the list above. No punctuation, no extra words.

@@ -489,3 +489,45 @@ Always create the necessary tables with the required columns before attempting t
 }
 ```
 
+## 2026-07-05T12:59:26.759256+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-05T12:59:26.759256+00:00",
+  "status": "resolved",
+  "question": "how many employees are assigned?",
+  "sql": "SELECT COUNT(id) AS assigned_employees FROM employees WHERE manager IS NOT NULL",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-05T13:00:02.628837+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-05T13:00:02.628837+00:00",
+  "status": "resolved",
+  "question": "how many customer joined last month?",
+  "sql": "SELECT COUNT(sale_id) AS customers_joined FROM sales WHERE STRFTIME('%Y-%m', sale_date) = STRFTIME('%Y-%m', DATE('now', '-1 month'))",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-05T13:01:58.642288+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-05T13:01:58.642288+00:00",
+  "status": "resolved",
+  "question": "ايه عدد ال موظفين الشغالين في كل الاقسام العندنا؟",
+  "sql": "SELECT department, COUNT(id) AS number_of_employees FROM employees GROUP BY department",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+

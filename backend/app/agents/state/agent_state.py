@@ -6,7 +6,7 @@ from typing import Any, Optional
 class AgentState:
     question: str
     source_id: str
-    intent: str = "INQUIRE"  # GENERAL, ADD, DELETE, UPDATE, INQUIRE
+    intent: str = "INQUIRE"  # ADD, DELETE, UPDATE, INQUIRE
     sql: str = ""
     query_results: list[dict[str, Any]] = field(default_factory=list)
     visualization: dict[str, Any] | None = None
