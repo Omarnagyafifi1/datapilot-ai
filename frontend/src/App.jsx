@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Layout } from './components/Layout';
-import { ChatInterface } from './components/ChatInterface';
+import ChatInterface from './components/ChatInterface';
 import { Analytics } from './components/pages/Analytics';
 import { Evaluation } from './components/pages/Evaluation';
-import { Settings } from './components/pages/Settings';
+import Settings from './components/pages/Settings';
 import { QueryHistory } from './components/pages/QueryHistory';
 import { Datasets } from './components/pages/Datasets';
 import { api } from './lib/api';

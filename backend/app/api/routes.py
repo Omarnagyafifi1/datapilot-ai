@@ -17,7 +17,6 @@ from app.models.schemas import (
     QueryPageRequest,
     QueryHistoryResponse,
     QueryResponse,
-    DataSourceResponse,
     DataSourceConfig,
     MetricsResponse,
     SchemaResponse,
@@ -209,9 +208,7 @@ def connect_datasource(
         "host": req.host,
         "port": req.port,
         "db_name": req.db_name,
-        "database": req.db_name,
         "username": req.username,
-        "user": req.username,
         "password": req.password,
     }
 
@@ -365,164 +362,6 @@ def get_system_feed(
     return _resp(success=True, message="Activity feed fetched", data=feed)
 
 
-<<<<<<< HEAD
-# ============================================================================
-# NEW: Upload Preview and Import Endpoints
-# ============================================================================
-
-@router.post("/upload/preview")
-async def upload_preview(file: UploadFile = File(...)) -> dict[str, Any]:
-    """
-    Upload a file and return a preview without importing.
-    Supports CSV and SQLite files.
-    """
-    provider = _get_provider(file)
-    if not provider:
-        raise HTTPException(status_code=400, detail="Unsupported file type. Supported: CSV, SQLite (.db, .sqlite, .sqlite3)")
-    
-    try:
-        # Validate the file
-        is_valid, error = await provider.validate(file)
-        if not is_valid:
-            raise HTTPException(status_code=400, detail=error or "Invalid file")
-        
-        # Get preview data
-        preview = await provider.preview(file)
-        
-        # Check for duplicates using module-level function
-        existing = get_dataset_by_hash(preview.file_hash)
-        
-        return _resp(
-            success=True,
-            message="File preview generated",
-            data={
-                "filename": preview.filename,
-                "file_size": preview.file_size,
-                "detected_format": preview.detected_format,
-                "file_hash": preview.file_hash,
-                "tables": [
-                    {
-                        "name": t.name,
-                        "original_name": t.original_name,
-                        "row_count": t.row_count,
-                        "columns": [
-                            {
-                                "name": c.name,
-                                "original_name": c.original_name,
-                                "data_type": c.data_type,
-                                "nullable": c.nullable,
-                                "primary_key": c.primary_key,
-                                "unique": c.unique,
-                                "is_numeric": c.is_numeric,
-                                "is_date": c.is_date,
-                            }
-                            for c in t.columns
-                        ],
-                    }
-                    for t in preview.tables
-                ],
-                "quality_report": {
-                    "total_rows": preview.quality_report.total_rows,
-                    "total_columns": preview.quality_report.total_columns,
-                    "missing_values": preview.quality_report.missing_values,
-                    "duplicate_rows": preview.quality_report.duplicate_rows,
-                    "has_nulls": preview.quality_report.has_nulls,
-                    "has_duplicates": preview.quality_report.has_duplicates,
-                },
-                "relationships": [
-                    {
-                        "column": r.column,
-                        "referenced_table": r.referenced_table,
-                        "referenced_column": r.referenced_column,
-                    }
-                    for r in preview.relationships
-                ],
-                "is_duplicate": existing is not None,
-                "existing_dataset": existing,
-            }
-        )
-    except Exception as e:
-        logger.exception("Upload preview failed")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.post("/upload/import")
-async def upload_import(
-    file: UploadFile = File(...),
-    dataset_name: str = "",
-    selected_tables: str = "[]",
-    renamed_columns: str = "{}",
-    modified_types: str = "{}",
-) -> dict[str, Any]:
-    """
-    Import an uploaded file into the system.
-    """
-    import json as _json
-    
-    provider = _get_provider(file)
-    if not provider:
-        raise HTTPException(status_code=400, detail="Unsupported file type. Supported: CSV, SQLite (.db, .sqlite, .sqlite3)")
-    
-    try:
-        # Parse options
-        options = ImportOptions(
-            selected_tables=_json.loads(selected_tables) if selected_tables else None,
-            renamed_columns=_json.loads(renamed_columns) if renamed_columns else None,
-            modified_types=_json.loads(modified_types) if modified_types else None,
-            dataset_name=dataset_name or file.filename,
-        )
-        
-        # Import the data
-        result = await provider.import_data(file, options)
-        
-        # Get the preview for metadata storage
-        preview = await provider.preview(file)
-        
-        # Save dataset metadata
-        if preview:
-            save_dataset_metadata(
-                source_id=result.source_id,
-                name=options.dataset_name or file.filename,
-                source_type=preview.detected_format,
-                original_filename=preview.filename,
-                file_size=preview.file_size,
-                file_hash=preview.file_hash,
-                tables=[
-                    {
-                        "name": t.name,
-                        "original_name": t.original_name,
-                        "row_count": t.row_count,
-                        "columns": [{"name": c.name, "data_type": c.data_type} for c in t.columns],
-                    }
-                    for t in preview.tables
-                ],
-                relationships=[
-                    {"column": r.column, "referenced_table": r.referenced_table, "referenced_column": r.referenced_column}
-                    for r in preview.relationships
-                ],
-                quality_report={
-                    "total_rows": preview.quality_report.total_rows,
-                    "total_columns": preview.quality_report.total_columns,
-                    "missing_values": preview.quality_report.missing_values,
-                    "duplicate_rows": preview.quality_report.duplicate_rows,
-                },
-            )
-        
-        return _resp(
-            success=True,
-            message=result.message,
-            data={
-                "source_id": result.source_id,
-                "dataset_id": result.dataset_id,
-                "table_names": result.table_names,
-                "total_rows": result.total_rows,
-            }
-        )
-    except Exception as e:
-        logger.exception("Upload import failed")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 # Dataset Management Endpoints
 @router.get("/datasets")
 def list_datasets(
@@ -577,17 +416,6 @@ def update_dataset(
     if name:
         data_source_service.update_dataset_name(id, name)
     return _resp(success=True, message="Dataset updated", data=None)
-=======
-@router.get("/system/metrics", response_model=MetricsResponse)
-def get_system_metrics(
-    data_source_service: DataSourceService = Depends(get_data_source_service),
-    history_service: HistoryService = Depends(get_history_service),
-) -> dict[str, Any]:
-    sources = data_source_service.list_sources()
-    metrics = history_service.get_metrics()
-    metrics["total_sources"] = len(sources)
-    return _resp(success=True, message="System metrics fetched", data=metrics)
->>>>>>> main
 
 
 @router.post('/data/csv')
@@ -662,54 +490,6 @@ def generate_report(payload: dict) -> dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-<<<<<<< HEAD
-# ============================================================================
-# LLM Settings Endpoints
-# ============================================================================
-
-@router.get("/settings/llm")
-def get_llm_settings_endpoint() -> dict[str, Any]:
-    """Get current LLM settings from database."""
-    settings = get_llm_settings()
-    # Sanitize API keys for response (don't expose full keys)
-    sanitized = settings.copy()
-    sanitized["api_keys"] = {
-        k: ("***" + v[-4:] if v and len(v) > 4 else "***") if v else ""
-        for k, v in settings.get("api_keys", {}).items()
-    }
-    return _resp(success=True, message="LLM settings retrieved", data=sanitized)
-
-
-@router.put("/settings/llm")
-def update_llm_settings_endpoint(
-    body: dict = Body(...)
-) -> dict[str, Any]:
-    """Update LLM settings (provider, model, temperature, max_tokens, api_keys)."""
-    provider = body.get("provider")
-    model = body.get("model")
-    temperature = body.get("temperature")
-    max_tokens = body.get("max_tokens")
-    api_keys = body.get("api_keys")
-    
-    try:
-        updated = save_llm_settings(
-            provider=provider,
-            model=model,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            api_keys=api_keys,
-        )
-        # Sanitize response
-        sanitized = updated.copy()
-        sanitized["api_keys"] = {
-            k: ("***" + v[-4:] if v and len(v) > 4 else "***") if v else ""
-            for k, v in updated.get("api_keys", {}).items()
-        }
-        return _resp(success=True, message="LLM settings updated", data=sanitized)
-    except Exception as e:
-        logger.exception("Failed to save LLM settings")
-        return _resp(success=False, message=f"Failed to update settings: {str(e)}", data=None)
-=======
 @router.post("/evaluate", response_model=EvalResponse)
 def evaluate_query_endpoint(
     payload: EvalRequest,
@@ -753,4 +533,3 @@ def update_settings_endpoint(payload: SettingsRequest) -> dict[str, Any]:
     # Reset the graph orchestrator so the next request uses the new LLM provider/keys
     reset_graph_orchestrator()
     return _resp(success=True, message="Settings updated", data=result)
->>>>>>> main

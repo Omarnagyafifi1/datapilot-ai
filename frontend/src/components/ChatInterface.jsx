@@ -53,7 +53,7 @@ function renderMarkdown(text) {
   return <div className="space-y-2 leading-relaxed" dangerouslySetInnerHTML={{ __html: formatted }} />;
 }
 
-export function ChatInterface({ 
+export default function ChatInterface({ 
   selectedSourceId: initialSelectedSourceId, 
   dataSources = [], 
   onUpdateSources,
@@ -130,7 +130,7 @@ export function ChatInterface({
       });
   }, []);
 
-// Load current messages when activeChatId changes
+  // Load current messages when activeChatId changes
   useEffect(() => {
     if (activeChatId) {
       const activeChat = conversations.find(c => c.id === activeChatId);
@@ -221,7 +221,6 @@ export function ChatInterface({
     setActiveChatId(newId);
   };
 
-<<<<<<< HEAD
   // Delete conversation
   const deleteConversation = (id, e) => {
     e.stopPropagation();
@@ -229,35 +228,6 @@ export function ChatInterface({
     setConversations(prev => prev.filter(c => c.id !== id));
     if (activeChatId === id) {
       setActiveChatId(null);
-=======
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
-    setLoading(true);
-
-    try {
-      const resp = await api.query(input, selectedSourceId);
-      
-      const botMessage = {
-        id: (Date.now() + 1).toString(),
-        type: 'bot',
-        content: resp.data.answer,
-        doc: resp.data.documentation,
-        eval: resp.data.evaluation,
-        timestamp: new Date().toISOString()
-      };
-      
-      setMessages(prev => [...prev, botMessage]);
-    } catch (err) {
-      setMessages(prev => [...prev, {
-        id: (Date.now() + 1).toString(),
-        type: 'bot',
-        content: 'Query failed to execute. Please try again or check your data source.',
-        isError: true,
-        timestamp: new Date().toISOString()
-      }]);
-    } finally {
-      setLoading(false);
->>>>>>> main
     }
   };
 
@@ -632,55 +602,44 @@ export function ChatInterface({
                     "relative p-6 rounded-2xl border border-border",
                     isBot ? "bg-card border-l-2 border-l-cyber-cyan" : "bg-foreground/[0.02] border-l-2 border-l-cyber-pink"
                   )}>
-<<<<<<< HEAD
                     {renderMarkdown(msg.content)}
 
                     {/* Integrated Query Results - Expandable block */}
                     {isBot && msg.doc && (
-                      <ExpandableDetails title="Database Execution Artifacts">
+                      <div className="mt-8 border-t border-white/5 pt-8">
+                        <div className="flex items-center gap-2 text-[10px] font-mono text-muted uppercase tracking-[0.2em] mb-6">
+                          <ChevronDown size={14} /> Expand SQL Synthesis
+                        </div>
                         <ResultVisualizer doc={msg.doc} />
-                      </ExpandableDetails>
+                      </div>
+                    )}
+
+                    {msg.eval && (
+                      <div className="mt-8 border-t border-white/5 pt-8">
+                        <div className="flex items-center gap-2 text-[10px] font-mono text-cyber-cyan uppercase tracking-[0.2em] mb-4">
+                          <Activity size={14} /> AI Quality Evaluation
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div className="bg-black/30 p-4 rounded-lg border border-cyber-cyan/10">
+                            <div className="text-[10px] font-mono text-muted uppercase tracking-widest mb-1">Overall</div>
+                            <div className="text-2xl font-mono font-bold text-cyber-cyan">{(msg.eval.overall * 100).toFixed(0)}%</div>
+                          </div>
+                          <div className="bg-black/30 p-4 rounded-lg border border-white/5">
+                            <div className="text-[10px] font-mono text-muted uppercase tracking-widest mb-1">Correctness</div>
+                            <div className="text-xl font-mono text-white">{(msg.eval.correctness * 100).toFixed(0)}%</div>
+                          </div>
+                          <div className="bg-black/30 p-4 rounded-lg border border-white/5">
+                            <div className="text-[10px] font-mono text-muted uppercase tracking-widest mb-1">Schema</div>
+                            <div className="text-xl font-mono text-white">{(msg.eval.schema_score * 100).toFixed(0)}%</div>
+                          </div>
+                          <div className="bg-black/30 p-4 rounded-lg border border-white/5">
+                            <div className="text-[10px] font-mono text-muted uppercase tracking-widest mb-1">Efficiency</div>
+                            <div className="text-xl font-mono text-white">{(msg.eval.efficiency * 100).toFixed(0)}%</div>
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </div>
-=======
-                    {msg.content}
-                  </p>
-                  
-                  {msg.doc && (
-                    <div className="mt-8 border-t border-white/5 pt-8">
-                      <div className="flex items-center gap-2 text-[10px] font-mono text-muted uppercase tracking-[0.2em] mb-6">
-                        <ChevronDown size={14} /> Expand SQL Synthesis
-                      </div>
-                      <ResultVisualizer doc={msg.doc} />
-                    </div>
-                  )}
-                  
-                  {msg.eval && (
-                    <div className="mt-8 border-t border-white/5 pt-8">
-                      <div className="flex items-center gap-2 text-[10px] font-mono text-cyber-cyan uppercase tracking-[0.2em] mb-4">
-                        <Activity size={14} /> AI Quality Evaluation
-                      </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="bg-black/30 p-4 rounded-lg border border-cyber-cyan/10">
-                          <div className="text-[10px] font-mono text-muted uppercase tracking-widest mb-1">Overall</div>
-                          <div className="text-2xl font-mono font-bold text-cyber-cyan">{(msg.eval.overall * 100).toFixed(0)}%</div>
-                        </div>
-                        <div className="bg-black/30 p-4 rounded-lg border border-white/5">
-                          <div className="text-[10px] font-mono text-muted uppercase tracking-widest mb-1">Correctness</div>
-                          <div className="text-xl font-mono text-white">{(msg.eval.correctness * 100).toFixed(0)}%</div>
-                        </div>
-                        <div className="bg-black/30 p-4 rounded-lg border border-white/5">
-                          <div className="text-[10px] font-mono text-muted uppercase tracking-widest mb-1">Schema</div>
-                          <div className="text-xl font-mono text-white">{(msg.eval.schema_score * 100).toFixed(0)}%</div>
-                        </div>
-                        <div className="bg-black/30 p-4 rounded-lg border border-white/5">
-                          <div className="text-[10px] font-mono text-muted uppercase tracking-widest mb-1">Efficiency</div>
-                          <div className="text-xl font-mono text-white">{(msg.eval.efficiency * 100).toFixed(0)}%</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
->>>>>>> main
                 </div>
               );
             })}
@@ -757,7 +716,7 @@ export function ChatInterface({
                   <button
                     type="submit"
                     disabled={!input.trim() || !initialSelectedSourceId || loading}
-                    className="px-5 py-2 bg-cyber-lime text-background font-mono font-bold text-xs uppercase tracking-widest rounded-lg flex items-center gap-2 hover:brightness-110 active:scale-95 transition-all disabled:opacity-20 shadow-glow-lime/20"
+                    className="px-5 py-2 bg-cyber-lime text-black font-mono font-bold text-xs uppercase tracking-widest rounded-lg flex items-center gap-2 hover:brightness-110 active:scale-95 transition-all disabled:opacity-20 shadow-glow-lime/20"
                   >
                     <span>Execute Flow</span>
                     <Send size={12} />
@@ -930,7 +889,7 @@ export function ChatInterface({
                         />
                         <div className="grid grid-cols-2 gap-2">
                           <input
-                            type="username"
+                            type="text"
                             placeholder="User"
                             value={dbFormData.username}
                             onChange={e => setDbFormData({...dbFormData, username: e.target.value})}
@@ -1015,5 +974,3 @@ function SuggestChip({ label, onClick }) {
     </button>
   );
 }
-
-export default ChatInterface;

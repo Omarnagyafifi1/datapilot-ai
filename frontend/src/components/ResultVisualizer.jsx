@@ -1,9 +1,7 @@
 import React from 'react';
-<<<<<<< HEAD
-import { Calendar, CheckCircle2, FileText, Lightbulb, Sparkles, Table as TableIcon, Terminal } from 'lucide-react';
-=======
-import { Calendar, CheckCircle2, Download, FileText, Lightbulb, Sparkles, Table as TableIcon, Terminal, BarChart3 } from 'lucide-react';
->>>>>>> main
+import { 
+  Calendar, CheckCircle2, FileText, Lightbulb, Sparkles, Table as TableIcon, Terminal, BarChart3 
+} from 'lucide-react';
 import { api } from '../lib/api';
 import { cn } from '../lib/utils';
 
@@ -140,19 +138,12 @@ export function ResultVisualizer({ doc }) {
 
       {showPreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-<<<<<<< HEAD
-          <div className="absolute inset-0 bg-background/60" onClick={() => setShowPreview(false)} />
-          <div className="relative bg-card p-6 rounded-2xl w-[90%] max-w-3xl border border-border">
-            <div className="flex items-center justify-between mb-4 gap-4">
-              <h4 className="text-lg font-bold">Chart Preview</h4>
-=======
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowPreview(false)} />
           <div className="relative bg-card p-6 rounded-2xl w-[95%] max-w-5xl h-[85vh] border border-white/10 flex flex-col">
             <div className="flex items-center justify-between mb-4 gap-4 shrink-0">
               <h4 className="text-lg font-bold">
                 {hasPlotlySpec ? `Chart Preview — ${visualization.chart_type}` : 'Simple Chart Preview'}
               </h4>
->>>>>>> main
               <div className="flex items-center gap-2">
                 {!hasPlotlySpec && <ActionButton onClick={() => downloadSVG(chartSvg)}>SVG</ActionButton>}
                 {!hasPlotlySpec && <ActionButton onClick={() => downloadPNGFromSVG(chartSvg)}>PNG</ActionButton>}
@@ -256,17 +247,10 @@ function MetricCard({ icon, label, value, color }) {
     gray: 'text-white/30 bg-white/5',
   };
   return (
-<<<<<<< HEAD
-    <div className="glass p-4 rounded-2xl border-border bg-card">
-      <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center mb-2', colors[color])}>{icon}</div>
-      <p className="text-[10px] font-bold text-foreground/40 uppercase tracking-wider">{label}</p>
-      <p className="text-lg font-bold text-foreground mt-1">{value}</p>
-=======
     <div className="glass p-4 rounded-2xl border-white/5">
       <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center mb-2', colors[color] || colors.gray)}>{icon}</div>
       <p className="text-[10px] font-bold text-white/40 uppercase tracking-wider">{label}</p>
       <p className="text-lg font-bold text-white mt-1">{value}</p>
->>>>>>> main
     </div>
   );
 }
@@ -322,7 +306,7 @@ function downloadBlob(content, filename, type) {
 }
 
 function escapeXml(value) {
-  return String(value).replace(/[<>&"']/g, (char) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[char]));
+  return String(value).replace(/[<>&"']/g, (char) => ({ '<': '<', '>': '>', '&': '&', '"': '"', "'": '&#39;' }[char]));
 }
 
 function buildChartSVG(results = [], chartType = 'bar') {

@@ -1,13 +1,28 @@
 from typing import Optional
-import litellm
-from litellm import Router
 from app.llm.base_llm import BaseLLM
 from app.core.logger import get_logger
 
 logger = get_logger(__name__)
 
+# Make litellm optional
+try:
+    import litellm
+    from litellm import Router
+    LITELLETM_AVAILABLE = True
+except ImportError:
+    litellm = None
+    Router = None
+    LITELLETM_AVAILABLE = False
+
+
 class LiteLLMProvider(BaseLLM):
     def __init__(self, api_keys: dict[str, str]) -> None:
+        if not LITELLETM_AVAILABLE:
+            logger.warning("litellm not installed, using mock mode")
+            self.router = None
+            self.primary_model = None
+            return
+
         model_list = []
         available_tiers = []
         
@@ -55,7 +70,7 @@ class LiteLLMProvider(BaseLLM):
         self.primary_model = available_tiers[0]
         fallbacks = available_tiers[1:]
         fallback_config = [{self.primary_model: fallbacks}] if fallbacks else []
-            
+        
         self.router = Router(
             model_list=model_list,
             fallbacks=fallback_config,

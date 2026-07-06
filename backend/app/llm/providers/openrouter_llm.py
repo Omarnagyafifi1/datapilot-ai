@@ -1,38 +1,17 @@
 from app.llm.base_llm import BaseLLM
-<<<<<<< HEAD
-from app.core.config import settings
+from typing import Optional
 
+# Use OpenAI-compatible client for OpenRouter
 try:
-    from langchain_openrouter import ChatOpenRouter
-except Exception:
-    ChatOpenRouter = None
-
-
-class OpenRouterLLM(BaseLLM):
-    def __init__(
-        self,
-        api_key: str = "",
-        model: str = "google/gemma-4-31b-it:free",
-        temperature: float = 0.2,
-        max_tokens: int = 2048,
-    ) -> None:
-        if ChatOpenRouter is None:
-            raise RuntimeError("OpenRouter LLM provider is not installed in this environment")
-        self.api_key = api_key or settings.OPENROUTER_API_KEY
-        self.model = model
-        self.temperature = temperature
-        self.max_tokens = max_tokens
-        self.llm = ChatOpenRouter(
-            model=model,
-            openrouter_api_key=self.api_key,
-            temperature=temperature,
-            max_tokens=max_tokens,
-=======
-from openai import OpenAI
+    from openai import OpenAI
+except ImportError:
+    OpenAI = None
 
 
 class OpenRouterLLM(BaseLLM):
     def __init__(self, api_key: str = "", model: str | None = None) -> None:
+        if OpenAI is None:
+            raise RuntimeError("OpenAI client is not installed in this environment")
         self.api_key = api_key
         self.client = OpenAI(
             api_key=api_key,
@@ -42,11 +21,10 @@ class OpenRouterLLM(BaseLLM):
                 "X-Title": "DataPilot AI",
             },
             timeout=30.0,
->>>>>>> main
         )
         self.model = model or "google/gemma-4-31b-it:free"
 
-    def generate(self, prompt: str, system_message: str | None = None, max_tokens: int | None = None) -> str:
+    def generate(self, prompt: str, system_message: Optional[str] = None, max_tokens: Optional[int] = None) -> str:
         messages = []
         if system_message:
             messages.append({"role": "system", "content": system_message})
