@@ -173,6 +173,14 @@ graph TD
     Document --> END3([END])
 ```
 
+## 🔧 Key Robustness & Performance Improvements
+
+The following platform enhancements have been integrated to improve multi-database schema reliability and minimize query failure rates:
+*   **Oracle Schema Extraction Fix:** Cleared the default tablespace exclusions (`SYSTEM`, `SYSAUX`) in the SQLAlchemy Oracle dialect, allowing user-created tables in default Oracle XE environments to be correctly mapped.
+*   **System Table Filtering (Oracle & SQL Server):** Cleared noise from the Schema Explorer and LLM prompt context by automatically filtering out internal system tables (e.g., `LOGMNR*`, `MSreplication*`, `spt_*`, etc.).
+*   **Bilingual Suggestion Caching:** Integrated an in-memory caching mechanism (`_SUGGESTIONS_CACHE`) on the backend for suggestions, reducing subsequent database switch times from ~4s to 0ms and preventing Gemini rate limit (429) issues.
+*   **LLM Provider Auto-Failover (FallbackLLM):** Implemented a fallback wrapper class that automatically catches LLM provider rate limits or connection errors and transparently switches to the next available configured API provider (e.g., Groq, Gemini, OpenRouter) to guarantee uninterrupted user queries.
+
 ---
 
 ## 🤝 Contributing

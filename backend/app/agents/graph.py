@@ -9,6 +9,14 @@ from typing import Any, Literal
 from uuid import uuid4
 from app.services.visualization_service import generate_visualization
 
+try:
+    from app.services.evaluation_service import evaluate_sql, post_evaluation_to_langsmith
+    _EVAL_AVAILABLE = True
+except Exception:
+    _EVAL_AVAILABLE = False
+    evaluate_sql = None
+    post_evaluation_to_langsmith = None
+
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import StateGraph, START, END
 from langgraph.store.memory import InMemoryStore
@@ -17,11 +25,10 @@ from app.agents.nodes.sql_node import run_sql_node
 from app.agents.prompts import (
     INSIGHT_PROMPT, 
     SUGGESTION_PROMPT, 
-    INTENT_ROUTER_PROMPT, 
-    VALIDATION_PROMPT,
     SQL_ADD_PROMPT,
     SQL_UPDATE_PROMPT,
-    SQL_DELETE_PROMPT
+    SQL_DELETE_PROMPT,
+    SCENARIO_LESSON_PROMPT,
 )
 from app.agents.state.agent_state import AgentState
 from app.agents.tools.schema_tools import fetch_schema_context
@@ -46,7 +53,22 @@ def _json_dumps(value: Any) -> str:
 
 
 def _is_error_sql(sql: str) -> bool:
-    return sql.strip().upper().startswith("ERROR:")
+    upper = sql.strip().upper()
+    return upper.startswith("ERROR:") or "SELECT 'ERROR:" in upper or 'SELECT "ERROR:' in upper
+
+
+def _sanitize_sql(sql: str) -> str:
+    """Strip markdown code fences that LLMs sometimes add despite instructions."""
+    cleaned = sql.strip()
+    if cleaned.startswith("```"):
+        lines = cleaned.splitlines()
+        # Remove opening fence (```sql or ```) and closing fence (```)
+        if len(lines) >= 3 and lines[-1].strip().startswith("```"):
+            lines = lines[1:-1]
+        elif len(lines) >= 2 and lines[0].strip().startswith("```"):
+            lines = lines[1:]
+        cleaned = "\n".join(lines).strip()
+    return cleaned
 
 
 def _fallback_insights() -> list[dict[str, str]]:
@@ -221,26 +243,73 @@ def _open_visualization_in_browser(result: dict[str, Any]) -> bool:
 
 
 def intent_router_node(state: AgentState, llm: BaseLLM) -> dict:
-    prompt = INTENT_ROUTER_PROMPT.format(question=state.question)
-    intent = llm.generate(prompt).strip().upper()
-    for valid_intent in ["GENERAL", "ADD", "DELETE", "UPDATE", "INQUIRE"]:
-        if valid_intent in intent:
-            return {"intent": valid_intent}
+    import re
+    from app.agents.prompts import INTENT_ROUTER_PROMPT
 
     normalized_question = state.question.strip().lower()
-    if any(token in normalized_question for token in ["insert", "add", "create"]):
+
+    # ── 1. Read / inquiry signals (check BEFORE write keywords) ──
+    # Questions starting with interrogative words or common read verbs
+    # are almost always INQUIRE, even if they contain words like "new",
+    # "change", "set", etc.
+    _READ_STARTERS = (
+        r'^(how|what|which|where|when|who|why|does|do|is|are|was|were|'
+        r'can|could|will|would|shall|should|has|have|had|did)\b'
+    )
+    _READ_VERBS = (
+        r'\b(show|list|display|find|get|fetch|count|total|average|sum|'
+        r'calculate|compare|report|describe|explain|tell|give|select|'
+        r'search|look\s*up|retrieve|check)\b'
+    )
+    # Arabic interrogatives
+    _AR_READ = (
+        r'(ما\s|من\s|كم\s|أين|متى|لماذا|هل\s|كيف|ما هي|ما هو|من هم|'
+        r'اعرض|أظهر|عرض|اذكر)'
+    )
+
+    is_read_question = bool(
+        re.search(_READ_STARTERS, normalized_question)
+        or re.search(_READ_VERBS, normalized_question)
+        or re.search(_AR_READ, state.question.strip())
+    )
+
+    if is_read_question:
+        return {"intent": "INQUIRE"}
+
+    # ── 3. Write-intent heuristics (strict patterns only) ──
+    # Only match when the verb clearly signals a write *command*,
+    # not when it appears incidentally inside a read question.
+    _ADD_PATTERNS = (
+        r'(?:^|\b)(?:insert|add|create|append)\s+'       # imperative: "add a row", "insert into"
+        r'|'
+        r'(?:^|\b)(?:i\s+want\s+to|please)\s+(?:insert|add|create)'
+    )
+    _UPDATE_PATTERNS = (
+        r'(?:^|\b)(?:update|modify|edit|change|rename|replace|set)\s+'
+        r'|'
+        r'(?:^|\b)(?:i\s+want\s+to|please)\s+(?:update|modify|edit|change|rename)'
+    )
+    _DELETE_PATTERNS = (
+        r'(?:^|\b)(?:delete|remove|destroy|purge|erase)\s+'
+        r'|'
+        r'(?:^|\b)(?:i\s+want\s+to|please)\s+(?:delete|remove|drop)'
+    )
+
+    if re.search(_ADD_PATTERNS, normalized_question):
         return {"intent": "ADD"}
-    if any(token in normalized_question for token in ["update", "set ", "edit", "change"]):
+    if re.search(_UPDATE_PATTERNS, normalized_question):
         return {"intent": "UPDATE"}
-    if any(token in normalized_question for token in ["delete", "remove", "drop"]):
+    if re.search(_DELETE_PATTERNS, normalized_question):
         return {"intent": "DELETE"}
+
+    # ── 3. Ambiguous — fall back to LLM classification ──
+    prompt = INTENT_ROUTER_PROMPT.format(question=state.question)
+    raw_intent = llm.generate(prompt, max_tokens=20).strip().upper()
+
+    # Accept only known categories; default to INQUIRE for safety
+    if raw_intent in {"ADD", "DELETE", "UPDATE", "INQUIRE"}:
+        return {"intent": raw_intent}
     return {"intent": "INQUIRE"}
-
-
-def general_chat_node(state: AgentState, llm: BaseLLM) -> dict:
-    prompt = f"The user said: {state.question}. Please respond politely as a helpful assistant."
-    answer = llm.generate(prompt)
-    return {"answer": answer, "success": True}
 
 
 def schema_node(state: AgentState, schema_service: SchemaService, llm: BaseLLM) -> dict:
@@ -251,18 +320,24 @@ def schema_node(state: AgentState, schema_service: SchemaService, llm: BaseLLM) 
 
 def scenario_lookup_node(state: AgentState) -> dict:
     matched = SCENARIO_MEMORY.find_similar_solution(state.question)
-    if not matched:
-        return {"scenario_matched": False, "scenario_similarity": 0.0}
+    scenario_context = SCENARIO_MEMORY.get_recent_context(n=10)
 
-    return {
-        "sql": matched["sql"],
-        "scenario_matched": True,
-        "scenario_similarity": float(matched["score"]),
+    result: dict = {
+        "scenario_matched": False,
+        "scenario_similarity": 0.0,
         "documentation": {
             **state.documentation,
-            "scenario_reference_question": matched["question"],
+            "scenario_context": f"\n### Past Query Examples (Learn from these)\n{scenario_context}\n",
         },
     }
+
+    if matched:
+        result["sql"] = matched["sql"]
+        result["scenario_matched"] = True
+        result["scenario_similarity"] = float(matched["score"])
+        result["documentation"]["scenario_reference_question"] = matched["question"]
+
+    return result
 
 
 def modification_sql_node(state: AgentState, llm: BaseLLM, schema_service: SchemaService) -> dict:
@@ -281,7 +356,7 @@ def modification_sql_node(state: AgentState, llm: BaseLLM, schema_service: Schem
         question=state.question
     )
     
-    sql = llm.generate(prompt)
+    sql = _sanitize_sql(llm.generate(prompt, max_tokens=300))
     return {"sql": sql}
 
 
@@ -340,7 +415,18 @@ def _validate_sql_keywords(sql: str, intent: str) -> str | None:
     return None
 
 
+_STALE_CACHE: dict[str, list[dict]] = {}
+_STALE_CACHE_MAX = 50
+
+
+def _cache_key(sql: str, source_id: str) -> str:
+    return f"{source_id}:::{sql.strip().lower()}"
+
+
 def sql_execution_node(state: AgentState, db_service: DBService) -> dict:
+    current_retry = state.retry_count
+    is_write = state.intent in {"ADD", "UPDATE", "DELETE"}
+
     if _is_error_sql(state.sql):
         return {
             "query_results": [],
@@ -360,12 +446,32 @@ def sql_execution_node(state: AgentState, db_service: DBService) -> dict:
             "retry_count": MAX_RETRIES,
         }
 
+    # Check cache (skip for write operations — they must always execute)
+    ck = _cache_key(state.sql, state.source_id)
+    if not is_write and ck in _STALE_CACHE:
+        logger.debug("SQL cache hit for: %s", state.sql[:60])
+        return {"query_results": list(_STALE_CACHE[ck]), "success": True}
+
     try:
         results = execute_sql(db_service, state.sql, state.source_id) or []
+        # Only cache read queries
+        if not is_write:
+            if len(_STALE_CACHE) >= _STALE_CACHE_MAX:
+                _STALE_CACHE.pop(next(iter(_STALE_CACHE)))
+            _STALE_CACHE[ck] = list(results)
+        else:
+            # Invalidate schema cache after writes (new tables/columns may exist)
+            from app.services.db_service import _SCHEMA_CACHE
+            _SCHEMA_CACHE.pop(state.source_id, None)
         return {"query_results": results, "success": True}
     except Exception as e:
         logger.error("SQL execution failed: %s", e)
-        return {"query_results": [], "success": False, "error": str(e)}
+        return {
+            "query_results": [],
+            "success": False,
+            "error": str(e),
+            "retry_count": current_retry + 1,
+        }
 
 
 
@@ -385,15 +491,18 @@ def fix_sql_node(state: AgentState, llm: BaseLLM, schema_service: SchemaService,
     schema = fetch_schema_context(schema_service, state.source_id)
     from app.agents.prompts import SQL_FIX_PROMPT
     
+    scenario_context = state.documentation.get("scenario_context", "")
+    
     prompt = SQL_FIX_PROMPT.format(
-        dialect=db_service.get_dialect(),
+        dialect=db_service.get_dialect(state.source_id),
         question=state.question,
         failed_query=state.sql,
         error_message=state.error or "Unknown error",
         schema=schema,
+        scenario_context=scenario_context,
     )
     
-    fixed_sql = llm.generate(prompt)
+    fixed_sql = _sanitize_sql(llm.generate(prompt, max_tokens=300))
     
     try:
         results = execute_sql(db_service, fixed_sql, state.source_id) or []
@@ -419,36 +528,19 @@ def fix_sql_node(state: AgentState, llm: BaseLLM, schema_service: SchemaService,
         }
 
 
-def validation_node(state: AgentState, llm: BaseLLM) -> dict:
-    if not state.query_results:
-        return {
-            "validation_passed": False,
-            "validation_reason": "No results returned",
-            "retry_count": state.retry_count + 1,
-        }
-        
-    prompt = VALIDATION_PROMPT.format(
-        question=state.question,
-        sql=state.sql,
-        results=_json_dumps(state.query_results),
-    )
-    
-    response = llm.generate(prompt).strip()
-    if response.startswith("VALID"):
-        return {"validation_passed": True, "validation_reason": None}
-    else:
-        return {
-            "validation_passed": False,
-            "validation_reason": response,
-            "retry_count": state.retry_count + 1,
-        }
+
 
 
 def insight_node(state: AgentState, llm: BaseLLM) -> dict:
     if not state.query_results:
         return {"insights": _fallback_insights()}
 
-    truncated_results = state.query_results[:50]
+    # Truncate to 20 rows and 5 columns max to reduce input tokens
+    truncated_results = state.query_results[:20]
+    if truncated_results and len(truncated_results[0]) > 5:
+        keys = list(truncated_results[0].keys())[:5]
+        truncated_results = [{k: row.get(k) for k in keys} for row in truncated_results]
+
     prompt = (
         f"{INSIGHT_PROMPT}\n\n"
         f"Question:\n{state.question}\n\n"
@@ -456,7 +548,7 @@ def insight_node(state: AgentState, llm: BaseLLM) -> dict:
         f"{_json_dumps(truncated_results)}"
     )
 
-    raw_response = llm.generate(prompt)
+    raw_response = llm.generate(prompt, max_tokens=512)
     parsed_insights = _parse_insights(raw_response)
     return {"insights": parsed_insights if parsed_insights is not None else _fallback_insights()}
 
@@ -465,14 +557,14 @@ def suggestion_node(state: AgentState, llm: BaseLLM) -> dict:
     if not state.query_results:
         return {"suggestions": []}
 
+    # Send concise context to reduce input tokens
     prompt = (
         f"{SUGGESTION_PROMPT}\n\n"
         f"Question:\n{state.question}\n\n"
-        f"Generated SQL:\n{state.sql}\n\n"
-        f"Insights:\n{_json_dumps(state.insights)}"
+        f"Generated SQL:\n{state.sql}"
     )
 
-    raw_response = llm.generate(prompt)
+    raw_response = llm.generate(prompt, max_tokens=512)
     parsed_suggestions = _parse_suggestions(raw_response)
     return {"suggestions": parsed_suggestions if parsed_suggestions is not None else []}
 
@@ -489,14 +581,50 @@ def scenario_success_node(state: AgentState) -> dict:
 
 
 def scenario_failure_node(state: AgentState) -> dict:
+    # Store the failure details in the documentation so the lesson node can use them
+    return {
+        "success": False,
+        "documentation": {
+            **state.documentation,
+            "_failure_question": state.question,
+            "_failure_sql": state.sql,
+            "_failure_error": state.error or state.validation_reason or "Unknown failure",
+            "_failure_validation": state.validation_reason,
+        },
+    }
+
+
+def scenario_lesson_node(state: AgentState, llm: BaseLLM, schema_service: SchemaService) -> dict:
+    failure_question = state.documentation.get("_failure_question") or state.question
+    failure_sql = state.documentation.get("_failure_sql") or state.sql
+    failure_error = state.documentation.get("_failure_error") or "Unknown failure"
+    schema = fetch_schema_context(schema_service, state.source_id)
+
+    prompt = SCENARIO_LESSON_PROMPT.format(
+        question=failure_question,
+        failed_sql=failure_sql,
+        error_message=failure_error,
+        schema=schema,
+    )
+
+    try:
+        lesson_text = llm.generate(prompt, max_tokens=800)
+    except Exception:
+        lesson_text = None
+
     SCENARIO_MEMORY.append_entry(
         status="failed",
-        question=state.question,
-        sql=state.sql,
-        error=state.error or state.validation_reason or "Unknown failure",
-        validation_reason=state.validation_reason,
+        question=failure_question,
+        sql=failure_sql,
+        error=failure_error,
+        validation_reason=state.documentation.get("_failure_validation"),
+        lesson=lesson_text,
     )
-    return {"success": False}
+
+    if lesson_text:
+        logger.info("Lesson documented for failed query: %s", failure_question[:80])
+
+    return {}
 
 
 def visualization_node(state: AgentState) -> dict:
@@ -607,7 +735,6 @@ class AgentGraph:
 
         # Nodes
         workflow.add_node("router", lambda s: intent_router_node(s, self.llm))
-        workflow.add_node("general_chat", lambda s: general_chat_node(s, self.llm))
         workflow.add_node("fetch_schema", lambda s: schema_node(s, self.schema_service, self.llm))
         workflow.add_node("load_memory", _make_load_long_term_memory_node(self.store))
         workflow.add_node("lookup_scenario", scenario_lookup_node)
@@ -616,9 +743,10 @@ class AgentGraph:
         workflow.add_node("approval", approval_node)
         workflow.add_node("execute_sql", lambda s: sql_execution_node(s, self.db_service))
         workflow.add_node("fix_sql", lambda s: fix_sql_node(s, self.llm, self.schema_service, self.db_service))
-        workflow.add_node("validate_result", lambda s: validation_node(s, self.llm))
+
         workflow.add_node("scenario_success", scenario_success_node)
         workflow.add_node("scenario_failure", scenario_failure_node)
+        workflow.add_node("scenario_lesson", lambda s: scenario_lesson_node(s, self.llm, self.schema_service))
         workflow.add_node("generate_visualization", visualization_node)
         workflow.add_node("generate_insights", lambda s: insight_node(s, self.llm))
         workflow.add_node("generate_suggestions", lambda s: suggestion_node(s, self.llm))
@@ -627,12 +755,7 @@ class AgentGraph:
 
         # Edges
         workflow.add_edge(START, "router")
-        
-        def route_intent(state: AgentState) -> Literal["general_chat", "fetch_schema"]:
-            return "general_chat" if state.intent == "GENERAL" else "fetch_schema"
-            
-        workflow.add_conditional_edges("router", route_intent, ["general_chat", "fetch_schema"])
-        workflow.add_edge("general_chat", END)
+        workflow.add_edge("router", "fetch_schema")
         
         def route_sql_gen(state: AgentState) -> Literal["lookup_scenario", "generate_mod_sql", "execute_sql", "approval"]:
             if state.sql and state.sql.strip():
@@ -645,11 +768,7 @@ class AgentGraph:
         workflow.add_conditional_edges("load_memory", route_sql_gen, ["lookup_scenario", "generate_mod_sql", "execute_sql", "approval"])
         
         def route_scenario(state: AgentState) -> Literal["execute_sql", "generate_sql", "persist_memory"]:
-            if state.documentation.get("preview_only"):
-                if state.scenario_matched and bool(state.sql.strip()):
-                    return "persist_memory"
-                return "generate_sql"
-            return "execute_sql" if state.scenario_matched and bool(state.sql.strip()) else "generate_sql"
+            return "generate_sql"
 
         workflow.add_conditional_edges("lookup_scenario", route_scenario, ["execute_sql", "generate_sql", "persist_memory"])
         
@@ -691,10 +810,11 @@ class AgentGraph:
 
         workflow.add_conditional_edges("fix_sql", route_fix, ["scenario_success", "execute_sql", "scenario_failure"])
         workflow.add_edge("scenario_success", "generate_visualization")
-        workflow.add_edge("generate_visualization", "generate_insights")
-        workflow.add_edge("generate_insights", "generate_suggestions")
-        workflow.add_edge("generate_suggestions", "document")
-        workflow.add_edge("scenario_failure", "document")
+        workflow.add_edge("scenario_success", "generate_insights")
+        workflow.add_edge("scenario_success", "generate_suggestions")
+        workflow.add_edge(["generate_visualization", "generate_insights", "generate_suggestions"], "document")
+        workflow.add_edge("scenario_failure", "scenario_lesson")
+        workflow.add_edge("scenario_lesson", "document")
         workflow.add_edge("document", "persist_memory")
         workflow.add_edge("persist_memory", END)
 
@@ -750,7 +870,43 @@ class AgentGraph:
         config = {"configurable": {"thread_id": resolved_thread_id}}
         config["configurable"]["user_id"] = source_id
         final_state = self.graph.invoke(initial_state, config=config)
-        return self._format_output(final_state, resolved_thread_id)
+        output = self._format_output(final_state, resolved_thread_id)
+
+        if _EVAL_AVAILABLE and not preview_only:
+            try:
+                generated_sql = final_state.get("sql", output.get("sql", ""))
+                results = final_state.get("query_results", output.get("results", []))
+                dialect = (final_state.get("documentation") or {}).get("dialect", "sqlite")
+                
+                def _run_eval():
+                    try:
+                        eval_scores = evaluate_sql(
+                            question=question,
+                            sql=generated_sql,
+                            results=results,
+                            dialect=dialect,
+                            llm=self.llm,
+                        )
+                        post_evaluation_to_langsmith(
+                            question=question,
+                            sql=generated_sql,
+                            source_id=source_id,
+                            thread_id=resolved_thread_id,
+                            scores=eval_scores,
+                            latency=0.0,
+                            results_count=len(results),
+                            has_visualization=output.get("visualization") is not None,
+                            insight_count=len(output.get("insights", [])),
+                        )
+                    except Exception as exc:
+                        logger.warning("Background evaluation failed: %s", exc)
+
+                import threading
+                threading.Thread(target=_run_eval, daemon=True).start()
+            except Exception as exc:
+                logger.warning("Failed to start background evaluation: %s", exc)
+
+        return output
 
     def resume(self, thread_id: str, approved: bool) -> dict[str, Any]:
         config = {"configurable": {"thread_id": thread_id}}

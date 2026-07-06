@@ -1,1404 +1,533 @@
-## 2026-05-05T20:44:02.727135+00:00 - failed
+
+## 2026-07-02T16:19:47.169807+00:00 - resolved
 
 ```json
 {
-  "created_at": "2026-05-05T20:44:02.727135+00:00",
-  "status": "failed",
-  "question": "Add a new record to the users table",
-  "sql": "Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": null
-}
-```
-
-## 2026-05-05T20:48:04.908275+00:00 - failed
-
-```json
-{
-  "created_at": "2026-05-05T20:48:04.908275+00:00",
-  "status": "failed",
-  "question": "Add a new record to the users table",
-  "sql": "Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer tasked with debugging and fixing a failed SQL query.\n\n### Context\n- User Goal: Add a new record to the users table\n- Failed Query: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n\n- Error Message Returned: 500: Failed to execute query: (sqlite3.OperationalError) near \"Mock\": syntax error\n[SQL: Mock response for: \nYou are an expert sqlite database engineer. Your objective is to generate an INSERT statement to accurately add the requested data.\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Critical Rules\n1. OUTPUT FORMAT: Return ONLY the raw SQL query. No markdown blocks, no explanations.\n2. COMPLETENESS: Ensure all required (NOT NULL) columns without default values are populated.\n3. DATA TYPES: Ensure the values strictly match the column data types defined in the schema.\n4. FORMAT: Use clear literal values or standard parameterized placeholders depending on the dialect's best practices.\n\n### User Question\nAdd a new record to the users table\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)\n\n### Database Schema\n{\n  \"tables\": []\n}\n\n### Task Instructions\n1. DIAGNOSE: Analyze the `error_message` against the `schema`. Look for missing/misspelled columns, incorrect table names, ambiguous references, type mismatches, or syntax errors.\n2. REWRITE: Fix the query so it executes successfully while still answering the user's original goal.\n3. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.\n]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": null
-}
-```
-
-## 2026-06-25T17:03:13.089964+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-25T17:03:13.089964+00:00",
-  "status": "failed",
-  "question": "show me all employees and their salaries",
-  "sql": "SELECT td.name, td.salary FROM test_data td LIMIT 1000",
-  "error": "INVALID: The SQL uses a LIMIT clause without an ORDER BY clause, which may not return all employees if there are more than 1000 employees in the table.",
-  "validation_reason": "INVALID: The SQL uses a LIMIT clause without an ORDER BY clause, which may not return all employees if there are more than 1000 employees in the table."
-}
-```
-
-## 2026-06-25T17:03:29.627842+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-25T17:03:29.627842+00:00",
+  "created_at": "2026-07-02T16:19:47.169807+00:00",
   "status": "resolved",
-  "question": "show total salary by department",
-  "sql": "SELECT department, SUM(salary) AS total_salary FROM test_data GROUP BY department LIMIT 1000",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-25T17:06:21.357187+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-25T17:06:21.357187+00:00",
-  "status": "failed",
-  "question": "show me all employees and their salaries",
-  "sql": "SELECT name, salary FROM test_data LIMIT 1000",
-  "error": "INVALID: The SQL does not guarantee retrieval of all employees, as it includes a LIMIT 1000 clause without an ORDER BY clause, potentially missing employees beyond the first 1000.",
-  "validation_reason": "INVALID: The SQL does not guarantee retrieval of all employees, as it includes a LIMIT 1000 clause without an ORDER BY clause, potentially missing employees beyond the first 1000."
-}
-```
-
-## 2026-06-26T12:01:01.595440+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T12:01:01.595440+00:00",
-  "status": "resolved",
-  "question": "Show all employees and their salaries sorted by salary descending",
-  "sql": "SELECT name, salary FROM employees ORDER BY salary DESC LIMIT 1000",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T12:01:05.992647+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T12:01:05.992647+00:00",
-  "status": "resolved",
-  "question": "What is the total salary budget per department?",
-  "sql": "SELECT department, SUM(salary) AS total_salary FROM employees GROUP BY department LIMIT 1000",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T12:01:10.303425+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T12:01:10.303425+00:00",
-  "status": "resolved",
-  "question": "Who are the top 3 highest paid employees?",
-  "sql": "SELECT name, salary FROM employees ORDER BY salary DESC LIMIT 3",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T12:01:15.394669+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T12:01:15.394669+00:00",
-  "status": "resolved",
-  "question": "Show total sales revenue by category",
-  "sql": "SELECT category, SUM(total_amount) AS total_revenue FROM sales GROUP BY category LIMIT 1000",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T12:01:35.374444+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T12:01:35.374444+00:00",
-  "status": "resolved",
-  "question": "أظهر جميع الموظفين ورواتبهم",
-  "sql": "SELECT name, salary FROM employees LIMIT 1000",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T12:02:02.856390+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T12:02:02.856390+00:00",
-  "status": "failed",
-  "question": "ما هو إجمالي ميزانية الرواتب لكل قسم؟",
-  "sql": "SELECT department, SUM(salary) AS total_salary FROM employees GROUP BY department LIMIT 1000",
-  "error": "INVALID: The SQL does not calculate the total salary across all departments, it only provides the total salary per department.",
-  "validation_reason": "INVALID: The SQL does not calculate the total salary across all departments, it only provides the total salary per department."
-}
-```
-
-## 2026-06-26T12:02:17.709754+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T12:02:17.709754+00:00",
-  "status": "resolved",
-  "question": "من هم أعلى 3 موظفين في الراتب؟",
-  "sql": "SELECT name, salary FROM employees ORDER BY salary DESC LIMIT 3",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T12:02:36.962968+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T12:02:36.962968+00:00",
-  "status": "resolved",
-  "question": "أظهر إجمالي المبيعات حسب الفئة",
-  "sql": "SELECT category, SUM(total_amount) AS total_sales FROM sales GROUP BY category LIMIT 1000",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T12:19:28.101317+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T12:19:28.101317+00:00",
-  "status": "resolved",
-  "question": "Show all employees and their salaries sorted by salary descending",
-  "sql": "SELECT name AS name, salary AS salary FROM employees ORDER BY salary DESC LIMIT 1000",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T12:19:31.692996+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T12:19:31.692996+00:00",
-  "status": "resolved",
-  "question": "What is the total salary budget per department?",
-  "sql": "SELECT department, SUM(salary) AS total_salary FROM employees GROUP BY department LIMIT 1000",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T12:19:33.968116+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T12:19:33.968116+00:00",
-  "status": "resolved",
-  "question": "Who are the top 3 highest paid employees?",
-  "sql": "SELECT name, salary FROM employees ORDER BY salary DESC LIMIT 3",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T12:19:41.463347+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T12:19:41.463347+00:00",
-  "status": "resolved",
-  "question": "Show total sales revenue by category",
-  "sql": "SELECT category, SUM(total_amount) AS total_revenue FROM sales GROUP BY category LIMIT 1000",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T12:20:03.597444+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T12:20:03.597444+00:00",
-  "status": "resolved",
-  "question": "أظهر جميع الموظفين ورواتبهم",
-  "sql": "SELECT name AS الاسم, salary AS الراتب FROM employees LIMIT 1000",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T12:20:35.830205+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T12:20:35.830205+00:00",
-  "status": "resolved",
-  "question": "ما هو إجمالي ميزانية الرواتب لكل قسم؟",
-  "sql": "SELECT department_ar AS القسم, SUM(salary) AS إجمالي_ميزانية_الرواتب FROM employees GROUP BY department_ar LIMIT 1000",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T12:20:53.372267+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T12:20:53.372267+00:00",
-  "status": "resolved",
-  "question": "من هم أعلى 3 موظفين في الراتب؟",
-  "sql": "SELECT name, salary FROM employees ORDER BY salary DESC LIMIT 3",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T12:21:13.067559+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T12:21:13.067559+00:00",
-  "status": "resolved",
-  "question": "أظهر إجمالي المبيعات حسب الفئة",
-  "sql": "SELECT category AS الفئة, SUM(total_amount) AS إجمالي_المبيعات FROM sales GROUP BY category LIMIT 1000",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T12:22:05.216764+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T12:22:05.216764+00:00",
-  "status": "resolved",
-  "question": "Show all employees and their salaries sorted by salary descending",
-  "sql": "SELECT name, salary FROM employees ORDER BY salary DESC LIMIT 1000",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T12:22:09.143388+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T12:22:09.143388+00:00",
-  "status": "resolved",
-  "question": "What is the total salary budget per department?",
-  "sql": "SELECT department, SUM(salary) AS total_salary FROM employees GROUP BY department LIMIT 1000",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T12:22:16.447519+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T12:22:16.447519+00:00",
-  "status": "resolved",
-  "question": "Who are the top 3 highest paid employees?",
-  "sql": "SELECT name, salary FROM employees ORDER BY salary DESC LIMIT 3",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T12:22:34.725150+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T12:22:34.725150+00:00",
-  "status": "resolved",
-  "question": "Show total sales revenue by category",
-  "sql": "SELECT category, SUM(total_amount) AS total_revenue FROM sales GROUP BY category LIMIT 1000",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T12:22:56.551608+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T12:22:56.551608+00:00",
-  "status": "resolved",
-  "question": "أظهر جميع الموظفين ورواتبهم",
-  "sql": "SELECT name_ar AS الاسم, salary AS الراتب FROM employees LIMIT 1000",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T12:23:31.101822+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T12:23:31.101822+00:00",
-  "status": "failed",
-  "question": "ما هو إجمالي ميزانية الرواتب لكل قسم؟",
-  "sql": "SELECT department_ar AS القسم, SUM(salary) AS إجمالي_ميزانية_الرواتب FROM employees GROUP BY department_ar LIMIT 1000",
-  "error": "INVALID: The question asks for the total budget of salaries for all departments, but the generated SQL only provides the total salary for each department, not the overall total.",
-  "validation_reason": "INVALID: The question asks for the total budget of salaries for all departments, but the generated SQL only provides the total salary for each department, not the overall total."
-}
-```
-
-## 2026-06-26T12:23:43.928838+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T12:23:43.928838+00:00",
-  "status": "resolved",
-  "question": "من هم أعلى 3 موظفين في الراتب؟",
-  "sql": "SELECT name, salary FROM employees ORDER BY salary DESC LIMIT 3",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T12:24:05.421360+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T12:24:05.421360+00:00",
-  "status": "resolved",
-  "question": "أظهر إجمالي المبيعات حسب الفئة",
-  "sql": "SELECT category_ar AS الفئة, SUM(total_amount) AS إجمالي_المبيعات FROM sales GROUP BY category_ar LIMIT 1000",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T12:56:32.366477+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T12:56:32.366477+00:00",
-  "status": "failed",
-  "question": "Show total budget by department",
-  "sql": "SELECT department, SUM(salary) AS total_salary FROM employees GROUP BY department LIMIT 1000",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: employees\n[SQL: SELECT department, SUM(salary) AS total_salary FROM employees GROUP BY department LIMIT 1000]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T13:00:19.146824+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T13:00:19.146824+00:00",
-  "status": "failed",
-  "question": "اعلي مرتبات ",
-  "sql": "SELECT salary AS الراتب FROM staff ORDER BY salary DESC LIMIT 1000",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: staff\n[SQL: SELECT salary AS الراتب FROM staff ORDER BY salary DESC LIMIT 1000]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T14:57:03.493120+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T14:57:03.493120+00:00",
-  "status": "failed",
-  "question": "top salary ",
-  "sql": "SELECT MAX(salary) FROM staff",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: staff\n[SQL: SELECT MAX(salary) FROM staff LIMIT 200]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T14:57:25.228166+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T14:57:25.228166+00:00",
-  "status": "failed",
-  "question": "SELECT MAX(salary) FROM staff",
-  "sql": "SELECT MAX(salary) FROM staff",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: staff\n[SQL: SELECT MAX(salary) FROM staff LIMIT 200]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T18:09:32.918430+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T18:09:32.918430+00:00",
-  "status": "failed",
-  "question": "Total sales by month",
-  "sql": "SELECT STRFTIME('%Y-%m', date) AS month, SUM(total_amount) AS total_revenue FROM sales_data_table GROUP BY STRFTIME('%Y-%m', date)",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: sales_data_table\n[SQL: SELECT STRFTIME('%Y-%m', date) AS month, SUM(total_amount) AS total_revenue FROM sales_data_table GROUP BY STRFTIME('%Y-%m', date) LIMIT 200]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T18:09:44.879529+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T18:09:44.879529+00:00",
-  "status": "failed",
-  "question": "Total sales by month",
-  "sql": "SELECT STRFTIME('%Y-%m', date) AS sales_month, SUM(amount) AS total_sales FROM orders GROUP BY STRFTIME('%Y-%m', date)",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: orders\n[SQL: SELECT STRFTIME('%Y-%m', date) AS sales_month, SUM(amount) AS total_sales FROM orders GROUP BY STRFTIME('%Y-%m', date) LIMIT 200]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T18:10:05.281215+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T18:10:05.281215+00:00",
-  "status": "failed",
-  "question": "Total sales by monthTotal sales by month",
-  "sql": "SELECT STRFTIME('%Y-%m', date) AS month, SUM(amount) AS total_revenue FROM orders GROUP BY STRFTIME('%Y-%m', date)",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: orders\n[SQL: SELECT STRFTIME('%Y-%m', date) AS month, SUM(amount) AS total_revenue FROM orders GROUP BY STRFTIME('%Y-%m', date) LIMIT 200]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T18:10:29.021416+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T18:10:29.021416+00:00",
-  "status": "failed",
-  "question": "Total sales by month",
-  "sql": "SELECT STRFTIME('%Y-%m', date) AS month, SUM(total_amount) AS total_revenue FROM sales_table GROUP BY STRFTIME('%Y-%m', date) LIMIT 1000",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: sales_table\n[SQL: SELECT STRFTIME('%Y-%m', date) AS month, SUM(total_amount) AS total_revenue FROM sales_table GROUP BY STRFTIME('%Y-%m', date) LIMIT 1000]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T18:12:42.170187+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T18:12:42.170187+00:00",
-  "status": "resolved",
-  "question": "Total sales by month",
-  "sql": "SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM sales GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T18:20:42.328310+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T18:20:42.328310+00:00",
-  "status": "resolved",
-  "question": "Total sales by month",
-  "sql": "SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM sales GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T18:49:32.365933+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T18:49:32.365933+00:00",
-  "status": "resolved",
-  "question": "Total sales by month",
-  "sql": "SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM sales GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T19:01:12.014200+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T19:01:12.014200+00:00",
-  "status": "failed",
   "question": "Show all employees and their salaries",
-  "sql": "SELECT name, salary FROM employees LIMIT 1000",
-  "error": "INVALID: The SQL query includes a LIMIT 1000 clause, which may not retrieve all employees if there are more than 1000 employees in the database, thus not fully addressing the question of showing \"all\" employees.",
-  "validation_reason": "INVALID: The SQL query includes a LIMIT 1000 clause, which may not retrieve all employees if there are more than 1000 employees in the database, thus not fully addressing the question of showing \"all\" employees."
-}
-```
-
-## 2026-06-26T19:01:20.702022+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T19:01:20.702022+00:00",
-  "status": "resolved",
-  "question": "SELECT name, salary FROM employees LIMIT 1000",
-  "sql": "SELECT name, salary FROM employees LIMIT 1000",
+  "sql": "SELECT name, salary FROM employees LIMIT 1000;",
   "error": null,
-  "validation_reason": null
+  "validation_reason": null,
+  "lesson": null
 }
 ```
 
-## 2026-06-26T19:05:04.628388+00:00 - resolved
+## 2026-07-02T16:25:25.944198+00:00 - resolved
 
 ```json
 {
-  "created_at": "2026-06-26T19:05:04.628388+00:00",
+  "created_at": "2026-07-02T16:25:25.944198+00:00",
   "status": "resolved",
-  "question": "Show first 10 rows from test_data",
-  "sql": "SELECT id, name, age, salary, department, manager, hire_date, location, email, phone, office_number, emergency_contact, blood_type, favorite_color, hobbies FROM test_data LIMIT 10",
+  "question": "ما هو إجمالي الرواتب لكل قسم؟",
+  "sql": "SELECT department_ar, SUM(salary) FROM employees GROUP BY department_ar",
   "error": null,
-  "validation_reason": null
+  "validation_reason": null,
+  "lesson": null
 }
 ```
 
-## 2026-06-26T19:05:11.590940+00:00 - resolved
+## 2026-07-02T16:26:15.310519+00:00 - resolved
 
 ```json
 {
-  "created_at": "2026-06-26T19:05:11.590940+00:00",
+  "created_at": "2026-07-02T16:26:15.310519+00:00",
   "status": "resolved",
-  "question": "SELECT id, name, age, salary, department, manager, hire_date, location, email, phone, office_number, emergency_contact, blood_type, favorite_color, hobbies FROM test_data LIMIT 10",
-  "sql": "SELECT id, name, age, salary, department, manager, hire_date, location, email, phone, office_number, emergency_contact, blood_type, favorite_color, hobbies FROM test_data LIMIT 10",
+  "question": "كام عدد الموظفين في كل اداره",
+  "sql": "SELECT department_ar, COUNT(*) FROM employees GROUP BY department_ar",
   "error": null,
-  "validation_reason": null
+  "validation_reason": null,
+  "lesson": null
 }
 ```
 
-## 2026-06-26T19:06:57.944375+00:00 - resolved
+## 2026-07-02T16:27:10.703974+00:00 - resolved
 
 ```json
 {
-  "created_at": "2026-06-26T19:06:57.944375+00:00",
-  "status": "resolved",
-  "question": "Show first 10 rows from test_data",
-  "sql": "SELECT id, name, age, salary, department, manager, hire_date, location, email, phone, office_number, emergency_contact, blood_type, favorite_color, hobbies FROM test_data LIMIT 10",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T19:07:03.000972+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T19:07:03.000972+00:00",
-  "status": "resolved",
-  "question": "SELECT id, name, age, salary, department, manager, hire_date, location, email, phone, office_number, emergency_contact, blood_type, favorite_color, hobbies FROM test_data LIMIT 10",
-  "sql": "SELECT id, name, age, salary, department, manager, hire_date, location, email, phone, office_number, emergency_contact, blood_type, favorite_color, hobbies FROM test_data LIMIT 10",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T19:08:14.468526+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T19:08:14.468526+00:00",
-  "status": "resolved",
-  "question": "SELECT id, name, age, salary, department, manager, hire_date, location, email, phone, office_number, emergency_contact, blood_type, favorite_color, hobbies FROM test_data LIMIT 10",
-  "sql": "SELECT id, name, age, salary, department, manager, hire_date, location, email, phone, office_number, emergency_contact, blood_type, favorite_color, hobbies FROM test_data LIMIT 10",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T19:08:32.787135+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T19:08:32.787135+00:00",
-  "status": "resolved",
-  "question": "Show first 10 rows from test_data",
-  "sql": "SELECT id, name, age, salary, department, manager, hire_date, location, email, phone, office_number, emergency_contact, blood_type, favorite_color, hobbies FROM test_data LIMIT 10",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T19:10:15.055791+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T19:10:15.055791+00:00",
-  "status": "resolved",
-  "question": "Show first 10 rows from test_data",
-  "sql": "SELECT id, name, age, salary, department, manager, hire_date, location, email, phone, office_number, emergency_contact, blood_type, favorite_color, hobbies FROM test_data LIMIT 10",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T19:11:20.952106+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T19:11:20.952106+00:00",
-  "status": "resolved",
-  "question": "what is the total number of employees?\n",
-  "sql": "SELECT COUNT(id) AS total_employees FROM employees LIMIT 1000",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T19:12:23.145469+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T19:12:23.145469+00:00",
-  "status": "resolved",
-  "question": "Show first 10 rows from test_data",
-  "sql": "SELECT id, name, age, salary, department, manager, hire_date, location, email, phone, office_number, emergency_contact, blood_type, favorite_color, hobbies FROM test_data LIMIT 10",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T19:12:43.174156+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T19:12:43.174156+00:00",
+  "created_at": "2026-07-02T16:27:10.703974+00:00",
   "status": "resolved",
   "question": "من هم أعلى 5 موظفين راتباً؟",
-  "sql": "SELECT name_ar AS الاسم, salary AS الراتب FROM employees ORDER BY salary DESC LIMIT 5",
+  "sql": "SELECT name_ar, salary FROM employees ORDER BY salary DESC LIMIT 5;",
   "error": null,
-  "validation_reason": null
+  "validation_reason": null,
+  "lesson": null
 }
 ```
 
-## 2026-06-26T19:12:45.016267+00:00 - resolved
+## 2026-07-02T16:30:06.901987+00:00 - resolved
 
 ```json
 {
-  "created_at": "2026-06-26T19:12:45.016267+00:00",
+  "created_at": "2026-07-02T16:30:06.901987+00:00",
   "status": "resolved",
-  "question": "من هم أعلى 5 موظفين راتباً؟",
-  "sql": "SELECT name_ar AS الاسم, salary AS الراتب FROM employees ORDER BY salary DESC LIMIT 5",
+  "question": "مين اعلي واحد في المرتبات و حددلي هو من اي قسم",
+  "sql": "SELECT name, department, salary FROM employees ORDER BY salary DESC LIMIT 1;",
   "error": null,
-  "validation_reason": null
+  "validation_reason": null,
+  "lesson": null
 }
 ```
 
-## 2026-06-26T19:12:56.007735+00:00 - failed
+## 2026-07-02T16:40:08.422718+00:00 - resolved
 
 ```json
 {
-  "created_at": "2026-06-26T19:12:56.007735+00:00",
-  "status": "failed",
+  "created_at": "2026-07-02T16:40:08.422718+00:00",
+  "status": "resolved",
+  "question": "Top 5 customers by revenue",
+  "sql": "SELECT employee_name, SUM(total_amount) FROM sales GROUP BY employee_name ORDER BY SUM(total_amount) DESC LIMIT 5;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-02T16:48:24.738081+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-02T16:48:24.738081+00:00",
+  "status": "resolved",
+  "question": "ما هي الاقسام الموجوده؟",
+  "sql": "SELECT DISTINCT department FROM employees LIMIT 1000;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-02T16:53:42.566617+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-02T16:53:42.566617+00:00",
+  "status": "resolved",
   "question": "Show all employees and their salaries",
-  "sql": "SELECT id, name, salary FROM employees LIMIT 1000",
-  "error": "INVALID: The SQL has a LIMIT 1000 clause which may not return all employees if there are more than 1000 employees in the database.",
-  "validation_reason": "INVALID: The SQL has a LIMIT 1000 clause which may not return all employees if there are more than 1000 employees in the database."
-}
-```
-
-## 2026-06-26T19:13:45.091194+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T19:13:45.091194+00:00",
-  "status": "resolved",
-  "question": "SELECT id, name, salary FROM employees LIMIT 1000",
-  "sql": "SELECT id, name, salary FROM employees LIMIT 1000",
+  "sql": "SELECT name, salary FROM employees LIMIT 1000;",
   "error": null,
-  "validation_reason": null
+  "validation_reason": null,
+  "lesson": null
 }
 ```
 
-## 2026-06-26T19:14:45.458857+00:00 - resolved
+## 2026-07-02T16:57:13.012308+00:00 - resolved
 
 ```json
 {
-  "created_at": "2026-06-26T19:14:45.458857+00:00",
+  "created_at": "2026-07-02T16:57:13.012308+00:00",
   "status": "resolved",
-  "question": "Show first 10 rows from test_data",
-  "sql": "SELECT id, name, age, salary, department, manager, hire_date, location, email, phone, office_number, emergency_contact, blood_type, favorite_color, hobbies FROM test_data LIMIT 10",
+  "question": "what are the count of the eployees in the last 30 days?",
+  "sql": "SELECT COUNT(id) FROM employees WHERE hire_date >= DATE('now', '-30 days');",
   "error": null,
-  "validation_reason": null
+  "validation_reason": null,
+  "lesson": null
 }
 ```
 
-## 2026-06-26T19:18:19.959871+00:00 - failed
+## 2026-07-02T17:08:54.384278+00:00 - resolved
 
 ```json
 {
-  "created_at": "2026-06-26T19:18:19.959871+00:00",
-  "status": "failed",
-  "question": "what is the total number of employees?",
-  "sql": "SELECT COUNT(id) AS total_employees FROM employees LIMIT 1000",
-  "error": "INVALID: The SQL uses a LIMIT clause without an ORDER BY clause, which may not provide a complete answer to the question of the total number of employees if there are more than 1000 employees in the table.",
-  "validation_reason": "INVALID: The SQL uses a LIMIT clause without an ORDER BY clause, which may not provide a complete answer to the question of the total number of employees if there are more than 1000 employees in the table."
-}
-```
-
-## 2026-06-26T19:18:33.160421+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T19:18:33.160421+00:00",
-  "status": "failed",
-  "question": "Total sales by month",
-  "sql": "SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM sales_table GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: sales_table\n[SQL: SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM sales_table GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T19:18:47.515277+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T19:18:47.515277+00:00",
-  "status": "resolved",
-  "question": "SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM sales_table GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000",
-  "sql": "SELECT STRFTIME('%Y-%m', s.sale_date) AS month, SUM(s.total_amount) AS total_sales FROM sales s GROUP BY STRFTIME('%Y-%m', s.sale_date) ORDER BY month LIMIT 1000",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T19:19:34.768063+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T19:19:34.768063+00:00",
-  "status": "failed",
-  "question": "Show all employees and their salaries",
-  "sql": "SELECT name, salary FROM employees ORDER BY salary DESC LIMIT 1000",
-  "error": "INVALID: The SQL query only returns a limited number of employees (up to 1000) and orders them by salary in descending order, but it does not necessarily show \"all\" employees as the question intends, especially if there are more than 1000 employees in the database.",
-  "validation_reason": "INVALID: The SQL query only returns a limited number of employees (up to 1000) and orders them by salary in descending order, but it does not necessarily show \"all\" employees as the question intends, especially if there are more than 1000 employees in the database."
-}
-```
-
-## 2026-06-26T19:21:44.440440+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T19:21:44.440440+00:00",
-  "status": "failed",
-  "question": "Total sales by month",
-  "sql": "SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM sales_table GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: sales_table\n[SQL: SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM sales_table GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T19:21:46.330351+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T19:21:46.330351+00:00",
-  "status": "failed",
-  "question": "Total sales by month",
-  "sql": "SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM sales_table GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: sales_table\n[SQL: SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM sales_table GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T19:21:50.035268+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T19:21:50.035268+00:00",
-  "status": "failed",
-  "question": "SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM sales_table GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000",
-  "sql": "SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM sales_table GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: sales_table\n[SQL: SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM sales_table GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T19:21:53.864507+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T19:21:53.864507+00:00",
-  "status": "failed",
-  "question": "SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM sales_table GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000",
-  "sql": "SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM sales_table GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: sales_table\n[SQL: SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM sales_table GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T19:22:05.858779+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T19:22:05.858779+00:00",
-  "status": "failed",
-  "question": "Total sales by month",
-  "sql": "SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM sales_table GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: sales_table\n[SQL: SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM sales_table GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T19:22:21.671496+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T19:22:21.671496+00:00",
-  "status": "failed",
-  "question": "Show all employees and their salaries",
-  "sql": "SELECT name, salary FROM employees LIMIT 1000",
-  "error": "INVALID: The SQL uses a LIMIT clause without an ORDER BY clause, which may not return all employees if there are more than 1000 employees in the table.",
-  "validation_reason": "INVALID: The SQL uses a LIMIT clause without an ORDER BY clause, which may not return all employees if there are more than 1000 employees in the table."
-}
-```
-
-## 2026-06-26T19:22:24.248962+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T19:22:24.248962+00:00",
-  "status": "failed",
-  "question": "ما هو إجمالي الرواتب لكل قسم؟",
-  "sql": "SELECT department_ar AS القسم, SUM(salary) AS إجمالي_المرتبات FROM employees GROUP BY department_ar LIMIT 1000",
-  "error": "INVALID: SQL does not calculate the total salaries across all departments as requested, but rather provides the total for each department separately.",
-  "validation_reason": "INVALID: SQL does not calculate the total salaries across all departments as requested, but rather provides the total for each department separately."
-}
-```
-
-## 2026-06-26T19:24:46.492217+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T19:24:46.492217+00:00",
-  "status": "resolved",
-  "question": "Show total sales revenue by category",
-  "sql": "SELECT category, SUM(total_amount) AS total_revenue FROM sales GROUP BY category LIMIT 1000",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T21:07:51.332857+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T21:07:51.332857+00:00",
+  "created_at": "2026-07-02T17:08:54.384278+00:00",
   "status": "resolved",
   "question": "ما هو إجمالي الرواتب لكل قسم؟",
-  "sql": "SELECT department_ar AS القسم, SUM(salary) AS إجمالي_الرواتب FROM employees GROUP BY department_ar LIMIT 1000",
+  "sql": "SELECT department, SUM(salary) FROM employees GROUP BY department",
   "error": null,
-  "validation_reason": null
+  "validation_reason": null,
+  "lesson": null
 }
 ```
 
-## 2026-06-26T21:08:03.176803+00:00 - failed
+## 2026-07-02T17:15:59.728133+00:00 - resolved
 
 ```json
 {
-  "created_at": "2026-06-26T21:08:03.176803+00:00",
-  "status": "failed",
-  "question": "Total sales by month",
-  "sql": "SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM sales_table GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: sales_table\n[SQL: SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM sales_table GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T23:08:15.537814+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-26T23:08:15.537814+00:00",
+  "created_at": "2026-07-02T17:15:59.728133+00:00",
   "status": "resolved",
-  "question": "ما هو إجمالي الرواتب لكل قسم؟",
-  "sql": "SELECT department_ar AS القسم, SUM(salary) AS إجمالي_الرواتب FROM employees GROUP BY department_ar LIMIT 1000",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T23:08:45.357120+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T23:08:45.357120+00:00",
-  "status": "failed",
-  "question": "Total sales by month",
-  "sql": "SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM sales_table GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: sales_table\n[SQL: SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM sales_table GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T23:09:40.124644+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T23:09:40.124644+00:00",
-  "status": "failed",
-  "question": "Total sales by monthwhat is the total number of employees?",
-  "sql": "ERROR: Insufficient schema context.",
-  "error": "ERROR: Insufficient schema context.",
-  "validation_reason": "INVALID: The SQL does not address the question about total sales by month and total number of employees, instead it checks for the existence of an 'employees' table."
-}
-```
-
-## 2026-06-26T23:09:49.900707+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T23:09:49.900707+00:00",
-  "status": "failed",
-  "question": "Total sales by monthwhat is the total number of employees?",
-  "sql": "ERROR: Insufficient schema context.",
-  "error": "ERROR: Insufficient schema context.",
-  "validation_reason": "INVALID: The SQL does not address the question about total sales by month, instead it counts the total number of employees."
-}
-```
-
-## 2026-06-26T23:09:54.972023+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T23:09:54.972023+00:00",
-  "status": "failed",
-  "question": "Total sales by monthwhat is the total number of employees?",
-  "sql": "ERROR: Insufficient schema context.",
-  "error": "ERROR: Insufficient schema context.",
-  "validation_reason": "INVALID: The SQL does not address the question about total sales by month, and instead queries the total number of employees."
-}
-```
-
-## 2026-06-26T23:12:33.976805+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T23:12:33.976805+00:00",
-  "status": "failed",
-  "question": "what is the total salary for each department?",
-  "sql": "SELECT department, SUM(salary) AS total_salary FROM employee_table GROUP BY department LIMIT 1000",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: employee_table\n[SQL: SELECT department, SUM(salary) AS total_salary FROM employee_table GROUP BY department LIMIT 1000]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": null
-}
-```
-
-## 2026-06-26T23:29:56.340489+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T23:29:56.340489+00:00",
-  "status": "failed",
-  "question": "Show first 10 rows from test_data",
-  "sql": "SELECT id AS الid, name AS الاسم, department AS القسم, location AS الموقع, age AS العمر, salary AS الراتب, manager AS المدير, hire_date AS تاريخ_تسجيل, email AS البريد_الالكتروني, phone AS الهاتف FROM test_data LIMIT 10",
-  "error": "INVALID: The SQL query seems to correctly address the question, but there's a concern with the results being empty while the question logically implies data should exist. Additionally, the question asks for the first 10 rows from test_data, but the results only provide a few rows.",
-  "validation_reason": "INVALID: The SQL query seems to correctly address the question, but there's a concern with the results being empty while the question logically implies data should exist. Additionally, the question asks for the first 10 rows from test_data, but the results only provide a few rows."
-}
-```
-
-## 2026-06-26T23:30:45.880264+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T23:30:45.880264+00:00",
-  "status": "failed",
-  "question": "SELECT id AS الid, name AS الاسم, department AS القسم, location AS الموقع, age AS العمر, salary AS الراتب, manager AS المدير, hire_date AS تاريخ_تسجيل, email AS البريد_الالكتروني, phone AS الهاتف FROM test_data LIMIT 10",
-  "sql": "SELECT id AS الid, name AS الاسم, department AS القسم, location AS الموقع, age AS العمر, salary AS الراتب, manager AS المدير, hire_date AS تاريخ_تسجيل, email AS البريد_الالكتروني, phone AS الهاتف FROM test_data LIMIT 10",
-  "error": "INVALID: SQL and results both match the original query, but the results only contain 3 records, which is less than the requested LIMIT 10.",
-  "validation_reason": "INVALID: SQL and results both match the original query, but the results only contain 3 records, which is less than the requested LIMIT 10."
-}
-```
-
-## 2026-06-26T23:32:48.747211+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T23:32:48.747211+00:00",
-  "status": "failed",
-  "question": "Calculate average salary by department",
-  "sql": "SELECT AVG(td.salary) AS المتوسط_الراتب FROM test_data td GROUP BY td.department LIMIT 1000",
-  "error": "INVALID: The results only contain two rows, but the LIMIT clause is set to 1000, implying there should be more data.",
-  "validation_reason": "INVALID: The results only contain two rows, but the LIMIT clause is set to 1000, implying there should be more data."
-}
-```
-
-## 2026-06-26T23:33:31.966778+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T23:33:31.966778+00:00",
-  "status": "failed",
-  "question": "SELECT AVG(td.salary) AS المتوسط_الراتب FROM test_data td GROUP BY td.department LIMIT 1000",
-  "sql": "SELECT td.name AS الاسم, td.salary AS الراتب, td.department AS القسم FROM test_data td GROUP BY td.department LIMIT 1000",
-  "error": "INVALID: Generated SQL does not address the original question as it is trying to select individual rows instead of grouping by department and calculating the average salary.\n\nHowever, based on the given inputs, the SQL query generated is actually selecting data that is not relevant to the question asked. The query is asking for the average salary by department, but the generated SQL does not have any aggregation or grouping by department. It's trying to select individual rows from the table.\n\nGiven the original question, the correct SQL query should be:\n\n```sql\nSELECT AVG(td.salary) AS المتوسط_الراتب FROM test_data td GROUP BY td.department LIMIT 1000\n```\n\nBut the generated SQL is:\n\n```sql\nSELECT td.name AS الاسم, td.salary AS الراتب, td.department AS القسم FROM test_data td GROUP BY td.department LIMIT 1000\n```\n\nThe difference is that the generated SQL includes the `name` column which is not needed for the original question. Also, the generated SQL does not calculate the average salary, it just groups the data by department.\n\nLooking at the database results, it's not possible to determine if the results are correct or not because the generated SQL does not match the original question.\n\nHowever, assuming the original question was correctly answered by the database results, the validation string should be:\n\nVALID\n\nAssuming the original question asked for the average salary by department, the database results should be empty because there is only one row for each department.\n\nHowever, without the actual expected results or a correct SQL query that matches the original question, we can't determine the validity of the results.\n\nBut assuming the original question was asking for the average salary by department and the results were correct, the validation string should be:\n\nINVALID: Generated SQL does not calculate the average salary as required by the question.\n\nHowever, if we assume the results were correct and the question was asking for a different type of data, the validation string should be:\n\nVALID",
-  "validation_reason": "INVALID: Generated SQL does not address the original question as it is trying to select individual rows instead of grouping by department and calculating the average salary.\n\nHowever, based on the given inputs, the SQL query generated is actually selecting data that is not relevant to the question asked. The query is asking for the average salary by department, but the generated SQL does not have any aggregation or grouping by department. It's trying to select individual rows from the table.\n\nGiven the original question, the correct SQL query should be:\n\n```sql\nSELECT AVG(td.salary) AS المتوسط_الراتب FROM test_data td GROUP BY td.department LIMIT 1000\n```\n\nBut the generated SQL is:\n\n```sql\nSELECT td.name AS الاسم, td.salary AS الراتب, td.department AS القسم FROM test_data td GROUP BY td.department LIMIT 1000\n```\n\nThe difference is that the generated SQL includes the `name` column which is not needed for the original question. Also, the generated SQL does not calculate the average salary, it just groups the data by department.\n\nLooking at the database results, it's not possible to determine if the results are correct or not because the generated SQL does not match the original question.\n\nHowever, assuming the original question was correctly answered by the database results, the validation string should be:\n\nVALID\n\nAssuming the original question asked for the average salary by department, the database results should be empty because there is only one row for each department.\n\nHowever, without the actual expected results or a correct SQL query that matches the original question, we can't determine the validity of the results.\n\nBut assuming the original question was asking for the average salary by department and the results were correct, the validation string should be:\n\nINVALID: Generated SQL does not calculate the average salary as required by the question.\n\nHowever, if we assume the results were correct and the question was asking for a different type of data, the validation string should be:\n\nVALID"
-}
-```
-
-## 2026-06-26T23:34:58.155376+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-26T23:34:58.155376+00:00",
-  "status": "failed",
-  "question": "what is the total sales by month?",
-  "sql": "SELECT STRFTIME('%Y-%m', hire_date) AS month, SUM(CASE WHEN sale_amount IS NOT NULL THEN sale_amount ELSE 0 END) AS total_sales \nFROM test_data \nGROUP BY STRFTIME('%Y-%m', hire_date) \nORDER BY month \nLIMIT 1000",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such column: sale_amount\n[SQL: SELECT STRFTIME('%Y-%m', hire_date) AS month, SUM(CASE WHEN sale_amount IS NOT NULL THEN sale_amount ELSE 0 END) AS total_sales \nFROM test_data \nGROUP BY STRFTIME('%Y-%m', hire_date) \nORDER BY month \nLIMIT 1000]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": null
-}
-```
-
-## 2026-06-27T08:16:11.826125+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-27T08:16:11.826125+00:00",
-  "status": "failed",
-  "question": "Show all employees and their salaries sorted by salary descending",
-  "sql": "SELECT name_ar AS الاسم, salary AS الراتب, department_ar AS القسم FROM employees ORDER BY salary DESC LIMIT 1000",
-  "error": "INVALID: SQL does not address the original question as it includes an arbitrary LIMIT of 1000, which is not present in the original query. Additionally, there's no filtering by specific departments as implied by the question's intent.\n\nThe original question asks to \"Show all employees and their salaries sorted by salary descending\". The SQL generated includes a LIMIT clause which may not return all employees. Moreover, the original question does not explicitly state to include all departments, but since not all departments are represented in the returned data, it's possible the original question intended to include all departments. Therefore, it's likely the SQL missed crucial constraints.",
-  "validation_reason": "INVALID: SQL does not address the original question as it includes an arbitrary LIMIT of 1000, which is not present in the original query. Additionally, there's no filtering by specific departments as implied by the question's intent.\n\nThe original question asks to \"Show all employees and their salaries sorted by salary descending\". The SQL generated includes a LIMIT clause which may not return all employees. Moreover, the original question does not explicitly state to include all departments, but since not all departments are represented in the returned data, it's possible the original question intended to include all departments. Therefore, it's likely the SQL missed crucial constraints."
-}
-```
-
-## 2026-06-27T08:17:11.989622+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-27T08:17:11.989622+00:00",
-  "status": "failed",
-  "question": "What is the total salary budget per department?",
-  "sql": "SELECT department_ar AS القسم, SUM(COALESCE(salary, 0)) AS الميزانية FROM employees GROUP BY department_ar LIMIT 1000",
-  "error": "INVALID: SQL is missing the constraint to only include employees with a non-zero salary in the salary budget calculation.",
-  "validation_reason": "INVALID: SQL is missing the constraint to only include employees with a non-zero salary in the salary budget calculation."
-}
-```
-
-## 2026-06-27T08:18:04.784274+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-27T08:18:04.784274+00:00",
-  "status": "failed",
-  "question": "Who are the top 3 highest paid employees?",
-  "sql": "SELECT name AS الاسم, salary AS الراتب FROM employees ORDER BY salary DESC LIMIT 3",
-  "error": "INVALID: SQL query does not account for the fact that the question asks for the \"top 3 highest paid employees\", but the results do not specify the time period or any other constraints, such as date of birth or hire date, that might affect the ranking. The SQL only orders by salary in descending order and limits the results to 3, but does not guarantee that these are the top 3 highest paid employees in the entire database.",
-  "validation_reason": "INVALID: SQL query does not account for the fact that the question asks for the \"top 3 highest paid employees\", but the results do not specify the time period or any other constraints, such as date of birth or hire date, that might affect the ranking. The SQL only orders by salary in descending order and limits the results to 3, but does not guarantee that these are the top 3 highest paid employees in the entire database."
-}
-```
-
-## 2026-06-27T08:19:13.408048+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-27T08:19:13.408048+00:00",
-  "status": "failed",
-  "question": "Show total sales revenue by category",
-  "sql": "SELECT category AS القسم, SUM(total_amount) AS المجموع من المبيعات FROM sales LIMIT 1000",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) near \"من\": syntax error\n[SQL: SELECT category AS القسم, SUM(total_amount) AS المجموع من المبيعات FROM sales LIMIT 1000]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": "INVALID: Generated SQL only retrieves the first 1000 records, which may not be sufficient to answer the question. The results only contain partial data and may not be representative of the total sales revenue by category."
-}
-```
-
-## 2026-06-27T08:20:43.703389+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-27T08:20:43.703389+00:00",
-  "status": "failed",
-  "question": "أظهر جميع الموظفين ورواتبهم",
-  "sql": "SELECT name_ar AS الاسم, salary AS الراتب, department_ar AS القسم FROM employees",
-  "error": "INVALID: Generated SQL is missing crucial constraints, such as filtering for all employees, which is implied by the original question \"أظهر جميع الموظفين ورواتبهم\".",
-  "validation_reason": "INVALID: Generated SQL is missing crucial constraints, such as filtering for all employees, which is implied by the original question \"أظهر جميع الموظفين ورواتبهم\"."
-}
-```
-
-## 2026-06-27T08:22:24.985746+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-27T08:22:24.985746+00:00",
-  "status": "failed",
-  "question": "ما هو إجمالي ميزانية الرواتب لكل قسم؟",
-  "sql": "SELECT SUM(total_amount) AS إجمالي_ميزانية_الرواتب, department AS القسم \nFROM sales \nJOIN employees ON sales.employee_id = employees.id \nGROUP BY department \nORDER BY إجمالي_ميزانية_الرواتب DESC \nLIMIT 1000",
-  "error": "INVALID: SQL missed crucial constraints, it joined the sales and employees table but did not filter or group by a date range, which is likely required to accurately calculate the total budget for each department over a specific period.",
-  "validation_reason": "INVALID: SQL missed crucial constraints, it joined the sales and employees table but did not filter or group by a date range, which is likely required to accurately calculate the total budget for each department over a specific period."
-}
-```
-
-## 2026-06-27T08:23:16.580279+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-27T08:23:16.580279+00:00",
-  "status": "failed",
-  "question": "من هم أعلى 3 موظفين في الراتب؟",
-  "sql": "SELECT name_ar AS الاسم, salary AS الراتب FROM employees ORDER BY salary DESC LIMIT 3",
-  "error": "INVALID: The SQL query only considers the employees with Arabized names, but the question does not specify any filtering on the name.",
-  "validation_reason": "INVALID: The SQL query only considers the employees with Arabized names, but the question does not specify any filtering on the name."
-}
-```
-
-## 2026-06-27T08:24:08.891255+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-27T08:24:08.891255+00:00",
-  "status": "failed",
-  "question": "أظهر إجمالي المبيعات حسب الفئة",
-  "sql": "SELECT category_ar AS المبيعات_الإجمالية, COUNT(*) FROM sales GROUP BY category_ar LIMIT 1000",
-  "error": "INVALID: SQL missed crucial constraint to filter by category or include all categories in the group by.\n\nExplanation: \n- The SQL generated groups by `category_ar` but does not specify which categories to include. This could result in empty or incomplete data if the database does not contain any sales data for certain categories.\n- The question asks to show the total sales by category, which implies that we want to include all categories in the group by. However, the SQL only includes categories that have sales data. To correctly answer the question, we need to include all categories in the group by, even if they do not have any sales data.",
-  "validation_reason": "INVALID: SQL missed crucial constraint to filter by category or include all categories in the group by.\n\nExplanation: \n- The SQL generated groups by `category_ar` but does not specify which categories to include. This could result in empty or incomplete data if the database does not contain any sales data for certain categories.\n- The question asks to show the total sales by category, which implies that we want to include all categories in the group by. However, the SQL only includes categories that have sales data. To correctly answer the question, we need to include all categories in the group by, even if they do not have any sales data."
-}
-```
-
-## 2026-06-27T09:24:13.813988+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-27T09:24:13.813988+00:00",
-  "status": "failed",
-  "question": "What is the total salary budget per department?",
-  "sql": "SELECT department_ar AS القسم, COUNT(employee_id) AS عدد_الموظفين, SUM(salary) AS الميزانية FROM employees GROUP BY department_ar LIMIT 1000",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such column: employee_id\n[SQL: SELECT department_ar AS القسم, COUNT(employee_id) AS عدد_الموظفين, SUM(salary) AS الميزانية FROM employees GROUP BY department_ar LIMIT 1000]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": "INVALID: The SQL query limits the result to 1000 rows, which may not provide the complete answer to the question of total salary budget per department.\n\nHowever, assuming the original question implies there should be results for all departments (i.e., not a limitation on the number of rows but a completeness issue), and that the SQL does indeed include all departments:\n\nVALID"
-}
-```
-
-## 2026-06-27T09:25:16.550706+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-27T09:25:16.550706+00:00",
-  "status": "failed",
-  "question": "SELECT department_ar AS القسم, COUNT(employee_id) AS عدد_الموظفين, SUM(salary) AS الميزانية FROM employees GROUP BY department_ar LIMIT 1000",
-  "sql": "SELECT department_ar AS القسم, COUNT(id) AS عدد_الموظفين, SUM(salary) AS الميزانية FROM employees GROUP BY department_ar LIMIT 1000",
-  "error": "INVALID: SQL missed crucial constraints (department and employee id columns were modified)\n\nThe original query and generated SQL both aim to count the number of employees and their total salary within each department. However, the generated SQL uses 'id' instead of 'employee_id' as the column for counting. This discrepancy may lead to incorrect results, especially if 'id' and 'employee_id' have different values or are not linked correctly. \n\nMoreover, the results provided show a total of 20 employees (2+4+3+3+3+2+3), but the 'LIMIT 1000' in the original query limits the results to 7 departments, suggesting that either the query is not correctly implemented or the database results are incomplete or inaccurate.",
-  "validation_reason": "INVALID: SQL missed crucial constraints (department and employee id columns were modified)\n\nThe original query and generated SQL both aim to count the number of employees and their total salary within each department. However, the generated SQL uses 'id' instead of 'employee_id' as the column for counting. This discrepancy may lead to incorrect results, especially if 'id' and 'employee_id' have different values or are not linked correctly. \n\nMoreover, the results provided show a total of 20 employees (2+4+3+3+3+2+3), but the 'LIMIT 1000' in the original query limits the results to 7 departments, suggesting that either the query is not correctly implemented or the database results are incomplete or inaccurate."
-}
-```
-
-## 2026-06-27T09:26:32.223956+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-27T09:26:32.223956+00:00",
-  "status": "failed",
-  "question": "Show total sales revenue by category",
-  "sql": "SELECT category_ar AS الفئة, total_amount AS المبلغ الكلي FROM sales",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) near \"الكلي\": syntax error\n[SQL: SELECT category_ar AS الفئة, total_amount AS المبلغ الكلي FROM sales]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": "INVALID: SQL query is limited to 1000 results, which may not fully address the question of total sales revenue by category.\n\nHowever, since we're only checking the provided rules and data, we might assume a more comprehensive dataset would be present in the database. \n\nTo provide a more accurate evaluation, we would need to know the database schema, any constraints or triggers, and more about the data.\n\nAssuming the dataset is indeed comprehensive, and the SQL query should not be limited to 1000 results:\n\n VALID"
-}
-```
-
-## 2026-06-27T09:27:28.092978+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-27T09:27:28.092978+00:00",
-  "status": "resolved",
-  "question": "Show total sales revenue by category",
-  "sql": "SELECT category, SUM(total_amount) AS total_revenue FROM sales GROUP BY category LIMIT 1000",
-  "error": null,
-  "validation_reason": null
-}
-```
-
-## 2026-06-27T09:28:29.326393+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-27T09:28:29.326393+00:00",
-  "status": "failed",
-  "question": "Total sales by month",
-  "sql": "SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM orders GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: orders\n[SQL: SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM orders GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": null
-}
-```
-
-## 2026-06-27T09:28:33.919069+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-27T09:28:33.919069+00:00",
-  "status": "failed",
-  "question": "SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM orders GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000",
-  "sql": "SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM orders GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: orders\n[SQL: SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM orders GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": null
-}
-```
-
-## 2026-06-27T09:28:43.153979+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-27T09:28:43.153979+00:00",
-  "status": "failed",
-  "question": "SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM orders GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000",
-  "sql": "SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM orders GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: orders\n[SQL: SELECT STRFTIME('%Y-%m', sale_date) AS month, SUM(total_amount) AS total_sales FROM orders GROUP BY STRFTIME('%Y-%m', sale_date) ORDER BY month LIMIT 1000]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": null
-}
-```
-
-## 2026-06-27T09:29:25.845868+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-27T09:29:25.845868+00:00",
-  "status": "failed",
-  "question": "Show total sales revenue by category",
-  "sql": "SELECT category AS فئة_المنتج, SUM(unit_price * quantity) AS الإيرادات_المجمعة \nFROM sales \nGROUP BY category \nLIMIT 1000",
-  "error": "INVALID: The results only contain three categories, whereas 'total sales revenue by category' implies that all categories should be included.",
-  "validation_reason": "INVALID: The results only contain three categories, whereas 'total sales revenue by category' implies that all categories should be included."
-}
-```
-
-## 2026-06-27T09:30:15.618964+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-27T09:30:15.618964+00:00",
-  "status": "failed",
-  "question": "SELECT category AS فئة_المنتج, SUM(unit_price * quantity) AS الإيرادات_المجمعة \nFROM sales \nGROUP BY category \nLIMIT 1000",
-  "sql": "SELECT category_ar AS فئة_المنتج, SUM(unit_price * quantity) AS الإيرادات_المجمعة \nFROM sales \nGROUP BY category_ar \nLIMIT 1000",
-  "error": "INVALID: Generated SQL does not match the original question's column alias, it should be category instead of category_ar.",
-  "validation_reason": "INVALID: Generated SQL does not match the original question's column alias, it should be category instead of category_ar."
-}
-```
-
-## 2026-06-27T09:33:36.470812+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-27T09:33:36.470812+00:00",
-  "status": "failed",
-  "question": "Count of active users last 30 days",
-  "sql": "SELECT COUNT(id) AS عدد_المستخدمين_النشطين \nFROM users \nWHERE email_active = 1 AND last_active >= DATE('now', '-30 days')",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: users\n[SQL: SELECT COUNT(id) AS عدد_المستخدمين_النشطين \nFROM users \nWHERE email_active = 1 AND last_active >= DATE('now', '-30 days')]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": null
-}
-```
-
-## 2026-06-27T09:33:55.124527+00:00 - failed
-
-```json
-{
-  "created_at": "2026-06-27T09:33:55.124527+00:00",
-  "status": "failed",
   "question": "Show all employees and their salaries",
-  "sql": "SELECT name AS الاسم, salary AS الراتب FROM employees LIMIT 1000",
-  "error": "INVALID: The SQL query is missing the crucial constraint of selecting all employees by not using a wildcard in the 'name' column. It also uses 'LIMIT 1000' which could potentially exclude employees.",
-  "validation_reason": "INVALID: The SQL query is missing the crucial constraint of selecting all employees by not using a wildcard in the 'name' column. It also uses 'LIMIT 1000' which could potentially exclude employees."
-}
-```
-
-## 2026-06-27T09:34:37.291663+00:00 - resolved
-
-```json
-{
-  "created_at": "2026-06-27T09:34:37.291663+00:00",
-  "status": "resolved",
-  "question": "SELECT name AS الاسم, salary AS الراتب FROM employees LIMIT 1000",
-  "sql": "SELECT name_ar AS الاسم, salary AS الراتب FROM employees LIMIT 1000",
+  "sql": "SELECT name, salary FROM employees LIMIT 1000;",
   "error": null,
-  "validation_reason": null
+  "validation_reason": null,
+  "lesson": null
 }
 ```
 
-## 2026-06-27T09:37:31.206303+00:00 - failed
+## 2026-07-02T17:22:54.056596+00:00 - resolved
 
 ```json
 {
-  "created_at": "2026-06-27T09:37:31.206303+00:00",
-  "status": "failed",
-  "question": "Add a new record to sales with category_ar 'electronics', total_amount 500, sale_date '2026-06-27', employee_id 1",
-  "sql": "ERROR: Insufficient schema context.",
-  "error": "ERROR: Insufficient schema context.",
-  "validation_reason": "No results returned"
+  "created_at": "2026-07-02T17:22:54.056596+00:00",
+  "status": "resolved",
+  "question": "what are the names of the employees and the salary and the corresponding deparments",
+  "sql": "SELECT name, salary, department FROM employees LIMIT 1000;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
 }
 ```
 
-## 2026-06-27T09:42:15.630026+00:00 - failed
+## 2026-07-02T17:29:39.327766+00:00 - resolved
 
 ```json
 {
-  "created_at": "2026-06-27T09:42:15.630026+00:00",
-  "status": "failed",
-  "question": "Add a new record to sales with category_ar 'electronics', total_amount 500, sale_date '2026-06-27', employee_id 1",
-  "sql": "ERROR: Insufficient schema context.",
-  "error": "ERROR: Insufficient schema context.",
-  "validation_reason": "INVALID: Generated SQL does not logically address the question, and the results do not make sense given the question. The question is to add a new record to sales, but the generated SQL returns an error message instead of performing the insertion."
+  "created_at": "2026-07-02T17:29:39.327766+00:00",
+  "status": "resolved",
+  "question": "list the anmes of the deparments and each profit they madde",
+  "sql": "SELECT T1.department, SUM(T2.total_amount) \nFROM employees AS T1 \nINNER JOIN sales AS T2 \nON T1.id = T2.employee_id \nGROUP BY T1.department",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
 }
 ```
 
-## 2026-06-27T09:46:09.252577+00:00 - failed
+## 2026-07-02T17:46:51.106080+00:00 - resolved
 
 ```json
 {
-  "created_at": "2026-06-27T09:46:09.252577+00:00",
-  "status": "failed",
-  "question": "Add a new record to sales with category_ar 'electronics', total_amount 500, sale_date '2026-06-27', employee_id 1",
-  "sql": "ERROR: Insufficient schema context.",
-  "error": "ERROR: Insufficient schema context.",
-  "validation_reason": "No results returned"
+  "created_at": "2026-07-02T17:46:51.106080+00:00",
+  "status": "resolved",
+  "question": "list the deparamnt names and ther corrsponding proft ",
+  "sql": "SELECT e.department, SUM(s.total_amount) \nFROM employees AS e \nINNER JOIN sales AS s \nON e.id = s.employee_id \nGROUP BY e.department",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
 }
 ```
 
-## 2026-06-27T10:23:09.403189+00:00 - failed
+## 2026-07-02T17:51:57.210505+00:00 - failed
+
+### What Went Wrong
+The root cause of the failure is that the SQL query is attempting to access a table named "staff" which does not exist in the database schema. The error message clearly indicates that there is "no such table: staff", resulting in a query execution failure. This mistake is due to referencing a non-existent table.
+
+### Correct Approach
+To correctly answer the user's question about the total salary, we first need to identify the correct table that contains salary information. However, since the provided database schema is empty, we must assume or create a table that would logically hold such data. If we had a table named "employees" with a column named "salary", we would use this table in our query. The correct approach involves selecting the appropriate table and column, in this case, "employees" and "salary", and then applying the SUM aggregate function to calculate the total salary.
+
+### Correct SQL
+```sql
+SELECT SUM(salary) FROM employees
+```
+
+### Key Lesson
+Always verify the existence of tables and columns in the database schema before attempting to query them.
 
 ```json
 {
-  "created_at": "2026-06-27T10:23:09.403189+00:00",
+  "created_at": "2026-07-02T17:51:57.210505+00:00",
   "status": "failed",
-  "question": "Count of active users last 30 days",
-  "sql": "SELECT COUNT(*) AS العدد FROM users WHERE status_ar = 'active' AND created_at > strftime('%Y-%m-%d', 'now', '-30 days')",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: users\n[SQL: SELECT COUNT(*) AS العدد FROM users WHERE status_ar = 'active' AND created_at > strftime('%Y-%m-%d', 'now', '-30 days')]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": null
+  "question": "What is the total salary?",
+  "sql": "SELECT SUM(salary) FROM staff",
+  "error": "Failed to execute query: (sqlite3.OperationalError) no such table: staff\n[SQL: SELECT SUM(salary) FROM staff]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+  "validation_reason": null,
+  "lesson": "### What Went Wrong\nThe root cause of the failure is that the SQL query is attempting to access a table named \"staff\" which does not exist in the database schema. The error message clearly indicates that there is \"no such table: staff\", resulting in a query execution failure. This mistake is due to referencing a non-existent table.\n\n### Correct Approach\nTo correctly answer the user's question about the total salary, we first need to identify the correct table that contains salary information. However, since the provided database schema is empty, we must assume or create a table that would logically hold such data. If we had a table named \"employees\" with a column named \"salary\", we would use this table in our query. The correct approach involves selecting the appropriate table and column, in this case, \"employees\" and \"salary\", and then applying the SUM aggregate function to calculate the total salary.\n\n### Correct SQL\n```sql\nSELECT SUM(salary) FROM employees\n```\n\n### Key Lesson\nAlways verify the existence of tables and columns in the database schema before attempting to query them."
 }
 ```
 
-## 2026-06-27T10:23:32.110824+00:00 - failed
+## 2026-07-04T13:32:27.281765+00:00 - resolved
 
 ```json
 {
-  "created_at": "2026-06-27T10:23:32.110824+00:00",
-  "status": "failed",
-  "question": "SELECT COUNT(*) AS العدد FROM users WHERE status_ar = 'active' AND created_at > strftime('%Y-%m-%d', 'now', '-30 days')",
-  "sql": "SELECT COUNT(*) AS العدد FROM employees WHERE status_ar = 'active' AND performance_score > (SELECT AVG(performance_score) FROM employees) LIMIT 1000",
-  "error": "500: Failed to execute query: (sqlite3.OperationalError) no such table: users\n[SQL: SELECT COUNT(*) AS العدد FROM users WHERE status_ar = 'active' AND created_at > strftime('%Y-%m-%d', 'now', '-30 days')]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
-  "validation_reason": "INVALID: The question is asking for the count of active users within the last 30 days, but the generated SQL is asking for employees with a performance score higher than the average performance score, which does not match the original question."
+  "created_at": "2026-07-04T13:32:27.281765+00:00",
+  "status": "resolved",
+  "question": "WHaast are the products sold?",
+  "sql": "SELECT DISTINCT product FROM sales LIMIT 1000;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
 }
 ```
 
-## 2026-06-27T10:24:34.142101+00:00 - failed
+## 2026-07-04T13:33:01.142453+00:00 - resolved
 
 ```json
 {
-  "created_at": "2026-06-27T10:24:34.142101+00:00",
-  "status": "failed",
-  "question": "Show all employees and their salaries",
-  "sql": "SELECT name_ar AS الاسم, salary AS الراتب FROM employees LIMIT 1000",
-  "error": "INVALID: SQL query is missing crucial constraint to fetch all employees, it only fetches 1000 employees",
-  "validation_reason": "INVALID: SQL query is missing crucial constraint to fetch all employees, it only fetches 1000 employees"
+  "created_at": "2026-07-04T13:33:01.142453+00:00",
+  "status": "resolved",
+  "question": "tell me what the deparments sold products",
+  "sql": "SELECT DISTINCT e.department \nFROM employees AS e \nINNER JOIN sales AS s \nON e.id = s.employee_id \nLIMIT 1000;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
 }
 ```
 
-## 2026-06-27T10:26:21.070739+00:00 - failed
+## 2026-07-04T13:36:01.753341+00:00 - resolved
 
 ```json
 {
-  "created_at": "2026-06-27T10:26:21.070739+00:00",
+  "created_at": "2026-07-04T13:36:01.753341+00:00",
+  "status": "resolved",
+  "question": "Show me the month-over-month total revenue for 2023, broken down by region, but only for regions that had more than $50,000 in total sales.",
+  "sql": "SELECT STRFTIME('%Y-%m', s.sale_date) AS month, s.region, SUM(s.total_amount) AS total_revenue \nFROM sales s \nWHERE STRFTIME('%Y', s.sale_date) = '2023' \nGROUP BY STRFTIME('%Y-%m', s.sale_date), s.region \nHAVING SUM(s.total_amount) > 50000",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-04T13:36:07.912897+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T13:36:07.912897+00:00",
+  "status": "resolved",
+  "question": "Show me the month-over-month total revenue for 2023, broken down by region, but only for regions that had more than $50,000 in total sales.",
+  "sql": "SELECT STRFTIME('%Y-%m', s.sale_date) AS month, s.region, SUM(s.total_amount) AS total_revenue \nFROM sales s \nWHERE STRFTIME('%Y', s.sale_date) = '2023' \nGROUP BY STRFTIME('%Y-%m', s.sale_date), s.region \nHAVING SUM(s.total_amount) > 50000",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-04T13:37:35.317848+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T13:37:35.317848+00:00",
+  "status": "resolved",
+  "question": "\"Show me the month-over-month total revenue for 2024, broken down by region, but only for regions that had more than $10,000 in total sales.\"",
+  "sql": "SELECT STRFTIME('%Y-%m', s.sale_date) AS month, s.region, SUM(s.total_amount) AS total_revenue \nFROM sales s \nWHERE STRFTIME('%Y', s.sale_date) = '2024' \nGROUP BY STRFTIME('%Y-%m', s.sale_date), s.region \nHAVING SUM(s.total_amount) > 10000",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-04T13:38:59.472098+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T13:38:59.472098+00:00",
+  "status": "resolved",
+  "question": "\"أظهر إجمالي الإيرادات شهراً بشهر لعام 2024، مقسمة حسب المنطقة، ولكن فقط للمناطق التي حققت مبيعات إجمالية تزيد عن 10 آلاف دولار.\"",
+  "sql": "SELECT STRFTIME('%Y-%m', s.sale_date) AS month, s.region, SUM(s.total_amount) AS total_revenue \nFROM sales s \nWHERE STRFTIME('%Y', s.sale_date) = '2024' \nGROUP BY STRFTIME('%Y-%m', s.sale_date), s.region \nHAVING SUM(s.total_amount) > 10000",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-04T13:49:35.450257+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T13:49:35.450257+00:00",
+  "status": "resolved",
+  "question": "Update the inventory table: increase the stock quantity by 50 and decrease the unit price by 10% for all products in the 'Electronics' category that are supplied by 'TechCorp' and currently have a stock quantity below the reorder level.\"",
+  "sql": "UPDATE inventory \nSET stock_quantity = stock_quantity + 50, \n    unit_price = unit_price * 0.9 \nWHERE category = 'Electronics' \n  AND supplier = 'TechCorp' \n  AND stock_quantity < reorder_level;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-04T13:49:59.104878+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T13:49:59.104878+00:00",
+  "status": "resolved",
+  "question": " \"Add a new employee to the database: Her name is 'Sara Ahmed', aged 28. She was hired today as a 'Data Scientist' in the 'Engineering' department. Her salary is 95000, she reports to 'Omar', and she works in the 'Dubai' office. Status is 'Active' and her performance score is 0.0.\"",
+  "sql": "INSERT INTO employees (name, age, job_title, department, salary, manager, hire_date, location, status, performance_score) VALUES ('Sara Ahmed', 28, 'Data Scientist', 'Engineering', 95000, 'Omar', DATE('now'), 'Dubai', 'Active', 0.0)",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-04T14:01:29.768203+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T14:01:29.768203+00:00",
+  "status": "resolved",
+  "question": " \"Add a new employee to the database: Her name is 'Suzy Ahmed', aged 28. She was hired today as a 'Data Scientist' in the 'Engineering' department. Her salary is 95000, she reports to 'Omar', and she works in the 'Dubai' office. Status is 'Active' and her performance score is 0.0.\"",
+  "sql": "INSERT INTO employees (name, age, job_title, department, salary, manager, location, status, performance_score, hire_date) VALUES ('Suzy Ahmed', 28, 'Data Scientist', 'Engineering', 95000, 'Omar', 'Dubai', 'Active', 0.0, DATE('now'));",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-04T14:03:38.749635+00:00 - failed
+
+### What Went Wrong
+The root cause of the failure is that the SQL query attempted to execute two statements at once: creating a table and inserting data into it. This is not allowed in SQLite, as indicated by the error message. The mistake is due to incorrect syntax, specifically trying to execute multiple statements in a single query.
+
+### Correct Approach
+To think through this query correctly, we need to break it down into two separate steps. First, we need to create the `employees` table with the required columns if it does not already exist. Then, we can insert the new employee's data into the table. We should use the `CREATE TABLE IF NOT EXISTS` statement to create the table, and then use the `INSERT INTO` statement to add the new employee's data.
+
+### Correct SQL
+```sql
+CREATE TABLE IF NOT EXISTS employees (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    age INTEGER,
+    job_title TEXT,
+    department TEXT,
+    salary REAL,
+    manager TEXT,
+    office TEXT,
+    status TEXT,
+    performance_score REAL
+);
+
+INSERT INTO employees (name, age, job_title, department, salary, manager, office, status, performance_score)
+VALUES ('Salma Ahmed', 28, 'Data Scientist', 'Engineering', 95000, 'Omar', 'Dubai', 'Active', 0.0);
+```
+
+### Key Lesson
+Always execute SQL statements one at a time, separating them with semicolons or executing them as separate queries, to avoid errors caused by attempting to execute multiple statements simultaneously.
+
+```json
+{
+  "created_at": "2026-07-04T14:03:38.749635+00:00",
   "status": "failed",
-  "question": "Show all employees and their salaries and it'sum for each department ",
-  "sql": "SELECT name_ar AS الاسم, salary AS الراتب, department_ar AS القسم, SUM(salary) OVER (PARTITION BY department_ar) AS المجموع FROM employees LIMIT 1000",
-  "error": "INVALID: The SQL query's `PARTITION BY department_ar` might not correctly group employees by department. The 'المجموع' (total) column's values for each department seem inconsistent (e.g., 'إدارة' has a total of 55000, while 'تسويق' has a total of 44800).\n\nUpon closer inspection, it appears that the SQL query is using a window function to calculate the sum of salaries for each department, but the results suggest that the sum is not being calculated correctly. For example, the total salary for the 'إدارة' department is 55000, which is the sum of Omar's and Bassem's salaries. However, the total salary for the 'تسويق' department is 44800, which is the sum of the salaries of 6 employees. This inconsistency suggests that the SQL query is not correctly grouping employees by department.\n\nA correct SQL query would use a GROUP BY clause to group employees by department and then calculate the sum of salaries for each group. The corrected SQL query would be:\n\n```sql\nSELECT \n  name_ar AS الاسم, \n  salary AS الراتب, \n  department_ar AS القسم, \n  SUM(salary) AS المجموع\nFROM \n  employees\nGROUP BY \n  department_ar, name_ar, salary\nLIMIT 1000\n```\n\nThis query will correctly group employees by department and calculate the sum of salaries for each department.",
-  "validation_reason": "INVALID: The SQL query's `PARTITION BY department_ar` might not correctly group employees by department. The 'المجموع' (total) column's values for each department seem inconsistent (e.g., 'إدارة' has a total of 55000, while 'تسويق' has a total of 44800).\n\nUpon closer inspection, it appears that the SQL query is using a window function to calculate the sum of salaries for each department, but the results suggest that the sum is not being calculated correctly. For example, the total salary for the 'إدارة' department is 55000, which is the sum of Omar's and Bassem's salaries. However, the total salary for the 'تسويق' department is 44800, which is the sum of the salaries of 6 employees. This inconsistency suggests that the SQL query is not correctly grouping employees by department.\n\nA correct SQL query would use a GROUP BY clause to group employees by department and then calculate the sum of salaries for each group. The corrected SQL query would be:\n\n```sql\nSELECT \n  name_ar AS الاسم, \n  salary AS الراتب, \n  department_ar AS القسم, \n  SUM(salary) AS المجموع\nFROM \n  employees\nGROUP BY \n  department_ar, name_ar, salary\nLIMIT 1000\n```\n\nThis query will correctly group employees by department and calculate the sum of salaries for each department."
+  "question": " \"Add a new employee to the database: Her name is 'Salma Ahmed', aged 28. She was hired today as a 'Data Scientist' in the 'Engineering' department. Her salary is 95000, she reports to 'Omar', and she works in the 'Dubai' office. Status is 'Active' and her performance score is 0.0.\"",
+  "sql": "CREATE TABLE IF NOT EXISTS employees (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, age INTEGER, job_title TEXT, department TEXT, salary REAL, manager TEXT, office TEXT, status TEXT, performance_score REAL);\nINSERT INTO employees (name, age, job_title, department, salary, manager, office, status, performance_score) VALUES ('Salma Ahmed', 28, 'Data Scientist', 'Engineering', 95000, 'Omar', 'Dubai', 'Active', 0.0)",
+  "error": "Failed to execute query: (sqlite3.ProgrammingError) You can only execute one statement at a time.\n[SQL: CREATE TABLE IF NOT EXISTS employees (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, age INTEGER, job_title TEXT, department TEXT, salary REAL, manager TEXT, office TEXT, status TEXT, performance_score REAL);\nINSERT INTO employees (name, age, job_title, department, salary, manager, office, status, performance_score) VALUES ('Salma Ahmed', 28, 'Data Scientist', 'Engineering', 95000, 'Omar', 'Dubai', 'Active', 0.0)]\n(Background on this error at: https://sqlalche.me/e/20/f405)",
+  "validation_reason": null,
+  "lesson": "### What Went Wrong\nThe root cause of the failure is that the SQL query attempted to execute two statements at once: creating a table and inserting data into it. This is not allowed in SQLite, as indicated by the error message. The mistake is due to incorrect syntax, specifically trying to execute multiple statements in a single query.\n\n### Correct Approach\nTo think through this query correctly, we need to break it down into two separate steps. First, we need to create the `employees` table with the required columns if it does not already exist. Then, we can insert the new employee's data into the table. We should use the `CREATE TABLE IF NOT EXISTS` statement to create the table, and then use the `INSERT INTO` statement to add the new employee's data.\n\n### Correct SQL\n```sql\nCREATE TABLE IF NOT EXISTS employees (\n    id INTEGER PRIMARY KEY AUTOINCREMENT,\n    name TEXT,\n    age INTEGER,\n    job_title TEXT,\n    department TEXT,\n    salary REAL,\n    manager TEXT,\n    office TEXT,\n    status TEXT,\n    performance_score REAL\n);\n\nINSERT INTO employees (name, age, job_title, department, salary, manager, office, status, performance_score)\nVALUES ('Salma Ahmed', 28, 'Data Scientist', 'Engineering', 95000, 'Omar', 'Dubai', 'Active', 0.0);\n```\n\n### Key Lesson\nAlways execute SQL statements one at a time, separating them with semicolons or executing them as separate queries, to avoid errors caused by attempting to execute multiple statements simultaneously."
+}
+```
+
+## 2026-07-04T14:03:44.473717+00:00 - failed
+
+### What Went Wrong
+The root cause of the failure is that the SQL query attempted to insert data into a table named "employees" that does not exist in the database. The error message clearly states "no such table: employees", indicating that the table has not been created before trying to insert data into it. This mistake could have been avoided by first creating the "employees" table with the necessary columns.
+
+### Correct Approach
+To correctly insert data into the database, we first need to create the "employees" table with the required columns, such as name, age, job_title, department, salary, manager, office, status, and performance_score. Once the table is created, we can use the INSERT INTO statement to add new data to the table. We should specify the correct column names and data types to ensure that the data is inserted correctly. We also need to ensure that the data we are inserting is consistent with the column data types and any constraints that may be defined on the table.
+
+### Correct SQL
+```sql
+CREATE TABLE employees (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    age INTEGER NOT NULL,
+    job_title TEXT NOT NULL,
+    department TEXT NOT NULL,
+    salary REAL NOT NULL,
+    manager TEXT NOT NULL,
+    office TEXT NOT NULL,
+    status TEXT NOT NULL,
+    performance_score REAL NOT NULL
+);
+
+INSERT INTO employees (name, age, job_title, department, salary, manager, office, status, performance_score) 
+VALUES ('Salma Ahmed', 28, 'Data Scientist', 'Engineering', 95000, 'Omar', 'Dubai', 'Active', 0.0)
+```
+
+### Key Lesson
+Always create the necessary tables with the required columns before attempting to insert data into the database.
+
+```json
+{
+  "created_at": "2026-07-04T14:03:44.473717+00:00",
+  "status": "failed",
+  "question": " \"Add a new employee to the database: Her name is 'Salma Ahmed', aged 28. She was hired today as a 'Data Scientist' in the 'Engineering' department. Her salary is 95000, she reports to 'Omar', and she works in the 'Dubai' office. Status is 'Active' and her performance score is 0.0.\"",
+  "sql": "INSERT INTO employees (name, age, job_title, department, salary, manager, office, status, performance_score) VALUES ('Salma Ahmed', 28, 'Data Scientist', 'Engineering', 95000, 'Omar', 'Dubai', 'Active', 0.0)",
+  "error": "Failed to execute query: (sqlite3.OperationalError) no such table: employees\n[SQL: INSERT INTO employees (name, age, job_title, department, salary, manager, office, status, performance_score) VALUES ('Salma Ahmed', 28, 'Data Scientist', 'Engineering', 95000, 'Omar', 'Dubai', 'Active', 0.0)]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+  "validation_reason": null,
+  "lesson": "### What Went Wrong\nThe root cause of the failure is that the SQL query attempted to insert data into a table named \"employees\" that does not exist in the database. The error message clearly states \"no such table: employees\", indicating that the table has not been created before trying to insert data into it. This mistake could have been avoided by first creating the \"employees\" table with the necessary columns.\n\n### Correct Approach\nTo correctly insert data into the database, we first need to create the \"employees\" table with the required columns, such as name, age, job_title, department, salary, manager, office, status, and performance_score. Once the table is created, we can use the INSERT INTO statement to add new data to the table. We should specify the correct column names and data types to ensure that the data is inserted correctly. We also need to ensure that the data we are inserting is consistent with the column data types and any constraints that may be defined on the table.\n\n### Correct SQL\n```sql\nCREATE TABLE employees (\n    id INTEGER PRIMARY KEY,\n    name TEXT NOT NULL,\n    age INTEGER NOT NULL,\n    job_title TEXT NOT NULL,\n    department TEXT NOT NULL,\n    salary REAL NOT NULL,\n    manager TEXT NOT NULL,\n    office TEXT NOT NULL,\n    status TEXT NOT NULL,\n    performance_score REAL NOT NULL\n);\n\nINSERT INTO employees (name, age, job_title, department, salary, manager, office, status, performance_score) \nVALUES ('Salma Ahmed', 28, 'Data Scientist', 'Engineering', 95000, 'Omar', 'Dubai', 'Active', 0.0)\n```\n\n### Key Lesson\nAlways create the necessary tables with the required columns before attempting to insert data into the database."
+}
+```
+
+## 2026-07-04T14:09:45.637049+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T14:09:45.637049+00:00",
+  "status": "resolved",
+  "question": "Show me all employees",
+  "sql": "SELECT id, name, age, salary, department FROM employees LIMIT 10",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-04T14:10:22.453129+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T14:10:22.453129+00:00",
+  "status": "resolved",
+  "question": "Show me all employees",
+  "sql": "SELECT id, name, age, salary, department FROM employees LIMIT 10",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-04T14:13:54.597590+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T14:13:54.597590+00:00",
+  "status": "resolved",
+  "question": " \"Add a new employee to the database: Her name is 'Suzzy Ahmed', aged 28. She was hired today as a 'Data Scientist' in the 'Engineering' department. Her salary is 95000, she reports to 'Omar', and she works in the 'Dubai' office. Status is 'Active' and her performance score is 0.0.\"",
+  "sql": "INSERT INTO employees (name, age, job_title, department, salary, manager, hire_date, location, status, performance_score) VALUES ('Suzzy Ahmed', 28, 'Data Scientist', 'Engineering', 95000, 'Omar', DATE('now'), 'Dubai', 'Active', 0.0)",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-04T14:14:13.114551+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-04T14:14:13.114551+00:00",
+  "status": "resolved",
+  "question": "Show me the emplyees names and deparments",
+  "sql": "SELECT name, department FROM employees LIMIT 1000",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-05T12:59:26.759256+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-05T12:59:26.759256+00:00",
+  "status": "resolved",
+  "question": "how many employees are assigned?",
+  "sql": "SELECT COUNT(id) AS assigned_employees FROM employees WHERE manager IS NOT NULL",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-05T13:00:02.628837+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-05T13:00:02.628837+00:00",
+  "status": "resolved",
+  "question": "how many customer joined last month?",
+  "sql": "SELECT COUNT(sale_id) AS customers_joined FROM sales WHERE STRFTIME('%Y-%m', sale_date) = STRFTIME('%Y-%m', DATE('now', '-1 month'))",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-05T13:01:58.642288+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-05T13:01:58.642288+00:00",
+  "status": "resolved",
+  "question": "ايه عدد ال موظفين الشغالين في كل الاقسام العندنا؟",
+  "sql": "SELECT department, COUNT(id) AS number_of_employees FROM employees GROUP BY department",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
 }
 ```
 

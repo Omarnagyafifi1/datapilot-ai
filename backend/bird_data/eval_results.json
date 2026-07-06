@@ -1,0 +1,251 @@
+{
+  "summary": {
+    "total": 24,
+    "passed": 1,
+    "failed": 23,
+    "execution_accuracy": 4.17,
+    "avg_overall_score": 0.04,
+    "timestamp": "2026-07-01T21:34:48Z"
+  },
+  "results": [
+    {
+      "db_id": "sales_db",
+      "question": "How many customers are from Egypt?",
+      "expected_sql": "SELECT COUNT(*) FROM customers WHERE country = 'Egypt'",
+      "generated_sql": "SELECT count(country) FROM customers WHERE country = 'Egypt' LIMIT 1000;",
+      "score": 0.97,
+      "execution_match": true,
+      "latency": 14.17
+    },
+    {
+      "db_id": "sales_db",
+      "question": "List all electronic products with their prices",
+      "expected_sql": "SELECT product_name, unit_price FROM products WHERE category = 'Electronics'",
+      "generated_sql": "",
+      "score": 0.0,
+      "execution_match": false,
+      "latency": 0.15,
+      "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01jr92b0r4fh5rh7jgggpe77zt` service tier `on_demand` on tokens per day (TPD): Limit"
+    },
+    {
+      "db_id": "sales_db",
+      "question": "What is the total revenue from completed orders?",
+      "expected_sql": "SELECT SUM(total_amount) FROM orders WHERE status = 'Completed'",
+      "generated_sql": "",
+      "score": 0.0,
+      "execution_match": false,
+      "latency": 0.17,
+      "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01jr92b0r4fh5rh7jgggpe77zt` service tier `on_demand` on tokens per day (TPD): Limit"
+    },
+    {
+      "db_id": "sales_db",
+      "question": "Which customer has spent the most on completed orders?",
+      "expected_sql": "SELECT c.name, SUM(o.total_amount) as total_spent FROM customers c JOIN orders o ON c.customer_id = o.customer_id WHERE o.status = 'Completed' GROUP BY c.name ORDER BY total_spent DESC LIMIT 1",
+      "generated_sql": "",
+      "score": 0.0,
+      "execution_match": false,
+      "latency": 0.34,
+      "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01jr92b0r4fh5rh7jgggpe77zt` service tier `on_demand` on tokens per day (TPD): Limit"
+    },
+    {
+      "db_id": "sales_db",
+      "question": "Show the top 3 most ordered products by quantity",
+      "expected_sql": "SELECT p.product_name, SUM(oi.quantity) as total_qty FROM products p JOIN order_items oi ON p.product_id = oi.product_id GROUP BY p.product_name ORDER BY total_qty DESC LIMIT 3",
+      "generated_sql": "",
+      "score": 0.0,
+      "execution_match": false,
+      "latency": 0.19,
+      "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01jr92b0r4fh5rh7jgggpe77zt` service tier `on_demand` on tokens per day (TPD): Limit"
+    },
+    {
+      "db_id": "sales_db",
+      "question": "What is the average order value per customer?",
+      "expected_sql": "SELECT c.name, ROUND(AVG(o.total_amount), 2) as avg_order FROM customers c JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.name",
+      "generated_sql": "",
+      "score": 0.0,
+      "execution_match": false,
+      "latency": 0.22,
+      "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01jr92b0r4fh5rh7jgggpe77zt` service tier `on_demand` on tokens per day (TPD): Limit"
+    },
+    {
+      "db_id": "sales_db",
+      "question": "Which products have never been ordered?",
+      "expected_sql": "SELECT p.product_name FROM products p LEFT JOIN order_items oi ON p.product_id = oi.product_id WHERE oi.product_id IS NULL",
+      "generated_sql": "",
+      "score": 0.0,
+      "execution_match": false,
+      "latency": 0.19,
+      "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01jr92b0r4fh5rh7jgggpe77zt` service tier `on_demand` on tokens per day (TPD): Limit"
+    },
+    {
+      "db_id": "sales_db",
+      "question": "Find customers with more than one completed order",
+      "expected_sql": "SELECT c.name, COUNT(o.order_id) as order_count FROM customers c JOIN orders o ON c.customer_id = o.customer_id WHERE o.status = 'Completed' GROUP BY c.name HAVING order_count > 1",
+      "generated_sql": "",
+      "score": 0.0,
+      "execution_match": false,
+      "latency": 0.14,
+      "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01jr92b0r4fh5rh7jgggpe77zt` service tier `on_demand` on tokens per day (TPD): Limit"
+    },
+    {
+      "db_id": "employees_db",
+      "question": "How many employees are in the Engineering department?",
+      "expected_sql": "SELECT COUNT(*) FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE d.dept_name = 'Engineering'",
+      "generated_sql": "",
+      "score": 0.0,
+      "execution_match": false,
+      "latency": 0.14,
+      "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01jr92b0r4fh5rh7jgggpe77zt` service tier `on_demand` on tokens per day (TPD): Limit"
+    },
+    {
+      "db_id": "employees_db",
+      "question": "List all employees with salaries above 80000",
+      "expected_sql": "SELECT first_name, last_name, salary FROM employees WHERE salary > 80000",
+      "generated_sql": "",
+      "score": 0.0,
+      "execution_match": false,
+      "latency": 0.14,
+      "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01jr92b0r4fh5rh7jgggpe77zt` service tier `on_demand` on tokens per day (TPD): Limit"
+    },
+    {
+      "db_id": "employees_db",
+      "question": "What is the average salary per department?",
+      "expected_sql": "SELECT d.dept_name, ROUND(AVG(e.salary), 2) as avg_salary FROM employees e JOIN departments d ON e.dept_id = d.dept_id GROUP BY d.dept_name",
+      "generated_sql": "",
+      "score": 0.0,
+      "execution_match": false,
+      "latency": 0.14,
+      "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01jr92b0r4fh5rh7jgggpe77zt` service tier `on_demand` on tokens per day (TPD): Limit"
+    },
+    {
+      "db_id": "employees_db",
+      "question": "Find the department with the highest total salary budget",
+      "expected_sql": "SELECT d.dept_name, SUM(e.salary) as total_salary FROM employees e JOIN departments d ON e.dept_id = d.dept_id GROUP BY d.dept_name ORDER BY total_salary DESC LIMIT 1",
+      "generated_sql": "",
+      "score": 0.0,
+      "execution_match": false,
+      "latency": 0.13,
+      "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01jr92b0r4fh5rh7jgggpe77zt` service tier `on_demand` on tokens per day (TPD): Limit"
+    },
+    {
+      "db_id": "employees_db",
+      "question": "Show departments with their project count and total project budget",
+      "expected_sql": "SELECT d.dept_name, COUNT(p.project_id) as project_count, SUM(p.budget) as total_budget FROM departments d LEFT JOIN projects p ON d.dept_id = p.dept_id GROUP BY d.dept_name",
+      "generated_sql": "",
+      "score": 0.0,
+      "execution_match": false,
+      "latency": 0.17,
+      "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01jr92b0r4fh5rh7jgggpe77zt` service tier `on_demand` on tokens per day (TPD): Limit"
+    },
+    {
+      "db_id": "employees_db",
+      "question": "Who are the managers and which departments do they manage?",
+      "expected_sql": "SELECT e.first_name, e.last_name, d.dept_name FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE e.is_manager = 1",
+      "generated_sql": "",
+      "score": 0.0,
+      "execution_match": false,
+      "latency": 0.15,
+      "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01jr92b0r4fh5rh7jgggpe77zt` service tier `on_demand` on tokens per day (TPD): Limit"
+    },
+    {
+      "db_id": "employees_db",
+      "question": "Find employees who earn more than their department average",
+      "expected_sql": "SELECT e.first_name, e.last_name, e.salary, d.dept_name FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE e.salary > (SELECT AVG(e2.salary) FROM employees e2 WHERE e2.dept_id = e.dept_id)",
+      "generated_sql": "",
+      "score": 0.0,
+      "execution_match": false,
+      "latency": 0.18,
+      "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01jr92b0r4fh5rh7jgggpe77zt` service tier `on_demand` on tokens per day (TPD): Limit"
+    },
+    {
+      "db_id": "employees_db",
+      "question": "Which departments have no active projects?",
+      "expected_sql": "SELECT d.dept_name FROM departments d LEFT JOIN projects p ON d.dept_id = p.dept_id WHERE p.project_id IS NULL",
+      "generated_sql": "",
+      "score": 0.0,
+      "execution_match": false,
+      "latency": 0.19,
+      "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01jr92b0r4fh5rh7jgggpe77zt` service tier `on_demand` on tokens per day (TPD): Limit"
+    },
+    {
+      "db_id": "inventory_db",
+      "question": "How many products are below their reorder level?",
+      "expected_sql": "SELECT COUNT(*) FROM inventory WHERE quantity < reorder_level",
+      "generated_sql": "",
+      "score": 0.0,
+      "execution_match": false,
+      "latency": 0.18,
+      "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01jr92b0r4fh5rh7jgggpe77zt` service tier `on_demand` on tokens per day (TPD): Limit"
+    },
+    {
+      "db_id": "inventory_db",
+      "question": "List all suppliers with reliability score above 4.0",
+      "expected_sql": "SELECT supplier_name, reliability_score FROM suppliers WHERE reliability_score > 4.0",
+      "generated_sql": "",
+      "score": 0.0,
+      "execution_match": false,
+      "latency": 0.23,
+      "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01jr92b0r4fh5rh7jgggpe77zt` service tier `on_demand` on tokens per day (TPD): Limit"
+    },
+    {
+      "db_id": "inventory_db",
+      "question": "What is the total quantity of each product across all warehouses?",
+      "expected_sql": "SELECT p.product_name, SUM(i.quantity) as total_qty FROM products p JOIN inventory i ON p.product_id = i.product_id GROUP BY p.product_name",
+      "generated_sql": "",
+      "score": 0.0,
+      "execution_match": false,
+      "latency": 0.35,
+      "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01jr92b0r4fh5rh7jgggpe77zt` service tier `on_demand` on tokens per day (TPD): Limit"
+    },
+    {
+      "db_id": "inventory_db",
+      "question": "Find warehouses that have products below reorder level",
+      "expected_sql": "SELECT DISTINCT w.warehouse_name FROM warehouses w JOIN inventory i ON w.warehouse_id = i.warehouse_id WHERE i.quantity < i.reorder_level",
+      "generated_sql": "",
+      "score": 0.0,
+      "execution_match": false,
+      "latency": 0.28,
+      "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01jr92b0r4fh5rh7jgggpe77zt` service tier `on_demand` on tokens per day (TPD): Limit"
+    },
+    {
+      "db_id": "inventory_db",
+      "question": "Which supplier provides the most expensive product?",
+      "expected_sql": "SELECT s.supplier_name, p.product_name, p.unit_price FROM suppliers s JOIN products p ON s.supplier_id = p.supplier_id ORDER BY p.unit_price DESC LIMIT 1",
+      "generated_sql": "",
+      "score": 0.0,
+      "execution_match": false,
+      "latency": 0.3,
+      "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01jr92b0r4fh5rh7jgggpe77zt` service tier `on_demand` on tokens per day (TPD): Limit"
+    },
+    {
+      "db_id": "inventory_db",
+      "question": "Show products that need restocking (quantity below reorder level) with supplier info",
+      "expected_sql": "SELECT p.product_name, i.quantity, i.reorder_level, s.supplier_name FROM products p JOIN inventory i ON p.product_id = i.product_id JOIN suppliers s ON p.supplier_id = s.supplier_id WHERE i.quantity < i.reorder_level",
+      "generated_sql": "",
+      "score": 0.0,
+      "execution_match": false,
+      "latency": 0.36,
+      "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01jr92b0r4fh5rh7jgggpe77zt` service tier `on_demand` on tokens per day (TPD): Limit"
+    },
+    {
+      "db_id": "inventory_db",
+      "question": "What is the total inventory value per warehouse?",
+      "expected_sql": "SELECT w.warehouse_name, SUM(i.quantity * p.unit_price) as total_value FROM warehouses w JOIN inventory i ON w.warehouse_id = i.warehouse_id JOIN products p ON i.product_id = p.product_id GROUP BY w.warehouse_name",
+      "generated_sql": "",
+      "score": 0.0,
+      "execution_match": false,
+      "latency": 0.39,
+      "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01jr92b0r4fh5rh7jgggpe77zt` service tier `on_demand` on tokens per day (TPD): Limit"
+    },
+    {
+      "db_id": "inventory_db",
+      "question": "Which categories have total stock value exceeding 5000?",
+      "expected_sql": "SELECT p.category, SUM(i.quantity * p.unit_price) as total_value FROM products p JOIN inventory i ON p.product_id = i.product_id GROUP BY p.category HAVING total_value > 5000",
+      "generated_sql": "",
+      "score": 0.0,
+      "execution_match": false,
+      "latency": 0.28,
+      "error": "Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.3-70b-versatile` in organization `org_01jr92b0r4fh5rh7jgggpe77zt` service tier `on_demand` on tokens per day (TPD): Limit"
+    }
+  ]
+}

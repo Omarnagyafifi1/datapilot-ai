@@ -4,7 +4,7 @@ from typing import Optional
 
 from langchain.tools import tool
 
-from app.agents.prompts import SQL_GENERATION_PROMPT, SQL_FIX_PROMPT
+from app.agents.prompts import SQL_GENERATION_PROMPT, SQL_SYSTEM_MESSAGE, SQL_FIX_PROMPT
 from app.agents.tools.schema_tools import fetch_schema_context
 from app.services.db_service import DBService
 from app.services.schema_service import SchemaService
@@ -14,6 +14,19 @@ MAX_RETRIES = 3
 QUERY_TIMEOUT_SECONDS = 10
 MAX_ROWS = 1000
 RESULTS_FILE = Path("sql_results.txt")
+
+
+def _sanitize_sql(sql: str) -> str:
+    """Strip markdown code fences that LLMs sometimes add despite instructions."""
+    cleaned = sql.strip()
+    if cleaned.startswith("```"):
+        lines = cleaned.splitlines()
+        if len(lines) >= 3 and lines[-1].strip().startswith("```"):
+            lines = lines[1:-1]
+        elif len(lines) >= 2 and lines[0].strip().startswith("```"):
+            lines = lines[1:]
+        cleaned = "\n".join(lines).strip()
+    return cleaned
 
 _db_service: Optional[DBService] = None
 _schema_service: Optional[SchemaService] = None
@@ -92,12 +105,12 @@ def execute_sql_query(question: str) -> str:
     while retry_count < MAX_RETRIES and not success:
         try:
             prompt = SQL_GENERATION_PROMPT.format(
-                dialect=_db_service.get_dialect(),
                 schema=schema_context,
                 max_rows=MAX_ROWS,
                 question=question,
+                scenario_context="",
             )
-            sql = _llm.generate(prompt)
+            sql = _sanitize_sql(_llm.generate(prompt, system_message=SQL_SYSTEM_MESSAGE))
 
             if sql.startswith("ERROR:"):
                 error = sql
@@ -164,8 +177,9 @@ def fix_and_execute_sql(question: str, failed_query: str, error_message: str) ->
             failed_query=failed_query,
             error_message=error_message,
             schema=schema_context,
+            scenario_context="",
         )
-        sql = _llm.generate(prompt)
+        sql = _sanitize_sql(_llm.generate(prompt))
 
         valid, error = _validate_sql(sql)
         if not valid:

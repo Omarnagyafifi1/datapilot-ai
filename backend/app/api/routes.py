@@ -3,20 +3,26 @@ from typing import Any, Optional
 from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query, Body
 from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from app.api.deps import get_data_source_service, get_graph_orchestrator, get_history_service
 from app.core.logger import get_logger
 from app.models.schemas import (
     ConnectRequest,
     DataSourceResponse,
+    EvalRequest,
+    EvalResponse,
     HealthResponse,
     QueryApprovalRequest,
     QueryRequest,
     QueryPageRequest,
-    QueryResponse,
     QueryHistoryResponse,
-    SystemStatsResponse,
-    ActivityFeedResponse,
+    QueryResponse,
+    DataSourceResponse,
+    DataSourceConfig,
+    MetricsResponse,
     SchemaResponse,
+    EvalScore,
+    SettingsRequest,
 )
 # LLM settings service - fallback to empty settings if not available
 try:
@@ -100,6 +106,7 @@ def query_endpoint(
 ) -> dict:
     start_time = time.time()
     status = "SUCCESS"
+    result = {}
     try:
         data_source_service.get_conn_string(payload.source_id)
         thread_id = payload.thread_id or str(uuid4())
@@ -129,7 +136,7 @@ def query_endpoint(
             "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
             "Access-Control-Allow-Headers": "*",
         }
-        return JSONResponse(content=result, headers=headers)
+        return JSONResponse(content=jsonable_encoder(result), headers=headers)
     except Exception as e:
         status = "ERROR"
         logger.exception("Query failed")
@@ -137,11 +144,14 @@ def query_endpoint(
     finally:
         latency = time.time() - start_time
         try:
+            viz_info = (result.get("documentation") or {}).get("visualization") or {}
             history_service.save_query(
                 question=payload.question,
                 source_id=payload.source_id,
                 status=status,
-                latency=latency
+                latency=latency,
+                has_visualization=bool(viz_info.get("spec")),
+                chart_type=viz_info.get("chart_type"),
             )
         except Exception:
             logger.exception("Failed to save query history in finally block")
@@ -209,6 +219,24 @@ def connect_datasource(
     if not result.get("success"):
         raise HTTPException(status_code=400, detail="Connection failed")
 
+    # Fetch and cache the schema immediately upon connection
+    try:
+        source_id = result["id"]
+        data_source_service.get_conn_string(source_id)
+        db_service.get_source_schema(source_id)
+        logger.info(f"Successfully pre-fetched schema for source_id={source_id}")
+
+        # Pre-warm suggestions cache in background so the UI gets instant suggestions
+        import threading
+        graph = get_graph_orchestrator()
+        threading.Thread(
+            target=_generate_and_cache_suggestions,
+            args=(source_id, graph),
+            daemon=True,
+        ).start()
+    except Exception as e:
+        logger.warning(f"Failed to pre-fetch schema for new source: {e}", exc_info=True)
+
     return _resp(success=True, message="Data source connected", data=result)
 
 
@@ -258,33 +286,67 @@ def get_datasource_schema(
     return _resp(success=True, message="Schema fetched", data=schema.get("tables", []))
 
 
+_SUGGESTIONS_CACHE: dict[str, list[dict[str, str]]] = {}
+
+
+def _generate_and_cache_suggestions(source_id: str, graph) -> None:
+    """Generate LLM-powered suggestions and cache them. Safe to call from background threads."""
+    if source_id in _SUGGESTIONS_CACHE:
+        return
+
+    try:
+        schema = db_service.get_source_schema(source_id)
+        tables = schema.get("tables", [])
+
+        # Build a compact schema summary for the LLM
+        schema_lines = []
+        for t in tables:
+            cols = ", ".join(c["name"] for c in t.get("columns", []))
+            schema_lines.append(f"- {t['name']}({cols})")
+        schema_summary = "\n".join(schema_lines) if schema_lines else "No tables found."
+
+        from app.agents.prompts import INITIAL_SUGGESTION_PROMPT
+        from app.agents.graph import _parse_suggestions
+
+        prompt = (
+            f"{INITIAL_SUGGESTION_PROMPT}\n\n"
+            f"### Database Schema\n{schema_summary}"
+        )
+        raw_response = graph.llm.generate(prompt)
+        parsed = _parse_suggestions(raw_response)
+        if parsed:
+            _SUGGESTIONS_CACHE[source_id] = parsed[:4]
+            return
+    except Exception:
+        logger.warning("LLM suggestion generation failed, using fallback", exc_info=True)
+
+    # Fallback: generate generic suggestions from table names
+    try:
+        schema = db_service.get_source_schema(source_id)
+        tables = schema.get("tables", [])
+    except Exception:
+        tables = []
+    fallback = []
+    for t in tables[:4]:
+        fallback.append({"ar": f"أظهر أول 10 صفوف من {t['name']}", "en": f"Show first 10 rows from {t['name']}"})
+    _SUGGESTIONS_CACHE[source_id] = fallback[:4]
+
+
 @router.get("/datasources/{id}/suggestions")
 def get_datasource_suggestions(
     id: str,
     data_source_service: DataSourceService = Depends(get_data_source_service),
+    graph=Depends(get_graph_orchestrator),
 ) -> dict[str, Any]:
+    if id in _SUGGESTIONS_CACHE:
+        return _resp(success=True, message="Suggestions fetched", data=_SUGGESTIONS_CACHE[id])
+
     data_source_service.get_conn_string(id)
-    schema = db_service.get_source_schema(id)
-    tables = schema.get("tables", [])
-    
-    suggestions = []
-    table_names = [t["name"].lower() for t in tables]
-    
-    if "employees" in table_names:
-        suggestions.extend(["Show all employees and their salaries", "ما هو إجمالي الرواتب لكل قسم؟", "من هم أعلى 5 موظفين راتباً؟"])
-    if "sales" in table_names:
-        suggestions.extend(["Show total sales revenue by category", "أظهر المبيعات الإجمالية حسب الفئة بالعربية", "What were total sales by month?"])
-    if "inventory" in table_names:
-        suggestions.extend(["Which products are below reorder level?", "عرض المنتجات التي نفد مخزونها"])
-        
-    if len(suggestions) < 3:
-        for t in tables:
-            suggestions.append(f"Show first 10 rows from {t['name']}")
-            
-    return _resp(success=True, message="Suggestions fetched", data=suggestions[:4])
+    _generate_and_cache_suggestions(id, graph)
+    return _resp(success=True, message="Suggestions fetched", data=_SUGGESTIONS_CACHE.get(id, []))
 
 
-@router.get("/system/stats", response_model=SystemStatsResponse)
+@router.get("/system/stats")
 def get_system_stats(
     data_source_service: DataSourceService = Depends(get_data_source_service),
     history_service: HistoryService = Depends(get_history_service),
@@ -295,7 +357,7 @@ def get_system_stats(
     return _resp(success=True, message="System stats fetched", data=stats)
 
 
-@router.get("/system/feed", response_model=ActivityFeedResponse)
+@router.get("/system/feed")
 def get_system_feed(
     history_service: HistoryService = Depends(get_history_service),
 ) -> dict[str, Any]:
@@ -303,6 +365,7 @@ def get_system_feed(
     return _resp(success=True, message="Activity feed fetched", data=feed)
 
 
+<<<<<<< HEAD
 # ============================================================================
 # NEW: Upload Preview and Import Endpoints
 # ============================================================================
@@ -514,6 +577,17 @@ def update_dataset(
     if name:
         data_source_service.update_dataset_name(id, name)
     return _resp(success=True, message="Dataset updated", data=None)
+=======
+@router.get("/system/metrics", response_model=MetricsResponse)
+def get_system_metrics(
+    data_source_service: DataSourceService = Depends(get_data_source_service),
+    history_service: HistoryService = Depends(get_history_service),
+) -> dict[str, Any]:
+    sources = data_source_service.list_sources()
+    metrics = history_service.get_metrics()
+    metrics["total_sources"] = len(sources)
+    return _resp(success=True, message="System metrics fetched", data=metrics)
+>>>>>>> main
 
 
 @router.post('/data/csv')
@@ -588,6 +662,7 @@ def generate_report(payload: dict) -> dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(e))
 
 
+<<<<<<< HEAD
 # ============================================================================
 # LLM Settings Endpoints
 # ============================================================================
@@ -634,3 +709,48 @@ def update_llm_settings_endpoint(
     except Exception as e:
         logger.exception("Failed to save LLM settings")
         return _resp(success=False, message=f"Failed to update settings: {str(e)}", data=None)
+=======
+@router.post("/evaluate", response_model=EvalResponse)
+def evaluate_query_endpoint(
+    payload: EvalRequest,
+) -> dict[str, Any]:
+    """Evaluate a Text-to-SQL query for syntax, correctness, and schema relevance."""
+    from app.services.evaluation_service import evaluate_sql
+    try:
+        scores = evaluate_sql(
+            question=payload.question,
+            sql=payload.sql,
+            results=None,
+            source_id=payload.source_id,
+            thread_id=payload.thread_id,
+        )
+        return _resp(success=True, message="Evaluation complete", data=scores)
+    except Exception as e:
+        logger.exception("Evaluation failed")
+        return _resp(success=False, message=f"Evaluation failed: {str(e)}", data=None)
+
+
+@router.get("/settings")
+def get_settings_endpoint() -> dict[str, Any]:
+    from app.services.settings_service import get_public_settings
+    return _resp(success=True, message="Settings retrieved", data=get_public_settings())
+
+
+@router.post("/settings")
+def update_settings_endpoint(payload: SettingsRequest) -> dict[str, Any]:
+    from app.services.settings_service import update_settings
+    from app.api.deps import reset_graph_orchestrator
+    updates = {}
+    if payload.llm_provider is not None:
+        updates["llm_provider"] = payload.llm_provider
+    if payload.api_keys is not None:
+        updates["api_keys"] = {k: v for k, v in payload.api_keys.items() if v}
+    if payload.visualization is not None:
+        updates["visualization"] = payload.visualization
+    if payload.features is not None:
+        updates["features"] = payload.features
+    result = update_settings(updates)
+    # Reset the graph orchestrator so the next request uses the new LLM provider/keys
+    reset_graph_orchestrator()
+    return _resp(success=True, message="Settings updated", data=result)
+>>>>>>> main

@@ -1,0 +1,21 @@
+{
+  "llm_provider": "litellm",
+  "api_keys": {
+    "groq": "",
+    "openrouter": "••••••••",
+    "gemini": "",
+    "openai": ""
+  },
+  "visualization": {
+    "default_chart_type": "auto",
+    "max_bars": 20,
+    "theme": "dark"
+  },
+  "features": {
+    "scenario_memory": true,
+    "arabic_column_rewrite": true,
+    "context_filtering": true,
+    "auto_visualization": true,
+    "human_approval_write": true
+  }
+}

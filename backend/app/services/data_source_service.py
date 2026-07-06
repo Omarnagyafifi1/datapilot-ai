@@ -115,9 +115,9 @@ def _build_conn_string_from_source(source: dict, password: str) -> str:
     if db_type == "mysql":
         return f"mysql+pymysql://{username}:{encoded_password}@{host}:{port}/{db_name}"
     if db_type == "mssql":
-        return f"mssql+pyodbc://{username}:{encoded_password}@{host}:{port or '1433'}/{db_name}?driver=ODBC+Driver+17+for+SQL+Server"
+        return f"mssql+pymssql://{username}:{encoded_password}@{host}:{port or '1433'}/{db_name}"
     if db_type == "oracle":
-        return f"oracle+cx_oracle://{username}:{encoded_password}@{host}:{port or '1521'}/?service_name={db_name}"
+        return f"oracle+oracledb://{username}:{encoded_password}@{host}:{port or '1521'}/?service_name={db_name}"
 
     raise HTTPException(status_code=400, detail="Unsupported database type")
 
