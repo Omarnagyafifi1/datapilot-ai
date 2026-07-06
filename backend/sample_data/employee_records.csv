@@ -1,0 +1,9 @@
+id,name,department_id,position,salary,hire_date
+1,John Doe,1,Developer,75000,2020-01-15
+2,Jane Smith,1,Senior Developer,95000,2018-03-20
+3,Mike Johnson,2,Marketing Manager,65000,2019-06-01
+4,Sarah Williams,2,Designer,55000,2021-02-10
+5,Tom Brown,3,Sales Rep,50000,2020-11-05
+6,Lisa Davis,3,Sales Lead,70000,2019-08-15
+7,Alex Chen,1,QA Engineer,65000,2021-04-01
+8,Maria Garcia,4,HR Specialist,45000,2022-01-10

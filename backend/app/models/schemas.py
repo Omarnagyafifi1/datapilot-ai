@@ -61,6 +61,11 @@ class QueryRequest(BaseModel):
     thread_id: str | None = None
     preview_only: bool = False
     sql: str | None = None
+    # Optional LLM config override (takes precedence over saved settings)
+    provider: Optional[str] = None
+    model: Optional[str] = None
+    temperature: Optional[float] = None
+    max_tokens: Optional[int] = None
 
 class QueryPageRequest(BaseModel):
     sql: str

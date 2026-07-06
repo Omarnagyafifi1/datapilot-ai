@@ -92,6 +92,10 @@ async def catch_all_options(full_path: str):
     }
     return Response(status_code=200, headers=headers)
 
+<<<<<<< HEAD
+# Include API router FIRST so it handles /api/* routes before static files
+=======
+>>>>>>> main
 app.include_router(api_router)
 
 # Mount frontend static files when available (built via `npm run build` into frontend/dist)
@@ -99,6 +103,10 @@ dist_dir = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 if dist_dir.exists():
     app.mount("/", StaticFiles(directory=str(dist_dir), html=True), name="frontend")
 
+<<<<<<< HEAD
+
+=======
+>>>>>>> main
 # Exception Handlers
 @app.exception_handler(CSVValidationError)
 async def csv_validation_exception_handler(request, exc: CSVValidationError):

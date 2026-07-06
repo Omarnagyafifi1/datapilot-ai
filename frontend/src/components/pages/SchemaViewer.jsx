@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Binary, ChevronRight, Table as TableIcon, Hash, Type, Key, Loader2, Database } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Binary, ChevronRight, Table as TableIcon, Hash, Key, Loader2, Database } from 'lucide-react';
 import { api } from '../../lib/api';
 
 export function SchemaViewer({ selectedSourceId, selectedSource }) {
@@ -46,9 +46,9 @@ export function SchemaViewer({ selectedSourceId, selectedSource }) {
           </p>
         </div>
 
-        <div className="glass p-4 rounded-xl border-white/5 min-w-[240px]">
+        <div className="glass p-4 rounded-xl border-border min-w-[240px]">
           <label className="text-[10px] font-mono font-bold text-muted uppercase block mb-2">Connected Data Node</label>
-          <div className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-cyber-cyan flex items-center gap-2">
+          <div className="w-full bg-foreground/5 border border-border rounded-lg px-3 py-2 text-xs font-mono text-cyber-cyan flex items-center gap-2">
             <Database size={14} />
             {selectedSource ? selectedSource.name : 'No source selected'}
           </div>
@@ -56,8 +56,8 @@ export function SchemaViewer({ selectedSourceId, selectedSource }) {
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1 glass rounded-2xl border-white/5 overflow-hidden">
-          <div className="p-4 border-b border-white/5 bg-white/5 text-[10px] font-mono font-bold text-muted uppercase">Entity Tree</div>
+        <div className="lg:col-span-1 glass rounded-2xl border-border overflow-hidden">
+          <div className="p-4 border-b border-border bg-foreground/5 text-[10px] font-mono font-bold text-muted uppercase">Entity Tree</div>
           <div className="p-4 space-y-2 max-h-[500px] overflow-y-auto no-scrollbar">
             {loading ? (
               <div className="py-10 flex flex-col items-center justify-center text-muted">
@@ -87,7 +87,7 @@ export function SchemaViewer({ selectedSourceId, selectedSource }) {
                   <h4 className="text-xl font-bold font-mono text-cyber-cyan">{activeTable.name}</h4>
                   <p className="text-xs text-muted">Schema mapping for {activeTable.name} entity.</p>
                 </div>
-                <TableIcon className="text-white/20" size={32} />
+                <TableIcon className="text-foreground/20" size={32} />
               </div>
 
               <div className="space-y-3">
@@ -97,7 +97,7 @@ export function SchemaViewer({ selectedSourceId, selectedSource }) {
               </div>
             </div>
           ) : (
-            <div className="glass p-12 rounded-2xl border-white/5 text-center flex flex-col items-center justify-center text-muted">
+            <div className="glass p-12 rounded-2xl border-border text-center flex flex-col items-center justify-center text-muted">
               <Database size={48} className="opacity-10 mb-4" />
               <p className="text-xs font-mono uppercase tracking-widest">No table selected or detected.</p>
             </div>
@@ -112,9 +112,9 @@ function TreeItem({ label, active, onClick }) {
   return (
     <div 
       onClick={onClick}
-      className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${active ? 'bg-cyber-cyan/10 text-cyber-cyan border border-cyber-cyan/20' : 'text-white/50 hover:bg-white/5'}`}
+      className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${active ? 'bg-cyber-cyan/10 text-cyber-cyan border border-cyber-cyan/20' : 'text-foreground/50 hover:bg-foreground/5'}`}
     >
-      <ChevronRight size={14} className={active ? '' : 'text-white/20'} />
+      <ChevronRight size={14} className={active ? '' : 'text-foreground/20'} />
       <span className="text-xs font-mono truncate">{label}</span>
     </div>
   );
@@ -122,12 +122,12 @@ function TreeItem({ label, active, onClick }) {
 
 function ColumnItem({ name, type, pkey }) {
   return (
-    <div className="flex items-center justify-between p-3 bg-white/[0.02] border border-white/5 rounded-xl">
+    <div className="flex items-center justify-between p-3 bg-foreground/5 border border-border rounded-xl">
       <div className="flex items-center gap-3">
-        {pkey ? <Key size={14} className="text-cyber-lime" /> : <Hash size={14} className="text-white/20" />}
-        <span className="text-xs font-mono text-white/90">{name}</span>
+        {pkey ? <Key size={14} className="text-cyber-lime" /> : <Hash size={14} className="text-foreground/20" />}
+        <span className="text-xs font-mono text-foreground/90">{name}</span>
       </div>
-      <span className="text-[10px] font-mono text-muted border border-white/10 px-1.5 py-0.5 rounded">{type}</span>
+      <span className="text-[10px] font-mono text-muted border border-border px-1.5 py-0.5 rounded">{type}</span>
     </div>
   );
 }

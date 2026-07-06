@@ -1,0 +1,7 @@
+id,code,name,department_id,credits
+1,CS101,Intro to Programming,1,1
+2,CS201,Data Structures,1,2
+3,MATH101,Calculus I,2,1
+4,MATH201,Linear Algebra,2,2
+5,PHYS101,Mechanics,3,1
+6,PHYS201,Thermodynamics,3,2
