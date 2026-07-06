@@ -5,15 +5,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { cn } from '../../lib/utils';
-
-const PROVIDERS = [
-  { id: 'litellm', label: 'LiteLLM (Latency Router)', desc: 'Dynamically routes to the fastest model among your provided keys.' },
-  { id: 'groq', label: 'Groq', desc: 'Fast inference with Llama/Mixtral models.' },
-  { id: 'openrouter', label: 'OpenRouter', desc: 'Unified API for 200+ models.' },
-  { id: 'gemini', label: 'Google Gemini', desc: 'Google\'s Gemini models.' },
-  { id: 'openai', label: 'OpenAI', desc: 'GPT-4 / GPT-3.5 models.' },
-  { id: 'mock', label: 'Mock (No LLM)', desc: 'Uses pre-defined responses for testing, no API key needed.' },
-];
+import { PROVIDERS } from '../../lib/constants';
 
 const FEATURES = [
   { key: 'scenario_memory', label: 'Scenario Memory', desc: 'Log SQL failures with lessons learned for future reference.' },

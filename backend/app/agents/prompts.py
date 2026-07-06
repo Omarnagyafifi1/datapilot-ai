@@ -9,6 +9,8 @@ SQL_GENERATION_PROMPT = """
 {question}
 
 ### Rules
+CRITICAL: NEVER output `SELECT 1`, `SELECT 1;`, or any query without a FROM clause referencing at least one schema table. A bare SELECT without FROM is NEVER a valid answer. If no schema table matches, use rule 21's error format.
+
 1. Use ONLY table and column names from the schema above. Never invent columns.
 2. Return ONLY the raw SQL query. No markdown, no backticks, no explanations.
 3. Query must be read-only. No INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE.
@@ -54,7 +56,9 @@ SQL_GENERATION_PROMPT = """
 23. NEVER output incomplete SQL. The query must be syntactically complete (SELECT, FROM, WHERE/GROUP BY/ORDER BY fully formed).
 24. If the user uses generic terms (like "users", "people", "items"), try to map them to the closest logical table (e.g. "employees", "sales", "inventory"). ONLY return "ERROR: Insufficient schema context." if the question is completely unrelated to the entire database.
 25. Output must be a single line or multiple lines with ; at the end.
-26. LEARN FROM PAST EXAMPLES: Review the "Past Query Examples" section above. Study both successful and failed examples to avoid repeating past mistakes. If you see a failed example for a question similar to the current one, make sure to fix the error pattern described."""
+26. LEARN FROM PAST EXAMPLES: Review the "Past Query Examples" section above. Study both successful and failed examples to avoid repeating past mistakes. If you see a failed example for a question similar to the current one, make sure to fix the error pattern described.
+27. NEVER output `SELECT 1`, `SELECT 1;`, or any query that does not reference at least one table from the schema. A query without a FROM clause or table reference is not an answer. If no schema table matches the question, output the error format from rule 21.
+28. FUZZY TABLE MATCHING: If the user mentions a concept not literally present as a table name (e.g., "stores", "retail", "products", "customers"), try to map it to the closest table in the schema (e.g., "stores" → "sales" or "inventory", "people" → "employees", "items" → "products" or "inventory"). Only output the ERROR format if the mapping is genuinely impossible (no related table exists)."""
 
 # Specialized prompts for Modification operations
 SQL_ADD_PROMPT = """
@@ -169,13 +173,17 @@ Strictly adhere to this format:
 """
 
 INITIAL_SUGGESTION_PROMPT = """
-You are a bilingual (Arabic/English) data analyst assistant. Based on the database schema provided below, suggest insightful starter questions the user might want to ask to explore and understand their data.
+You are a bilingual (Arabic/English) data analyst assistant. Based on the database schema and sample data below, suggest insightful starter questions the user might want to ask to explore and understand their data.
 
 ### Instructions
-- Analyze the table names and column names to understand what kind of data is stored.
+- Analyze the table names, column names, and sample values to understand what kind of data is stored.
 - Generate exactly 4 relevant, ready-to-ask questions that would help the user explore their data.
+- Questions must be SPECIFIC to the actual data content — use column values you see in the samples (e.g., if a "category" column has "Electronics", ask about Electronics; if "region" has "North", ask about North, etc.).
 - Questions should be diverse: mix aggregations, filtering, joins, and simple lookups.
-- Make questions specific to the actual tables and columns provided.
+- NEVER use generic placeholder terms like "specific category" or "certain region". Use the actual values from the samples.
+
+### Sample Data (first 3 rows per table)
+{sample_data}
 
 ### Critical Formatting Rules
 Return ONLY a valid JSON array of objects. Do NOT wrap the JSON in markdown code blocks (e.g., no ```json). Do NOT include any conversational text before or after the JSON.

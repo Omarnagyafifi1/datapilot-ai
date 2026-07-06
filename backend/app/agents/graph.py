@@ -91,9 +91,46 @@ def _extract_json_payload(raw_response: str) -> str:
     return cleaned
 
 
+def _safe_json_parse(text: str) -> Any | None:
+    text = text.strip()
+
+    m = re.search(r'```(?:json)?\s*(\{.*?\}|\[.*?\])\s*```', text, re.DOTALL)
+    if m:
+        try:
+            return json.loads(m.group(1))
+        except json.JSONDecodeError:
+            pass
+
+    for open_char, close_char in [('{', '}'), ('[', ']')]:
+        start = text.find(open_char)
+        end = text.rfind(close_char)
+        if start != -1 and end > start:
+            candidate = text[start:end + 1]
+            try:
+                return json.loads(candidate)
+            except json.JSONDecodeError:
+                fixed = re.sub(r",\s*}", "}", candidate)
+                fixed = re.sub(r",\s*\]", "]", fixed)
+                fixed = re.sub(r"(?<!\\)'", '"', fixed)
+                try:
+                    return json.loads(fixed)
+                except json.JSONDecodeError:
+                    pass
+
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    return None
+
+
 def _normalize_insights(payload: Any) -> list[dict[str, str]] | None:
     if isinstance(payload, dict):
-        payload = payload.get("insights")
+        if "ar" in payload or "en" in payload:
+            payload = [payload]
+        else:
+            payload = payload.get("insights")
 
     if not isinstance(payload, list):
         return None
@@ -105,13 +142,26 @@ def _normalize_insights(payload: Any) -> list[dict[str, str]] | None:
 
         ar_value = item.get("ar")
         en_value = item.get("en")
-        if not isinstance(ar_value, str) or not isinstance(en_value, str):
+
+        if isinstance(ar_value, str) and ar_value.strip():
+            ar_value = ar_value.strip()
+        else:
+            ar_value = ""
+
+        if isinstance(en_value, str) and en_value.strip():
+            en_value = en_value.strip()
+        else:
+            en_value = ""
+
+        if not ar_value and not en_value:
             continue
 
-        ar_value = ar_value.strip()
-        en_value = en_value.strip()
-        if ar_value and en_value:
-            normalized.append({"ar": ar_value, "en": en_value})
+        if not ar_value:
+            ar_value = en_value
+        if not en_value:
+            en_value = ar_value
+
+        normalized.append({"ar": ar_value, "en": en_value})
 
     if not normalized:
         return None
@@ -120,23 +170,13 @@ def _normalize_insights(payload: Any) -> list[dict[str, str]] | None:
 
 
 def _parse_insights(raw_response: str) -> list[dict[str, str]] | None:
-    cleaned = _extract_json_payload(raw_response)
-    candidates = [cleaned]
+    parsed = _safe_json_parse(raw_response)
+    if parsed is None:
+        return None
 
-    list_start = cleaned.find("[")
-    list_end = cleaned.rfind("]")
-    if list_start != -1 and list_end > list_start:
-        candidates.append(cleaned[list_start : list_end + 1])
-
-    for candidate in candidates:
-        try:
-            payload = json.loads(candidate)
-        except json.JSONDecodeError:
-            continue
-
-        normalized = _normalize_insights(payload)
-        if normalized is not None:
-            return normalized
+    normalized = _normalize_insights(parsed)
+    if normalized is not None:
+        return normalized
 
     return None
 
@@ -171,23 +211,13 @@ def _normalize_suggestions(payload: Any) -> list[dict[str, str]] | None:
 
 
 def _parse_suggestions(raw_response: str) -> list[dict[str, str]] | None:
-    cleaned = _extract_json_payload(raw_response)
-    candidates = [cleaned]
+    parsed = _safe_json_parse(raw_response)
+    if parsed is None:
+        return None
 
-    list_start = cleaned.find("[")
-    list_end = cleaned.rfind("]")
-    if list_start != -1 and list_end > list_start:
-        candidates.append(cleaned[list_start : list_end + 1])
-
-    for candidate in candidates:
-        try:
-            payload = json.loads(candidate)
-        except json.JSONDecodeError:
-            continue
-
-        normalized = _normalize_suggestions(payload)
-        if normalized is not None:
-            return normalized
+    normalized = _normalize_suggestions(parsed)
+    if normalized is not None:
+        return normalized
 
     return None
 
@@ -259,7 +289,8 @@ def intent_router_node(state: AgentState, llm: BaseLLM) -> dict:
     _READ_VERBS = (
         r'\b(show|list|display|find|get|fetch|count|total|average|sum|'
         r'calculate|compare|report|describe|explain|tell|give|select|'
-        r'search|look\s*up|retrieve|check)\b'
+        r'search|look\s*up|retrieve|check|aggregate|log|logs|'
+        r'analyze|analysis|analyse|trend|trends|group|breakdown)\b'
     )
     # Arabic interrogatives
     _AR_READ = (
@@ -340,6 +371,17 @@ def scenario_lookup_node(state: AgentState) -> dict:
     return result
 
 
+def _is_mock_output(output: str) -> bool:
+    upper = output.strip().upper()
+    if upper.startswith("MOCK") or "MOCK RESPONSE" in upper:
+        return True
+    if len(output) > 500:
+        return True
+    if "INSERT statement" in output or "UPDATE statement" in output or "DELETE statement" in output:
+        return True
+    return False
+
+
 def modification_sql_node(state: AgentState, llm: BaseLLM, schema_service: SchemaService) -> dict:
     schema = fetch_schema_context(schema_service, state.source_id)
     dialect = state.documentation.get("dialect", "sqlite")
@@ -357,6 +399,14 @@ def modification_sql_node(state: AgentState, llm: BaseLLM, schema_service: Schem
     )
     
     sql = _sanitize_sql(llm.generate(prompt, max_tokens=300))
+    
+    if _is_mock_output(sql):
+        logger.warning(
+            "LLM returned mock/nonsense output for modification query '%s' — resetting to empty",
+            state.question[:80],
+        )
+        sql = ""
+
     return {"sql": sql}
 
 
@@ -435,6 +485,14 @@ def sql_execution_node(state: AgentState, db_service: DBService) -> dict:
             "retry_count": MAX_RETRIES,
         }
 
+    if not state.sql or not state.sql.strip():
+        return {
+            "query_results": [],
+            "success": False,
+            "error": "Empty SQL query. Could not generate a valid query from the question.",
+            "retry_count": current_retry + 1,
+        }
+
     # Programmatic SQL safety check — blocks dangerous keywords
     validation_error = _validate_sql_keywords(state.sql, state.intent)
     if validation_error:
@@ -503,7 +561,18 @@ def fix_sql_node(state: AgentState, llm: BaseLLM, schema_service: SchemaService,
     )
     
     fixed_sql = _sanitize_sql(llm.generate(prompt, max_tokens=300))
-    
+
+    import re as _re
+    if fixed_sql.strip().rstrip(";").strip().upper() in ("SELECT 1", "SELECT 1;"):
+        logger.warning("fix_sql_node generated noop '%s' for '%s'", fixed_sql, state.question[:80])
+        return {
+            "sql": fixed_sql,
+            "query_results": [],
+            "success": False,
+            "error": "Could not generate a valid query for this question. The database schema does not contain the requested data or table.",
+            "retry_count": MAX_RETRIES,
+        }
+
     try:
         results = execute_sql(db_service, fixed_sql, state.source_id) or []
         return {
@@ -531,37 +600,73 @@ def fix_sql_node(state: AgentState, llm: BaseLLM, schema_service: SchemaService,
 
 
 
-def insight_node(state: AgentState, llm: BaseLLM) -> dict:
-    if not state.query_results:
-        return {"insights": _fallback_insights()}
-
-    # Truncate to 20 rows and 5 columns max to reduce input tokens
+def _build_insight_prompt(state: AgentState) -> str:
     truncated_results = state.query_results[:20]
     if truncated_results and len(truncated_results[0]) > 5:
         keys = list(truncated_results[0].keys())[:5]
         truncated_results = [{k: row.get(k) for k in keys} for row in truncated_results]
 
-    prompt = (
+    current_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    return (
         f"{INSIGHT_PROMPT}\n\n"
+        f"Current Date: {current_date}\n\n"
         f"Question:\n{state.question}\n\n"
         f"Query results (first {len(truncated_results)} rows):\n"
         f"{_json_dumps(truncated_results)}"
     )
 
-    raw_response = llm.generate(prompt, max_tokens=512)
-    parsed_insights = _parse_insights(raw_response)
-    return {"insights": parsed_insights if parsed_insights is not None else _fallback_insights()}
+
+def insight_node(state: AgentState, llm: BaseLLM) -> dict:
+    if not state.query_results:
+        logger.debug("insight_node: no query_results, returning fallback")
+        return {"insights": _fallback_insights()}
+
+    prompt = _build_insight_prompt(state)
+
+    for attempt in range(2):
+        raw_response = llm.generate(prompt, max_tokens=1024)
+        logger.debug("insight_node attempt=%d raw_response=%.300s", attempt, raw_response)
+        parsed_insights = _parse_insights(raw_response)
+        logger.debug("insight_node attempt=%d parsed_insights=%s", attempt, parsed_insights)
+        if parsed_insights is not None:
+            logger.debug("insight_node: returning insights count=%d", len(parsed_insights))
+            return {"insights": parsed_insights}
+
+    logger.debug("insight_node: all attempts failed, returning fallback")
+    return {"insights": _fallback_insights()}
 
 
 def suggestion_node(state: AgentState, llm: BaseLLM) -> dict:
     if not state.query_results:
         return {"suggestions": []}
 
-    # Send concise context to reduce input tokens
+    schema_str = (state.documentation or {}).get("schema", "")
+    schema_lines = []
+    if schema_str:
+        try:
+            schema_obj = json.loads(schema_str) if isinstance(schema_str, str) else schema_str
+            for tbl in schema_obj.get("tables", []):
+                cols = ", ".join(c["name"] for c in tbl.get("columns", []))
+                schema_lines.append(f"- {tbl['name']}({cols})")
+        except Exception:
+            pass
+
+    results_preview = []
+    if state.query_results:
+        preview = state.query_results[:3]
+        if preview:
+            keys = list(preview[0].keys())[:5]
+            results_preview = [{k: row.get(k) for k in keys} for row in preview]
+
+    schema_summary = "\n".join(schema_lines) if schema_lines else "N/A"
+
     prompt = (
         f"{SUGGESTION_PROMPT}\n\n"
         f"Question:\n{state.question}\n\n"
-        f"Generated SQL:\n{state.sql}"
+        f"Generated SQL:\n{state.sql}\n\n"
+        f"Database Schema:\n{schema_summary}\n\n"
+        f"Sample Results (first {len(results_preview)} rows):\n{json.dumps(results_preview, ensure_ascii=False)}"
     )
 
     raw_response = llm.generate(prompt, max_tokens=512)
@@ -768,6 +873,8 @@ class AgentGraph:
         workflow.add_conditional_edges("load_memory", route_sql_gen, ["lookup_scenario", "generate_mod_sql", "execute_sql", "approval"])
         
         def route_scenario(state: AgentState) -> Literal["execute_sql", "generate_sql", "persist_memory"]:
+            if state.sql and state.sql.strip():
+                return "execute_sql"
             return "generate_sql"
 
         workflow.add_conditional_edges("lookup_scenario", route_scenario, ["execute_sql", "generate_sql", "persist_memory"])

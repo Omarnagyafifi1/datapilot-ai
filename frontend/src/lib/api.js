@@ -76,11 +76,6 @@ export const api = {
     update: (id, data) => client.patch(`/datasets/${id}`, data),
   },
 
-  settings: {
-    get: () => client.get('/settings/llm'),
-    update: (data) => client.put('/settings/llm', data),
-  },
-
   evaluate: (question, sql, sourceId) => client.post('/evaluate', {
     question,
     sql,

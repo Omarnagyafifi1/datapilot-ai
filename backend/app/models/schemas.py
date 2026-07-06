@@ -239,6 +239,9 @@ class EvalResponse(BaseModel):
 
 class SettingsRequest(BaseModel):
     llm_provider: str | None = None
+    model: str | None = None
+    temperature: float | None = None
+    max_tokens: int | None = None
     api_keys: dict[str, str] | None = None
     visualization: dict[str, Any] | None = None
     features: dict[str, bool] | None = None

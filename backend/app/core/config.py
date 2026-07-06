@@ -47,3 +47,13 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# MUST run before any langsmith/langchain imports — the SDK caches env var
+# state at import time. Setting them here ensures the tracers pick them up.
+if settings.LANGCHAIN_API_KEY and settings.LANGCHAIN_TRACING_V2:
+    os.environ.setdefault("LANGSMITH_TRACING", "true")
+    os.environ.setdefault("LANGSMITH_API_KEY", settings.LANGCHAIN_API_KEY)
+    os.environ.setdefault("LANGSMITH_PROJECT", settings.LANGCHAIN_PROJECT or "datapilot-ai")
+    os.environ.setdefault("LANGSMITH_ENDPOINT", settings.LANGCHAIN_ENDPOINT or "https://api.smith.langchain.com")
+    os.environ.setdefault("LANGCHAIN_TRACING_V2", "true")
+    os.environ.setdefault("LANGCHAIN_API_KEY", settings.LANGCHAIN_API_KEY)

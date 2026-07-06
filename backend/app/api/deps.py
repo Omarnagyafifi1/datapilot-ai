@@ -1,36 +1,16 @@
 import os
 
+from app.core.config import settings
+from app.core.logger import get_logger
 from app.agents.graph import AgentGraph
 from app.agents.memory_backends import GraphMemoryBackends
-from app.core.config import settings
 from app.llm.factory import get_llm
 from app.services.db_service import DBService
 from app.services.data_source_service import DataSourceService
 from app.services.schema_service import SchemaService
 from app.services.history_service import HistoryService
-from app.core.logger import get_logger
 
 logger = get_logger(__name__)
-
-# LLM settings service - fallback to empty settings if not available
-try:
-    from app.services.llm_settings_service import get_llm_settings
-except ImportError:
-    def get_llm_settings():
-        return {}
-
-def _init_langsmith() -> None:
-    if settings.LANGCHAIN_API_KEY:
-        os.environ["LANGCHAIN_TRACING_V2"] = "true" if settings.LANGCHAIN_TRACING_V2 else "false"
-        os.environ["LANGCHAIN_API_KEY"] = settings.LANGCHAIN_API_KEY
-        os.environ["LANGCHAIN_PROJECT"] = settings.LANGCHAIN_PROJECT
-        os.environ["LANGCHAIN_ENDPOINT"] = settings.LANGCHAIN_ENDPOINT
-        logger.info(
-            "LangSmith tracing enabled for project '%s'",
-            settings.LANGCHAIN_PROJECT,
-        )
-    else:
-        logger.info("LangSmith not configured (LANGCHAIN_API_KEY not set)")
 
 
 _db_service = DBService()
@@ -39,9 +19,6 @@ _schema_service = SchemaService()
 _memory_backends = GraphMemoryBackends()
 _graph_orchestrator: AgentGraph | None = None
 _history_service = HistoryService()
-
-
-_init_langsmith()
 
 
 def get_graph_orchestrator() -> AgentGraph:
@@ -67,10 +44,8 @@ def get_graph_orchestrator() -> AgentGraph:
 
 def reset_graph_orchestrator() -> None:
     """Reset the graph orchestrator so it rebuilds with updated settings on next request."""
-    from app.llm.factory import _get_cached_llm
     global _graph_orchestrator
     _graph_orchestrator = None
-    _get_cached_llm.cache_clear()
     logger.info("Graph orchestrator reset — will rebuild with new settings on next request")
 
 

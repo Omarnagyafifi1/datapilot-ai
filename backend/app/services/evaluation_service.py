@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 from typing import Any
 
@@ -11,7 +12,6 @@ logger = get_logger(__name__)
 
 try:
     from langsmith import Client as LangSmithClient
-    from langsmith.run_trees import RunTree
 
     _LANGSMITH_AVAILABLE = bool(settings.LANGCHAIN_API_KEY)
     if _LANGSMITH_AVAILABLE:
@@ -99,24 +99,65 @@ def _llm_eval(prompt: str, llm: BaseLLM | None) -> dict[str, Any] | None:
     try:
         response = llm.generate(prompt)
         cleaned = response.strip()
-        import re
-        import json
-        
-        # Try to find JSON block if markdown formatting is used
-        json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', cleaned, re.DOTALL)
-        if json_match:
-            cleaned = json_match.group(1)
-        else:
-            # Fallback to finding the first { and last }
-            start_idx = cleaned.find('{')
-            end_idx = cleaned.rfind('}')
-            if start_idx != -1 and end_idx != -1:
-                cleaned = cleaned[start_idx:end_idx+1]
-                
-        return json.loads(cleaned)
+
+        result = _safe_parse_json(cleaned)
+        if result is not None:
+            return result
+
+        logger.warning("LLM evaluation returned non-JSON: %.200s", cleaned)
+        return None
     except Exception as e:
         logger.warning("LLM evaluation failed: %s", e)
         return None
+
+
+def _safe_parse_json(text: str) -> dict | None:
+    text = text.strip()
+
+    # Strategy 1: Extract from markdown code block
+    m = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', text, re.DOTALL)
+    if m:
+        result = _try_json_loads(m.group(1))
+        if result is not None:
+            return result
+
+    # Strategy 2: Find first { and last }
+    start = text.find('{')
+    end = text.rfind('}')
+    if start != -1 and end != -1 and end > start:
+        candidate = text[start:end + 1]
+        result = _try_json_loads(candidate)
+        if result is not None:
+            return result
+        # with single-quote fix
+        result = _try_json_loads(_fix_single_quotes(candidate))
+        if result is not None:
+            return result
+
+    # Strategy 3: ast.literal_eval handles Python dicts natively
+    try:
+        import ast
+        parsed = ast.literal_eval(text)
+        if isinstance(parsed, dict):
+            return parsed
+    except Exception:
+        pass
+
+    return None
+
+
+def _try_json_loads(text: str) -> dict | None:
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        return None
+
+
+def _fix_single_quotes(text: str) -> str:
+    text = re.sub(r",\s*}", "}", text)
+    text = re.sub(r",\s*\]", "]", text)
+    text = re.sub(r"(?<!\\)'", '"', text)
+    return text
 
 
 def evaluate_sql(
@@ -187,6 +228,15 @@ def evaluate_sql(
     return scores
 
 
+def _is_valid_uuid(value: str) -> bool:
+    try:
+        import uuid
+        uuid.UUID(value)
+        return True
+    except (ValueError, AttributeError):
+        return False
+
+
 def post_evaluation_to_langsmith(
     question: str,
     sql: str,
@@ -200,6 +250,10 @@ def post_evaluation_to_langsmith(
 ) -> bool:
     if not _LANGSMITH_AVAILABLE or not _LS_CLIENT:
         logger.debug("LangSmith not configured, skipping evaluation posting")
+        return False
+
+    if not _is_valid_uuid(thread_id):
+        logger.debug("thread_id is not a valid UUID, skipping LangSmith feedback: %s", thread_id)
         return False
 
     try:

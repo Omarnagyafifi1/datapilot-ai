@@ -202,16 +202,16 @@ class CSVProvider(ImportProvider):
             message=f"CSV '{dataset_name}' imported successfully with {len(metadata['columns'])} columns.",
         )
     
-    async def _register_datasource(self, name: str, db_path: str) -> str:
+    async def _register_datasource(self, name: str, table_name: str) -> str:
         """Register a datasource in the registry."""
         from app.services.data_source_service import save_source
-        
+
         result = save_source({
             "name": name,
             "db_type": "sqlite",
             "host": "",
             "port": None,
-            "db_name": db_path,
+            "db_name": table_name,
             "username": "",
             "password": "",
         })

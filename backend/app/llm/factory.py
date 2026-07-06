@@ -47,8 +47,10 @@ class FallbackLLM(BaseLLM):
 def _sanitize_key(key: str | None) -> str:
     if not key:
         return ""
-    # Strip any hidden non-ASCII characters
-    return key.encode("ascii", "ignore").decode("ascii").strip()
+    stripped = key.encode("ascii", "ignore").decode("ascii").strip()
+    if stripped == "••••••••":
+        return ""
+    return stripped
 
 
 def get_llm(provider: str | None = None) -> BaseLLM:
@@ -60,7 +62,7 @@ def get_llm(provider: str | None = None) -> BaseLLM:
     openrouter_key = _sanitize_key(api_keys.get("openrouter") or settings.OPENROUTER_API_KEY)
     gemini_key = _sanitize_key(api_keys.get("gemini") or settings.GEMINI_API_KEY)
 
-    provider = provider or dynamic_settings.get("llm_provider") or settings.LLM_PROVIDER
+    provider = provider or dynamic_settings.get("llm_provider") or getattr(settings, "DEFAULT_LLM_PROVIDER", "groq")
     if provider:
         provider = provider.strip().lower()
     # 'mock' is always valid; unknown providers fall back to litellm

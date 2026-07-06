@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from uuid import UUID, uuid4
 from typing import Any
 
-from sqlalchemy import Column, DateTime, Float, Integer, MetaData, String, Table, create_engine, select, insert, desc, func
+from sqlalchemy import Column, DateTime, Float, Integer, MetaData, String, Table, create_engine, select, insert, desc, func, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -38,7 +38,21 @@ def _get_history_engine() -> Engine:
     db_url = settings.query_history_db_url.strip()
     _HISTORY_ENGINE = create_engine(db_url, pool_pre_ping=True)
     _METADATA.create_all(_HISTORY_ENGINE, tables=[_QUERY_HISTORY])
+    _migrate_history_schema(_HISTORY_ENGINE)
     return _HISTORY_ENGINE
+
+def _migrate_history_schema(engine: Engine) -> None:
+    with engine.connect() as conn:
+        try:
+            conn.execute(text("ALTER TABLE query_history ADD COLUMN has_visualization INTEGER DEFAULT 0"))
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE query_history ADD COLUMN chart_type VARCHAR(64)"))
+        except Exception:
+            pass
+        conn.commit()
+
 
 def _get_session_factory() -> sessionmaker:
     global _SESSION_FACTORY
@@ -110,6 +124,7 @@ class HistoryService:
                 "total_queries": total_queries,
                 "avg_latency": round(float(avg_latency), 2),
                 "success_rate": round(float(success_rate), 2),
+                "success_count": success_count,
                 "total_visualizations": viz_count,
                 "visualization_rate": round(float(viz_rate), 2),
             }

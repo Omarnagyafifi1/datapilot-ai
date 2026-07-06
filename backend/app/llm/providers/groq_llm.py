@@ -19,7 +19,7 @@ class GroqLLM(BaseLLM):
             base_url="https://api.groq.com/openai/v1",
             timeout=30.0,
         )
-        self.model = model or settings.GROQ_MODEL or "llama-3.3-70b-versatile"
+        self.model = model or "llama-3.3-70b-versatile"
 
     def generate(self, prompt: str, system_message: Optional[str] = None, max_tokens: Optional[int] = None) -> str:
         messages = []

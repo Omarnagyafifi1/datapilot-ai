@@ -101,6 +101,9 @@ export default function ChatInterface({
     name: '', db_type: 'sqlite', host: '', port: 5432, db_name: '', username: '', password: ''
   });
 
+  // Dynamic suggestion chips
+  const [suggestionChips, setSuggestionChips] = useState([]);
+
   // LLM settings state - loaded from backend
   const [llmSettings, setLlmSettings] = useState({
     provider: 'groq',
@@ -118,7 +121,7 @@ export default function ChatInterface({
         if (resp.data?.success && resp.data?.data) {
           const settings = resp.data.data;
           setLlmSettings({
-            provider: settings.provider || 'groq',
+            provider: settings.llm_provider || settings.provider || 'groq',
             model: settings.model || 'llama-3.3-70b-versatile',
             temperature: settings.temperature ?? 0.2,
             maxTokens: settings.max_tokens ?? 2048
@@ -191,18 +194,30 @@ export default function ChatInterface({
     fetchSchema();
   }, [initialSelectedSourceId]);
 
+  // Fetch dynamic suggestion chips when source changes
+  useEffect(() => {
+    if (!initialSelectedSourceId) {
+      setSuggestionChips([]);
+      return;
+    }
+    api.schema.suggestions(initialSelectedSourceId)
+      .then(resp => {
+        if (resp.data?.success && resp.data?.data?.length > 0) {
+          setSuggestionChips(resp.data.data.slice(0, 3));
+        } else {
+          setSuggestionChips([]);
+        }
+      })
+      .catch(() => setSuggestionChips([]));
+  }, [initialSelectedSourceId]);
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, loading, loadingStage]);
 
-  // Sync preferences - update provider in llmSettings
-  const handleProviderChange = (e) => {
-    const val = e.target.value;
-    setLlmSettings(prev => ({ ...prev, provider: val }));
-    localStorage.setItem('dp_provider', val);
-  };
+
 
 
   // Create new conversation session
@@ -311,8 +326,11 @@ export default function ChatInterface({
       const botMessage = {
         id: (Date.now() + 1).toString(),
         type: 'bot',
-        content: payload.answer || payload.message || (payload.requires_approval ? 'Approval required before execution.' : 'Completed execution of generated query.'),
+        content: payload.answer || payload.message || (payload.requires_approval ? 'This query will modify data. Approve or deny below.' : 'Completed execution of generated query.'),
         doc: derivedDoc,
+        requiresApproval: !!payload.requires_approval,
+        approvalRequest: payload.approval_request || null,
+        approvalThreadId: payload.requires_approval ? (payload.thread_id || chatSessionId) : null,
         timestamp: new Date().toISOString()
       };
 
@@ -356,6 +374,60 @@ export default function ChatInterface({
       setLoading(false);
       setLoadingStage('');
       setAbortController(null);
+    }
+  };
+
+  const handleApprove = async (msgId, threadId) => {
+    try {
+      const resp = await api.queryApproval(threadId, true);
+      const payload = resp.data?.data ?? resp.data ?? {};
+      const updatedDoc = {
+        ...payload.documentation,
+        sql: payload.sql || null,
+        results: payload.results || [],
+        results_count: payload.results_count ?? (payload.results || []).length,
+        visualization: payload.visualization || payload.documentation?.visualization || null,
+        insights: payload.insights || [],
+        suggestions: payload.suggestions || [],
+        question: payload.question || '',
+        executed_at: payload.executed_at || new Date().toISOString(),
+        status: payload.status || 'completed',
+      };
+      setMessages(prev => prev.map(m => m.id === msgId ? {
+        ...m,
+        content: payload.answer || payload.message || 'Query approved and executed.',
+        doc: updatedDoc,
+        requiresApproval: false,
+        approvalRequest: null,
+        approvalThreadId: null,
+      } : m));
+    } catch (err) {
+      setMessages(prev => prev.map(m => m.id === msgId ? {
+        ...m,
+        content: 'Approval failed: ' + (err.message || 'Unknown error'),
+        requiresApproval: false,
+        approvalRequest: null,
+        approvalThreadId: null,
+      } : m));
+    }
+  };
+
+  const handleDeny = async (msgId, threadId) => {
+    try {
+      await api.queryApproval(threadId, false);
+      setMessages(prev => prev.map(m => m.id === msgId ? {
+        ...m,
+        content: 'Operation cancelled by user.',
+        requiresApproval: false,
+        approvalRequest: null,
+        approvalThreadId: null,
+        doc: { ...m.doc, insights: [], suggestions: [] },
+      } : m));
+    } catch (err) {
+      setMessages(prev => prev.map(m => m.id === msgId ? {
+        ...m,
+        content: 'Failed to cancel: ' + (err.message || 'Unknown error'),
+      } : m));
     }
   };
 
@@ -539,22 +611,7 @@ export default function ChatInterface({
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="text-[9px] font-mono text-muted uppercase">ENGINE:</span>
-            <select
-              value={llmSettings.provider}
-              onChange={handleProviderChange}
-              className="bg-foreground/5 border border-border rounded-lg px-2.5 py-1 text-[10px] font-mono outline-none text-foreground cursor-pointer"
-            >
-              <option value="groq">Groq</option>
-              <option value="openai">OpenAI</option>
-              <option value="anthropic">Anthropic</option>
-              <option value="gemini">Gemini</option>
-              <option value="deepseek">DeepSeek</option>
-              <option value="openrouter">OpenRouter</option>
-              <option value="ollama">Ollama</option>
-            </select>
-          </div>
+
         </div>
 
         {/* Chat message containers */}
@@ -604,8 +661,36 @@ export default function ChatInterface({
                   )}>
                     {renderMarkdown(msg.content)}
 
+                    {/* Approval UI for write queries */}
+                    {isBot && msg.requiresApproval && msg.approvalRequest && (
+                      <div className="mt-6 space-y-4">
+                        <div className="glass p-4 rounded-xl border border-amber-500/30 bg-amber-500/5">
+                          <div className="flex items-center gap-2 text-[11px] font-bold text-amber-400 uppercase tracking-widest mb-2">
+                            <Zap size={14} /> Pending Approval
+                          </div>
+                          <div className="font-mono text-xs text-foreground/80 bg-black/30 p-3 rounded-lg mb-4 overflow-x-auto whitespace-pre">
+                            {msg.approvalRequest.sql || msg.doc?.sql || 'No SQL available'}
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => handleApprove(msg.id, msg.approvalThreadId)}
+                              className="inline-flex items-center gap-2 px-5 py-2 text-xs font-bold font-mono bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 rounded-lg hover:bg-emerald-500/30 transition-colors"
+                            >
+                              <Check size={14} /> Approve & Execute
+                            </button>
+                            <button
+                              onClick={() => handleDeny(msg.id, msg.approvalThreadId)}
+                              className="inline-flex items-center gap-2 px-5 py-2 text-xs font-bold font-mono bg-red-500/20 border border-red-500/50 text-red-300 rounded-lg hover:bg-red-500/30 transition-colors"
+                            >
+                              <Trash2 size={14} /> Deny
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Integrated Query Results - Expandable block */}
-                    {isBot && msg.doc && (
+                    {isBot && msg.doc && !msg.requiresApproval && (
                       <div className="mt-8 border-t border-white/5 pt-8">
                         <div className="flex items-center gap-2 text-[10px] font-mono text-muted uppercase tracking-[0.2em] mb-6">
                           <ChevronDown size={14} /> Expand SQL Synthesis
@@ -727,9 +812,12 @@ export default function ChatInterface({
             
             {/* Quick Suggestions Chips */}
             <div className="flex items-center justify-center gap-4 mt-4 overflow-x-auto no-scrollbar py-1">
-              <SuggestChip label="Show top 5 active customer counts" onClick={() => setInput("Show top 5 active customer counts")} />
-              <SuggestChip label="Aggregate monthly revenue logs" onClick={() => setInput("Aggregate monthly revenue logs")} />
-              <SuggestChip label="Export db schema report" onClick={() => setInput("Export db schema report")} />
+              {(suggestionChips.length > 0 ? suggestionChips : []).map((chip, i) => {
+                const label = chip.en || chip.ar || chip;
+                return (
+                  <SuggestChip key={i} label={label} onClick={() => setInput(label)} />
+                );
+              })}
             </div>
           </form>
         </div>

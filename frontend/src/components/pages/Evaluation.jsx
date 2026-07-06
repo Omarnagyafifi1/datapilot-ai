@@ -51,24 +51,23 @@ export function Evaluation() {
   const totalSources = stats?.total_sources ?? 0;
   const avgLatency = stats?.avg_latency ?? 0;
   const successRate = stats?.success_rate ?? 0;
-
-  const recentSuccessful = history.filter((item) => item.status === 'SUCCESS').length;
-  const recentFailures = history.filter((item) => item.status !== 'SUCCESS').length;
+  const successCount = stats?.success_count ?? Math.round((successRate / 100) * totalQueries);
+  const failureCount = totalQueries - successCount;
 
   const benchmarkRows = [
     {
       name: 'Query Success',
       syntax: `${successRate.toFixed(1)}%`,
       performance: `${totalQueries} total`,
-      rate: `${recentSuccessful} successful`,
-      rating: Math.min(5, Math.max(0, successRate / 20)),
+      rate: `${successCount} successful`,
+      rating: Math.round(Math.min(5, Math.max(0, successRate / 20)) * 100) / 100,
     },
     {
       name: 'Latency Health',
       syntax: `${avgLatency.toFixed(2)}s`,
       performance: totalQueries > 0 ? 'Live backend metric' : 'No queries yet',
-      rate: `${recentFailures} recent failures`,
-      rating: avgLatency <= 1 ? 4.9 : avgLatency <= 2 ? 4.4 : 3.8,
+      rate: `${failureCount} failures`,
+      rating: Math.round((avgLatency <= 1 ? 4.9 : avgLatency <= 2 ? 4.4 : 3.8) * 100) / 100,
     },
     {
       name: 'Source Coverage',

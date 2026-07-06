@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from datetime import datetime
 from typing import Optional
 from urllib.parse import quote_plus
@@ -9,7 +10,7 @@ import json
 
 from cryptography.fernet import Fernet
 from fastapi import HTTPException
-from sqlalchemy import Column, DateTime, Integer, MetaData, String, Table, create_engine, delete, insert, select, Text
+from sqlalchemy import Column, DateTime, Integer, MetaData, String, Table, create_engine, delete, insert, select, update, Text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -70,6 +71,33 @@ def _get_fernet() -> Fernet:
         raise HTTPException(status_code=500, detail="Encryption key is invalid") from exc
 
 
+def _migrate_sqlite_paths() -> None:
+    """Migrate any SQLite source with a relative db_name to an absolute path."""
+    try:
+        session_local = _get_session_factory()
+        session: Session = session_local()
+        rows = session.execute(
+            select(_DATA_SOURCES).where(_DATA_SOURCES.c.db_type == "sqlite")
+        ).mappings().all()
+        changed = False
+        for row in rows:
+            db_name = row["db_name"]
+            if db_name and not os.path.isabs(db_name):
+                abs_path = os.path.abspath(db_name)
+                session.execute(
+                    update(_DATA_SOURCES)
+                    .where(_DATA_SOURCES.c.id == row["id"])
+                    .values(db_name=abs_path)
+                )
+                logger.info("Migrated SQLite path: %s -> %s", db_name, abs_path)
+                changed = True
+        if changed:
+            session.commit()
+        session.close()
+    except Exception as exc:
+        logger.warning("Failed to migrate SQLite paths: %s", exc)
+
+
 def _get_store_engine() -> Engine:
     global _REGISTRY_ENGINE
 
@@ -87,6 +115,7 @@ def _get_store_engine() -> Engine:
         connect_args=connect_args,
     )
     _METADATA.create_all(_REGISTRY_ENGINE, tables=[_DATA_SOURCES, _DATASET_METADATA])
+    _migrate_sqlite_paths()
     return _REGISTRY_ENGINE
 
 
@@ -132,14 +161,18 @@ def save_source(params: dict) -> dict:
 
     encrypted_password = _get_fernet().encrypt(str(params.get("password", "")).encode("utf-8")).decode("utf-8")
 
+    db_name = str(params.get("db_name") or params.get("database") or params.get("path") or "")
+    if db_type_lower == "sqlite" and db_name:
+        db_name = os.path.abspath(db_name)
+
     source_uuid = str(uuid4())
     payload = {
         "id": source_uuid,
         "name": str(params.get("name", "")).strip() or source_uuid,
-        "db_type": str(params.get("db_type", "")).lower().strip(),
+        "db_type": db_type_lower,
         "host": str(params.get("host", "")),
         "port": int(params["port"]) if params.get("port") is not None else None,
-        "db_name": str(params.get("db_name") or params.get("database") or params.get("path") or ""),
+        "db_name": db_name,
         "username": str(params.get("username") or params.get("user") or ""),
         "enc_password": encrypted_password,
         "created_at": datetime.utcnow(),

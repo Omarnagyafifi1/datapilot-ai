@@ -110,18 +110,7 @@ def query_endpoint(
         data_source_service.get_conn_string(payload.source_id)
         thread_id = payload.thread_id or str(uuid4())
         
-        # Build LLM config override from payload or use saved settings
-        llm_config = {
-            "provider": payload.provider,
-            "model": payload.model,
-            "temperature": payload.temperature,
-            "max_tokens": payload.max_tokens,
-        }
-        
-        # Only pass non-None values to get_graph_orchestrator
-        graph_kwargs = {k: v for k, v in llm_config.items() if v is not None}
-        
-        result = get_graph_orchestrator(**graph_kwargs).run(
+        result = get_graph_orchestrator().run(
             payload.question,
             payload.source_id,
             thread_id=thread_id,
@@ -286,6 +275,22 @@ def get_datasource_schema(
 _SUGGESTIONS_CACHE: dict[str, list[dict[str, str]]] = {}
 
 
+def _fetch_sample_rows(source_id: str, tables: list[dict], max_tables: int = 3) -> str:
+    """Fetch first 3 rows from each table for LLM context."""
+    lines = []
+    for t in tables[:max_tables]:
+        name = t["name"]
+        try:
+            sample = db_service.execute_query(f"SELECT * FROM \"{name}\" LIMIT 3", source_id)
+            if sample:
+                lines.append(f"Table: {name}")
+                for row in sample[:3]:
+                    lines.append(f"  {row}")
+        except Exception:
+            pass
+    return "\n".join(lines)
+
+
 def _generate_and_cache_suggestions(source_id: str, graph) -> None:
     """Generate LLM-powered suggestions and cache them. Safe to call from background threads."""
     if source_id in _SUGGESTIONS_CACHE:
@@ -302,13 +307,16 @@ def _generate_and_cache_suggestions(source_id: str, graph) -> None:
             schema_lines.append(f"- {t['name']}({cols})")
         schema_summary = "\n".join(schema_lines) if schema_lines else "No tables found."
 
+        # Build sample data context
+        sample_data = _fetch_sample_rows(source_id, tables)
+
         from app.agents.prompts import INITIAL_SUGGESTION_PROMPT
         from app.agents.graph import _parse_suggestions
 
         prompt = (
             f"{INITIAL_SUGGESTION_PROMPT}\n\n"
             f"### Database Schema\n{schema_summary}"
-        )
+        ).replace("{sample_data}", sample_data if sample_data else "No sample data available.")
         raw_response = graph.llm.generate(prompt)
         parsed = _parse_suggestions(raw_response)
         if parsed:
@@ -352,6 +360,17 @@ def get_system_stats(
     stats = history_service.get_stats()
     stats["total_sources"] = len(sources)
     return _resp(success=True, message="System stats fetched", data=stats)
+
+
+@router.get("/system/metrics")
+def get_system_metrics(
+    data_source_service: DataSourceService = Depends(get_data_source_service),
+    history_service: HistoryService = Depends(get_history_service),
+) -> dict[str, Any]:
+    sources = data_source_service.list_sources()
+    metrics = history_service.get_metrics()
+    metrics["total_sources"] = len(sources)
+    return _resp(success=True, message="System metrics fetched", data=metrics)
 
 
 @router.get("/system/feed")
@@ -493,14 +512,36 @@ def generate_report(payload: dict) -> dict[str, Any]:
 @router.post("/evaluate", response_model=EvalResponse)
 def evaluate_query_endpoint(
     payload: EvalRequest,
+    data_source_service: DataSourceService = Depends(get_data_source_service),
 ) -> dict[str, Any]:
     """Evaluate a Text-to-SQL query for syntax, correctness, and schema relevance."""
+    from app.llm.factory import get_llm
     from app.services.evaluation_service import evaluate_sql
+    from app.services.db_service import DBService
     try:
+        llm = None
+        results = None
+        dialect = "sqlite"
+        try:
+            llm = get_llm()
+        except Exception:
+            logger.warning("LLM not available for evaluation — using syntax-only defaults")
+
+        if payload.source_id:
+            try:
+                data_source_service.get_conn_string(payload.source_id)
+                db = DBService()
+                dialect = db.get_dialect(payload.source_id)
+                results = db.execute_query(payload.sql, payload.source_id)
+            except Exception as exc:
+                logger.warning("Could not execute SQL for evaluation: %s", exc)
+
         scores = evaluate_sql(
             question=payload.question,
             sql=payload.sql,
-            results=None,
+            results=results,
+            dialect=dialect,
+            llm=llm,
             source_id=payload.source_id,
             thread_id=payload.thread_id,
         )
@@ -523,6 +564,12 @@ def update_settings_endpoint(payload: SettingsRequest) -> dict[str, Any]:
     updates = {}
     if payload.llm_provider is not None:
         updates["llm_provider"] = payload.llm_provider
+    if payload.model is not None:
+        updates["model"] = payload.model
+    if payload.temperature is not None:
+        updates["temperature"] = payload.temperature
+    if payload.max_tokens is not None:
+        updates["max_tokens"] = payload.max_tokens
     if payload.api_keys is not None:
         updates["api_keys"] = {k: v for k, v in payload.api_keys.items() if v}
     if payload.visualization is not None:
