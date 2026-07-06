@@ -245,4 +245,5 @@ class SQLiteProvider(ImportProvider):
             table_names=table_names,
             total_rows=sum(t.row_count for t in preview.tables if t.original_name in table_names),
             message=f"SQLite database '{dataset_name}' imported with {len(table_names)} tables.",
+            stored_path=stored_path,
         )

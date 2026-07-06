@@ -1,7 +1,7 @@
 import time
 from typing import Any, Optional
 from uuid import uuid4
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query, Body
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query, Body, Form
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from app.api.deps import get_data_source_service, get_graph_orchestrator, get_history_service
@@ -57,6 +57,21 @@ from datetime import datetime as _datetime
 def _default_serializer(obj):
     if isinstance(obj, _datetime):
         return obj.isoformat()
+    
+    # Handle numpy data types
+    try:
+        import numpy as np
+        if isinstance(obj, (np.bool_, bool)):
+            return bool(obj)
+        if isinstance(obj, (np.integer, np.int64, np.int32, np.int16, np.int8)):
+            return int(obj)
+        if isinstance(obj, (np.floating, np.float64, np.float32)):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+    except ImportError:
+        pass
+
     raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 
@@ -446,6 +461,69 @@ async def upload_csv(file: UploadFile = File(...)) -> dict[str, Any]:
     except Exception as e:
         logger.exception("CSV ingest failed")
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post('/upload/preview')
+async def upload_preview(file: UploadFile = File(...)) -> dict[str, Any]:
+    """Generate preview of SQLite or CSV file upload."""
+    provider = _get_provider(file)
+    if not provider:
+        raise HTTPException(status_code=400, detail=f"Unsupported file format: {file.filename}")
+    
+    try:
+        is_valid, err_msg = await provider.validate(file)
+        if not is_valid:
+            raise HTTPException(status_code=400, detail=err_msg or "Validation failed")
+            
+        await file.seek(0)
+        preview_data = await provider.preview(file)
+        
+        from dataclasses import asdict
+        return _resp(success=True, message="Preview generated", data=asdict(preview_data))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Failed to generate preview")
+        raise HTTPException(status_code=500, detail=f"Failed to generate preview: {str(e)}")
+
+
+@router.post('/upload/import')
+async def upload_import(
+    file: UploadFile = File(...),
+    dataset_name: Optional[str] = Form(None),
+    selected_tables: Optional[str] = Form(None),
+    renamed_columns: Optional[str] = Form(None),
+    modified_types: Optional[str] = Form(None),
+) -> dict[str, Any]:
+    """Import the CSV or SQLite file as a data source."""
+    provider = _get_provider(file)
+    if not provider:
+        raise HTTPException(status_code=400, detail=f"Unsupported file format: {file.filename}")
+        
+    try:
+        import json
+        selected_tables_list = json.loads(selected_tables) if selected_tables else None
+        renamed_columns_dict = json.loads(renamed_columns) if renamed_columns else None
+        modified_types_dict = json.loads(modified_types) if modified_types else None
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid JSON in form parameters: {str(e)}")
+
+    options = ImportOptions(
+        selected_tables=selected_tables_list,
+        renamed_columns=renamed_columns_dict,
+        modified_types=modified_types_dict,
+        dataset_name=dataset_name,
+    )
+
+    try:
+        await file.seek(0)
+        result = await provider.import_data(file, options)
+        
+        from dataclasses import asdict
+        return _resp(success=True, message=result.message, data=asdict(result))
+    except Exception as e:
+        logger.exception("Failed to import data")
+        raise HTTPException(status_code=500, detail=f"Failed to import data: {str(e)}")
 
 
 @router.post('/explain')

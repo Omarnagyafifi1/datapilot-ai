@@ -144,7 +144,7 @@ def _build_conn_string_from_source(source: dict, password: str) -> str:
     if db_type == "mysql":
         return f"mysql+pymysql://{username}:{encoded_password}@{host}:{port}/{db_name}"
     if db_type == "mssql":
-        return f"mssql+pymssql://{username}:{encoded_password}@{host}:{port or '1433'}/{db_name}"
+        return f"mssql+pymssql://{username}:{encoded_password}@{host}:{port or '1433'}/{db_name}?charset=utf8"
     if db_type == "oracle":
         return f"oracle+oracledb://{username}:{encoded_password}@{host}:{port or '1521'}/?service_name={db_name}"
 

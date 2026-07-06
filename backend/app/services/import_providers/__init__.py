@@ -81,6 +81,7 @@ class ImportResult:
     table_names: List[str]
     total_rows: int
     message: str
+    stored_path: Optional[str] = None
 
 
 class ImportProvider(ABC):

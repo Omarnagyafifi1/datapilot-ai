@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     
     # Default model (used when no model is specified in runtime settings)
     DEFAULT_LLM_MODEL: str = "llama-3.3-70b-versatile"
+    LLM_PROVIDER: str = "groq"
 
     # LangSmith Tracing & Evaluation
     LANGCHAIN_TRACING_V2: bool = os.getenv("LANGCHAIN_TRACING_V2", "false").lower() == "true"

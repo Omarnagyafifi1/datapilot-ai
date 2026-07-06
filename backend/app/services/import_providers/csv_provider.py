@@ -177,6 +177,24 @@ class CSVProvider(ImportProvider):
     
     async def import_data(self, file: UploadFile, options: ImportOptions) -> ImportResult:
         """Import CSV data into the system."""
+        import os
+        UPLOAD_DIR = os.getenv("UPLOAD_DIR", "./uploads")
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
+        
+        # Save original file to uploads folder
+        await file.seek(0)
+        content = await file.read()
+        file_hash = self._calculate_file_hash(content)
+        safe_name = "".join(c for c in file.filename or "uploaded.csv" if c.isalnum() or c in "._-")
+        stored_filename = f"{file_hash[:8]}_{safe_name}"
+        stored_path = os.path.join(UPLOAD_DIR, stored_filename)
+        
+        with open(stored_path, "wb") as f:
+            f.write(content)
+            
+        # Reset file seek position for CSVService ingestion
+        await file.seek(0)
+        
         # Use existing CSV service to process
         metadata = await CSVService.process_csv(file, engine)
         
@@ -200,6 +218,7 @@ class CSVProvider(ImportProvider):
             table_names=[table_name],
             total_rows=metadata.get("row_count", len(metadata.get("sample_data", []))),
             message=f"CSV '{dataset_name}' imported successfully with {len(metadata['columns'])} columns.",
+            stored_path=stored_path,
         )
     
     async def _register_datasource(self, name: str, table_name: str) -> str:
