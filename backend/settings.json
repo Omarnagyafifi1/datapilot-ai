@@ -1,8 +1,11 @@
 {
-  "llm_provider": "litellm",
+  "llm_provider": "groq",
+  "model": "llama-3.3-70b-versatile",
+  "temperature": 0.2,
+  "max_tokens": 2048,
   "api_keys": {
-    "groq": "",
-    "openrouter": "••••••••",
+    "groq": "test_key",
+    "openrouter": "",
     "gemini": "",
     "openai": ""
   },

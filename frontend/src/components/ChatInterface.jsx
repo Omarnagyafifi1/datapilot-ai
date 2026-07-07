@@ -956,25 +956,43 @@ export default function ChatInterface({
 
                     <select
                       value={dbFormData.db_type}
-                      onChange={e => setDbFormData({...dbFormData, db_type: e.target.value})}
+                      onChange={e => {
+                        const type = e.target.value;
+                        let defaultPort = 5432;
+                        if (type === 'mysql') defaultPort = 3306;
+                        if (type === 'mssql') defaultPort = 1433;
+                        if (type === 'oracle') defaultPort = 1521;
+                        setDbFormData({...dbFormData, db_type: type, port: defaultPort});
+                      }}
                       className="w-full bg-card border border-border rounded-lg px-3 py-2 text-xs font-mono text-foreground focus:outline-none"
                     >
                       <option value="sqlite" className="bg-card text-foreground">SQLite File</option>
                       <option value="postgresql" className="bg-card text-foreground">PostgreSQL</option>
                       <option value="mysql" className="bg-card text-foreground">MySQL</option>
                       <option value="mssql" className="bg-card text-foreground">SQL Server</option>
+                      <option value="oracle" className="bg-card text-foreground">Oracle</option>
                     </select>
 
                     {dbFormData.db_type !== 'sqlite' && (
                       <>
-                        <input
-                          type="text"
-                          placeholder="Host"
-                          value={dbFormData.host}
-                          onChange={e => setDbFormData({...dbFormData, host: e.target.value})}
-                          required
-                          className="w-full bg-foreground/5 border border-border rounded-lg px-3 py-2 text-xs font-mono text-foreground focus:outline-none"
-                        />
+                        <div className="grid grid-cols-3 gap-2">
+                          <input
+                            type="text"
+                            placeholder="Host"
+                            value={dbFormData.host}
+                            onChange={e => setDbFormData({...dbFormData, host: e.target.value})}
+                            required
+                            className="col-span-2 w-full bg-foreground/5 border border-border rounded-lg px-3 py-2 text-xs font-mono text-foreground focus:outline-none"
+                          />
+                          <input
+                            type="number"
+                            placeholder="Port"
+                            value={dbFormData.port}
+                            onChange={e => setDbFormData({...dbFormData, port: Number(e.target.value) || 0})}
+                            required
+                            className="col-span-1 w-full bg-foreground/5 border border-border rounded-lg px-3 py-2 text-xs font-mono text-foreground focus:outline-none"
+                          />
+                        </div>
                         <div className="grid grid-cols-2 gap-2">
                           <input
                             type="text"

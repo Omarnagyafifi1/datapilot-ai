@@ -830,3 +830,174 @@ Always create the necessary tables with the required columns before attempting t
 }
 ```
 
+## 2026-07-06T20:05:51.640758+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-06T20:05:51.640758+00:00",
+  "status": "resolved",
+  "question": "Show all employees and their salaries sorted by salary descending",
+  "sql": "SELECT name, salary FROM employees LIMIT 1000;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-06T20:06:15.391899+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-06T20:06:15.391899+00:00",
+  "status": "resolved",
+  "question": "What is the total salary budget per department?",
+  "sql": "SELECT department, SUM(salary) AS total_salary \nFROM employees \nGROUP BY department \nLIMIT 1000",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-06T20:06:21.793273+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-06T20:06:21.793273+00:00",
+  "status": "resolved",
+  "question": "Who are the top 3 highest paid employees?",
+  "sql": "SELECT name, salary \nFROM employees \nORDER BY salary DESC \nLIMIT 3",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-06T20:06:46.759496+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-06T20:06:46.759496+00:00",
+  "status": "resolved",
+  "question": "Show total sales revenue by category",
+  "sql": "SELECT category, SUM(total_amount) AS total_sales \nFROM sales \nGROUP BY category \nLIMIT 1000",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-06T20:07:30.124946+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-06T20:07:30.124946+00:00",
+  "status": "resolved",
+  "question": "أظهر جميع الموظفين ورواتبهم",
+  "sql": "SELECT name, salary FROM employees LIMIT 1000;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-06T20:07:36.360479+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-06T20:07:36.360479+00:00",
+  "status": "resolved",
+  "question": "ما هو إجمالي ميزانية الرواتب لكل قسم؟",
+  "sql": "SELECT department, SUM(salary) AS total_salary \nFROM employees \nGROUP BY department \nLIMIT 1000",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-06T20:08:02.860574+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-06T20:08:02.860574+00:00",
+  "status": "resolved",
+  "question": "من هم أعلى 3 موظفين في الراتب؟",
+  "sql": "SELECT name, salary \nFROM employees \nORDER BY salary DESC \nLIMIT 3",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-06T20:08:25.181057+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-06T20:08:25.181057+00:00",
+  "status": "resolved",
+  "question": "أظهر إجمالي المبيعات حسب الفئة",
+  "sql": "SELECT category, SUM(total_amount) AS total_sales \nFROM sales \nGROUP BY category \nLIMIT 1000",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-06T20:12:53.364500+00:00 - failed
+
+### What Went Wrong
+The root cause of the failure is that the SQL query attempted to access a table named "employees" which does not exist in the database schema. The error message clearly indicates that there is no such table, resulting in a sqlite3.OperationalError. This mistake could have been avoided by first checking the database schema to ensure the table exists.
+
+### Correct Approach
+To answer the user's question, we first need to identify the correct table that contains the category column. However, since the database schema provided is empty, we must assume that there is a table that contains the necessary information. Let's assume this table is named "categories" and it has a column named "category". If we also want to show the average salary by department, we would need another table, let's call it "salaries", with columns "department" and "salary". We would then use a JOIN to combine these tables based on a common column, and apply the DISTINCT and AVG aggregate functions as needed.
+
+### Correct SQL
+```sql
+SELECT DISTINCT category, AVG(salary) AS average_salary 
+FROM categories 
+JOIN salaries ON categories.department = salaries.department 
+GROUP BY category;
+```
+
+### Key Lesson
+Always verify the existence of tables and columns in the database schema before attempting to query them.
+
+```json
+{
+  "created_at": "2026-07-06T20:12:53.364500+00:00",
+  "status": "failed",
+  "question": "What are the unique values in the category column?Show average salary by department",
+  "sql": "SELECT DISTINCT category FROM employees",
+  "error": "Failed to execute query: (sqlite3.OperationalError) no such table: employees\n[SQL: SELECT DISTINCT category FROM employees]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)",
+  "validation_reason": null,
+  "lesson": "### What Went Wrong\nThe root cause of the failure is that the SQL query attempted to access a table named \"employees\" which does not exist in the database schema. The error message clearly indicates that there is no such table, resulting in a sqlite3.OperationalError. This mistake could have been avoided by first checking the database schema to ensure the table exists.\n\n### Correct Approach\nTo answer the user's question, we first need to identify the correct table that contains the category column. However, since the database schema provided is empty, we must assume that there is a table that contains the necessary information. Let's assume this table is named \"categories\" and it has a column named \"category\". If we also want to show the average salary by department, we would need another table, let's call it \"salaries\", with columns \"department\" and \"salary\". We would then use a JOIN to combine these tables based on a common column, and apply the DISTINCT and AVG aggregate functions as needed.\n\n### Correct SQL\n```sql\nSELECT DISTINCT category, AVG(salary) AS average_salary \nFROM categories \nJOIN salaries ON categories.department = salaries.department \nGROUP BY category;\n```\n\n### Key Lesson\nAlways verify the existence of tables and columns in the database schema before attempting to query them."
+}
+```
+
+## 2026-07-06T20:20:34.734232+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-06T20:20:34.734232+00:00",
+  "status": "resolved",
+  "question": "Show all employees and their salaries",
+  "sql": "SELECT name, salary FROM employees LIMIT 1000;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-06T20:23:20.955885+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-06T20:23:20.955885+00:00",
+  "status": "resolved",
+  "question": "Show all employees and their salaries",
+  "sql": "SELECT name, salary FROM employees LIMIT 1000;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
