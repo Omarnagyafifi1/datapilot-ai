@@ -1,0 +1,13 @@
+backend/.venv/
+backend/.pytest_cache/
+backend/__pycache__/
+backend/*.db
+backend/uploads/
+backend/employees_data_*
+backend/test_data_*
+backend/app.db
+frontend/node_modules/
+frontend/dist/
+.git/
+.gitignore
+.env

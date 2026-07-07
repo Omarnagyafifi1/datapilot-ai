@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  datapilot-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: datapilot-ai-app
+    ports:
+      - "8000:8000"
+    environment:
+      - LLM_PROVIDER=groq
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-}
+      - DATABASE_URL=sqlite+aiosqlite:///./dev.db
+      - DATA_SOURCES_DB_URL=sqlite:///./data_sources.db
+      - QUERY_HISTORY_DB_URL=sqlite:///./query_history.db
+    volumes:
+      # Persistent storage volume for SQLite metadata and databases
+      - datapilot-data:/app/backend/data
+    restart: always
+
+volumes:
+  datapilot-data:
