@@ -13,31 +13,21 @@ logger = get_logger(__name__)
 
 _ENGINE_CACHE: dict[str, Engine] = {}
 _SOURCE_CONN_STRINGS: dict[str, str] = {}
+_SCHEMA_CACHE: dict[str, dict] = {}
+
 _MONTH_NAME_TO_NUMBER = {
-    "january": "01",
-    "jan": "01",
-    "february": "02",
-    "feb": "02",
-    "march": "03",
-    "mar": "03",
-    "april": "04",
-    "apr": "04",
+    "january": "01", "jan": "01",
+    "february": "02", "feb": "02",
+    "march": "03", "mar": "03",
+    "april": "04", "apr": "04",
     "may": "05",
-    "june": "06",
-    "jun": "06",
-    "july": "07",
-    "jul": "07",
-    "august": "08",
-    "aug": "08",
-    "september": "09",
-    "sep": "09",
-    "sept": "09",
-    "october": "10",
-    "oct": "10",
-    "november": "11",
-    "nov": "11",
-    "december": "12",
-    "dec": "12",
+    "june": "06", "jun": "06",
+    "july": "07", "jul": "07",
+    "august": "08", "aug": "08",
+    "september": "09", "sep": "09", "sept": "09",
+    "october": "10", "oct": "10",
+    "november": "11", "nov": "11",
+    "december": "12", "dec": "12",
 }
 
 
@@ -89,7 +79,7 @@ def _rewrite_month_name_like_filters(sql: str) -> str:
         return f"SUBSTR({column_expr}, 4, 2) = '{month_number}'"
 
     pattern = re.compile(
-        r"(?P<column>\"[^\"]+\"|`[^`]+`|\[[^\]]+\]|\w+)\s+LIKE\s+'%(?P<month>[A-Za-z]+)%'",
+        r'(?P<column>"[^"]+"|`[^`]+`|\[[^\]]+\]|\w+)\s+LIKE\s+\'%(?P<month>[A-Za-z]+)%\',',
         re.IGNORECASE,
     )
     return pattern.sub(replace, sql)
@@ -107,9 +97,8 @@ def _rewrite_month_extraction_filters(sql: str) -> str:
         return f"SUBSTR({column_expr}, 4, 2) = '{month_number}'"
 
     extract_pattern = re.compile(
-        r"EXTRACT\s*\(\s*MONTH\s+FROM\s+"
-        r"(?:TO_DATE\s*\(\s*(?P<extract_to_date_col>\"[^\"]+\"|`[^`]+`|\[[^\]]+\]|\w+)\s*,\s*'[^']*'\s*\)"
-        r"|(?P<extract_col>\"[^\"]+\"|`[^`]+`|\[[^\]]+\]|\w+))\s*\)\s*=\s*'?(?P<extract_month>\d{1,2})'?",
+        r'EXTRACT\s*\(\s*MONTH\s+FROM\s+'
+        r'(?:TO_DATE\s*\(\s*(?P<extract_to_date_col>"[^"]+"|`[^`]+`|\[[^\]]+\]|\w+)\s*,\s*\'[^\']*\'\s*\)\s*|\s*(?P<extract_col>"[^"]+"|`[^`]+`|\[[^\]]+\]|\w+))\s*\)\s*=\s*\'?(?P<extract_month>\d{1,2})\'?',
         re.IGNORECASE,
     )
 
@@ -121,7 +110,7 @@ def _rewrite_month_extraction_filters(sql: str) -> str:
     rewritten = extract_pattern.sub(replace_extract, sql)
 
     strftime_pattern = re.compile(
-        r"STRFTIME\s*\(\s*'%m'\s*,\s*(?P<strftime_col>\"[^\"]+\"|`[^`]+`|\[[^\]]+\]|\w+)\s*\)\s*=\s*'?(?P<strftime_month>\d{1,2})'?",
+        r'STRFTIME\s*\(\s*\'%m\'\s*,\s*(?P<strftime_col>"[^"]+"|`[^`]+`|\[[^\]]+\]|\w+)\s*\)\s*=\s*\'?(?P<strftime_month>\d{1,2})\'?',
         re.IGNORECASE,
     )
 
@@ -136,17 +125,23 @@ def _rewrite_month_extraction_filters(sql: str) -> str:
 def _normalize_conn_string_for_sync(conn_string: str) -> str:
     lowered = conn_string.lower()
     if lowered.startswith("postgresql+asyncpg://"):
-        return "postgresql+psycopg2://" + conn_string[len("postgresql+asyncpg://") :]
+        return "postgresql+psycopg2://" + conn_string[len("postgresql+asyncpg://"):]
+    # Migrate legacy sqlite__:/ format to standard sqlite:///
+    if conn_string.startswith("sqlite__:/"):
+        return "sqlite:///" + conn_string[len("sqlite__:/"):]
     return conn_string
 
 
-def upload_csv_to_sqlite(csv_path: str, source_id: str) -> tuple[str, str]:
+def upload_csv_to_sqlite(csv_path: str, source_id: str) -> tuple:
     """Uploads a CSV to a temporary SQLite database and returns (conn_string, table_name)."""
     try:
         df = pd.read_csv(csv_path)
         df = _normalize_numeric_text_columns(df)
-        # Create a filename for the sqlite db based on source_id
-        db_path = os.path.join(os.getcwd(), f"{source_id}.db")
+        # Create a filename for the sqlite db based on source_id in project root
+        project_root = _get_project_root()
+        db_path = os.path.join(project_root, "uploads", f"{source_id}.db")
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        # Use standard SQLAlchemy SQLite format (sqlite:///) for consistency
         conn_string = f"sqlite:///{db_path}"
         
         engine = create_engine(conn_string)
@@ -162,6 +157,7 @@ def upload_csv_to_sqlite(csv_path: str, source_id: str) -> tuple[str, str]:
         logger.error(f"Failed to upload CSV: {e}")
         raise HTTPException(status_code=500, detail=f"CSV upload failed: {str(e)}")
 
+
 def get_engine(source_id: str, conn_string: str) -> Engine:
     normalized_conn_string = _normalize_conn_string_for_sync(conn_string)
     cached = _ENGINE_CACHE.get(source_id)
@@ -174,8 +170,32 @@ def get_engine(source_id: str, conn_string: str) -> Engine:
     _SOURCE_CONN_STRINGS[source_id] = normalized_conn_string
     return engine
 
-def execute_query(sql: str, source_id: str, timeout: int = 15) -> list[dict]:
+
+def _ensure_sqlite_path_resolved(source_id: str) -> str:
+    """Ensure SQLite database path is resolved correctly for the source. Returns the resolved conn_string."""
     conn_string = _SOURCE_CONN_STRINGS.get(source_id)
+    if conn_string is None:
+        return None
+    
+    if conn_string.startswith("sqlite:///") or conn_string.startswith("sqlite__:/"):
+        normalized_conn = conn_string
+        if conn_string.startswith("sqlite__:/"):
+            normalized_conn = "sqlite:///" + conn_string[len("sqlite__:/"):]
+        
+        db_path = normalized_conn[len("sqlite:///"):]
+        found_path = _find_sqlite_db_path(db_path)
+        if found_path is None:
+            raise ValueError(f"Database file not found: {db_path}")
+        if found_path != db_path:
+            normalized_path = os.path.abspath(found_path)
+            _SOURCE_CONN_STRINGS[source_id] = f"sqlite:///{normalized_path}"
+            return f"sqlite:///{normalized_path}"
+    
+    return conn_string
+
+
+def execute_query(sql: str, source_id: str, timeout: int = 15) -> list:
+    conn_string = _ensure_sqlite_path_resolved(source_id)
     if conn_string is None:
         raise ValueError("Data source not found or not initialized")
 
@@ -225,7 +245,6 @@ def test_connection(params: dict) -> dict:
     password = str(params.get("password", ""))
 
     try:
-        from urllib.parse import quote_plus
         if db_type == "sqlite":
             conn_string = f"sqlite:///{db_name}"
         elif db_type == "postgresql":
@@ -270,7 +289,54 @@ def close_engine(source_id: str) -> None:
     _SCHEMA_CACHE.pop(source_id, None)
 
 
-_SCHEMA_CACHE: dict[str, dict] = {}
+def _get_project_root() -> str:
+    """Get the project root directory (where backend/ would be)."""
+    return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def _find_sqlite_db_path(db_path: str) -> str | None:
+    """Attempt to locate a SQLite database file by searching common locations."""
+    if os.path.exists(db_path):
+        return db_path
+    
+    # Try in current working directory
+    alt_path = os.path.join(os.getcwd(), os.path.basename(db_path))
+    if os.path.exists(alt_path):
+        return alt_path
+    
+    # Try in backend/ subdirectory (common project structure)
+    backend_path = os.path.join(os.getcwd(), "backend", os.path.basename(db_path))
+    if os.path.exists(backend_path):
+        return backend_path
+    
+    # Try in uploads/ subdirectory (relative to cwd)
+    uploads_path = os.path.join(os.getcwd(), "uploads", os.path.basename(db_path))
+    if os.path.exists(uploads_path):
+        return uploads_path
+    
+    # Try in backend/uploads/ subdirectory
+    backend_uploads_path = os.path.join(os.getcwd(), "backend", "uploads", os.path.basename(db_path))
+    if os.path.exists(backend_uploads_path):
+        return backend_uploads_path
+    
+    # Try in project root uploads/ directory
+    project_root = _get_project_root()
+    project_uploads_path = os.path.join(project_root, "uploads", os.path.basename(db_path))
+    if os.path.exists(project_uploads_path):
+        return project_uploads_path
+    
+    # Try in project root backend/uploads/ directory
+    project_backend_uploads = os.path.join(project_root, "backend", "uploads", os.path.basename(db_path))
+    if os.path.exists(project_backend_uploads):
+        return project_backend_uploads
+    
+    # Try in project root directory
+    project_root_file = os.path.join(project_root, os.path.basename(db_path))
+    if os.path.exists(project_root_file):
+        return project_root_file
+    
+    return None
+
 
 def get_source_schema(source_id: str) -> dict:
     conn_string = _SOURCE_CONN_STRINGS.get(source_id)
@@ -279,6 +345,24 @@ def get_source_schema(source_id: str) -> dict:
         
     if source_id in _SCHEMA_CACHE:
         return _SCHEMA_CACHE[source_id]
+
+    # Normalize to standard format for path extraction (handle both formats)
+    normalized_conn = conn_string
+    if conn_string.startswith("sqlite__:/"):
+        normalized_conn = "sqlite:///" + conn_string[len("sqlite__:/"):]
+    
+    # Check if SQLite file exists and try to migrate path if needed
+    if normalized_conn.startswith("sqlite:///"):
+        db_path = normalized_conn[len("sqlite:///"):]
+        found_path = _find_sqlite_db_path(db_path)
+        if found_path is None:
+            logger.error("SQLite database file not found: %s for source_id=%s", db_path, source_id)
+            raise HTTPException(status_code=404, detail=f"Database file not found: {db_path}")
+        if found_path != db_path:
+            logger.info("Fixed SQLite path for source_id=%s: %s -> %s", source_id, db_path, found_path)
+            normalized_path = os.path.abspath(found_path)
+            _SOURCE_CONN_STRINGS[source_id] = f"sqlite:///{normalized_path}"
+            conn_string = f"sqlite:///{normalized_path}"
 
     try:
         engine = get_engine(source_id=source_id, conn_string=conn_string)
@@ -333,9 +417,12 @@ def get_source_schema(source_id: str) -> dict:
             result = {"tables": tables}
             _SCHEMA_CACHE[source_id] = result
             return result
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.exception("Failed schema fetch for source_id=%s", source_id)
         raise HTTPException(status_code=500, detail=f"Failed to fetch schema: {str(exc)}")
+
 
 class DBService:
     def __init__(self, source_id: str = "default", conn_string: str | None = None) -> None:
@@ -350,7 +437,7 @@ class DBService:
             return "sqlite"
         return _dialect_from_conn_string(conn_string)
 
-    def run_query(self, sql: str, source_id: str | None = None, timeout: int | None = None) -> list[dict]:
+    def run_query(self, sql: str, source_id: str | None = None, timeout: int | None = None) -> list:
         resolved_source_id = source_id or self.source_id
         kwargs: dict = {"sql": sql, "source_id": resolved_source_id}
         if timeout is not None:

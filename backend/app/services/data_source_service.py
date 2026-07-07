@@ -127,11 +127,42 @@ def _get_session_factory() -> sessionmaker:
     return _SESSION_FACTORY
 
 
+def _find_sqlite_path_in_common_locations(db_path: str) -> str | None:
+    """Search for a SQLite database file in common project locations."""
+    basename = os.path.basename(db_path)
+    
+    # List of common search locations
+    search_locations = [
+        db_path,  # As-is first
+        os.path.join(os.getcwd(), basename),  # CWD
+        os.path.join(os.getcwd(), "backend", basename),  # backend/
+        os.path.join(os.getcwd(), "uploads", basename),  # uploads/
+        os.path.join(os.getcwd(), "backend", "uploads", basename),  # backend/uploads/
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), basename),  # project root
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "backend", basename),  # project root backend/
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "uploads", basename),  # project root uploads/
+        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "backend", "uploads", basename),  # project root backend/uploads/
+    ]
+    
+    for loc in search_locations:
+        if os.path.exists(loc):
+            return loc
+    return None
+
+
 def _build_conn_string_from_source(source: dict, password: str) -> str:
     db_type = str(source["db_type"]).lower()
 
     if db_type == "sqlite":
-        return f"sqlite:///{source['db_name']}"
+        db_name = source['db_name']
+        db_path = db_name
+        if not os.path.isabs(db_path):
+            found_path = _find_sqlite_path_in_common_locations(db_path)
+            if found_path:
+                db_path = found_path
+            else:
+                db_path = os.path.abspath(db_path)  # Best effort if not found
+        return f"sqlite:///{db_path}"
 
     encoded_password = quote_plus(password)
     username = source["username"]

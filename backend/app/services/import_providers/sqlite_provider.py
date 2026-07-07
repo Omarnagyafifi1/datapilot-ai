@@ -25,9 +25,21 @@ from app.services.import_providers import (
 
 logger = get_logger(__name__)
 
-# Directory to store uploaded SQLite files
-UPLOAD_DIR = os.getenv("UPLOAD_DIR", "./uploads")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+def _get_upload_dir() -> str:
+    """Get the absolute path for the upload directory."""
+    upload_dir = os.getenv("UPLOAD_DIR", "./uploads")
+    # If relative, resolve from the project root (backend/app)
+    if not os.path.isabs(upload_dir):
+        # Get the backend directory (parent of app/)
+        backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        upload_dir = os.path.join(backend_dir, upload_dir.lstrip("./"))
+    os.makedirs(upload_dir, exist_ok=True)
+    return upload_dir
+
+
+# Directory to store uploaded SQLite files (absolute path)
+UPLOAD_DIR = _get_upload_dir()
 
 
 class SQLiteProvider(ImportProvider):

@@ -1001,3 +1001,73 @@ Always verify the existence of tables and columns in the database schema before 
 }
 ```
 
+## 2026-07-07T20:38:51.554059+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-07T20:38:51.554059+00:00",
+  "status": "resolved",
+  "question": "How many employees in Alexandria are older than 30 years old?",
+  "sql": "SELECT COUNT(id) AS number_of_employees \nFROM employees \nWHERE location = 'Alexandria' AND age > 30",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-07T20:41:07.629082+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-07T20:41:07.629082+00:00",
+  "status": "resolved",
+  "question": "how many employees do we have ",
+  "sql": "SELECT COUNT(id) AS number_of_employees FROM employees LIMIT 1000;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-07T20:42:12.364402+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-07T20:42:12.364402+00:00",
+  "status": "resolved",
+  "question": "What is the average salary of Engineering department employees in Cairo?",
+  "sql": "SELECT department, SUM(salary) AS total_salary \nFROM employees \nGROUP BY department \nLIMIT 1000",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-07T20:42:39.561855+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-07T20:42:39.561855+00:00",
+  "status": "resolved",
+  "question": "how many cairo are in employee",
+  "sql": "SELECT COUNT(id) AS number_of_employees \nFROM employees \nWHERE location = 'Cairo'",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-07T21:04:07.656274+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-07T21:04:07.656274+00:00",
+  "status": "resolved",
+  "question": "What is the total number of records in the table?",
+  "sql": "SELECT COUNT(*) AS total_records FROM sqlite_master WHERE type='table'",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+

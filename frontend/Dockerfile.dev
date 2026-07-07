@@ -1,0 +1,17 @@
+# Development Dockerfile for Vite frontend with hot-reload
+FROM node:22-alpine
+
+WORKDIR /app/frontend
+
+# Install dependencies
+COPY package*.json ./
+RUN npm install
+
+# Copy source files
+COPY . .
+
+# Expose Vite's default port
+EXPOSE 5173
+
+# Run Vite dev server, binding to all interfaces for Docker access
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
