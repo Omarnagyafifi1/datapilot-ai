@@ -17,6 +17,7 @@ oracledb
 
 # LLM / AI
 openai
+azure-identity
 langchain
 langchain-core
 langchain-groq

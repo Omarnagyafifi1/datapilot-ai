@@ -81,15 +81,17 @@ def get_llm(provider: str | None = None) -> BaseLLM:
 
     # Azure OpenAI is selected directly, no fallback needed
     if provider == "azure":
-        if not azure_endpoint or not azure_api_key:
-            logger.warning("Azure OpenAI endpoint or API key not configured, falling back to mock")
+        if not azure_endpoint:
+            logger.warning("Azure OpenAI endpoint not configured, falling back to mock")
             from app.llm.providers.mock_llm import MockLLM
             return MockLLM()
+        use_entra = bool(not azure_api_key)
         return AzureOpenAILLM(
             endpoint=azure_endpoint,
             api_key=azure_api_key,
             deployment=azure_deployment,
             api_version=azure_api_version,
+            use_entra_id=use_entra,
         )
 
     # Build the fallback map of available configured providers

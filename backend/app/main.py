@@ -38,7 +38,7 @@ def validate_environment() -> None:
         provider = settings.DEFAULT_LLM_PROVIDER
 
     if provider == "azure":
-        required_vars.extend(["AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_API_KEY", "AZURE_OPENAI_DEPLOYMENT"])
+        required_vars.append("AZURE_OPENAI_ENDPOINT")
     elif provider == "groq":
         required_vars.append("GROQ_API_KEY")
     elif provider == "openrouter":
