@@ -76,7 +76,20 @@ class SQLiteProvider(ImportProvider):
     
     async def validate(self, file: UploadFile) -> Tuple[bool, Optional[str]]:
         """Validate SQLite file format."""
+        from app.core.config import settings
+        
         try:
+            # Check file size limit
+            if file.size is not None and file.size > settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024:
+                return False, f"File size exceeds maximum allowed ({settings.MAX_UPLOAD_SIZE_MB}MB)"
+            
+            # Check extension against whitelist from settings
+            allowed_extensions = [ext.lower().lstrip('.') for ext in settings.ALLOWED_FILE_EXTENSIONS.split(",")]
+            if file.filename:
+                ext = file.filename.lower().split('.')[-1] if '.' in file.filename else ''
+                if ext and ext not in allowed_extensions:
+                    return False, f"File extension '.{ext}' not allowed. Allowed: {settings.ALLOWED_FILE_EXTENSIONS}"
+            
             # Check extension
             if not file.filename:
                 return False, "No filename provided"

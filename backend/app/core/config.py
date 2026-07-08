@@ -47,8 +47,8 @@ class Settings(BaseSettings):
     OPENROUTER_API_KEY: Optional[str] = None
     
     # Default model (used when no model is specified in runtime settings)
-    DEFAULT_LLM_MODEL: str = "llama-3.3-70b-versatile"
-    LLM_PROVIDER: str = "groq"
+    DEFAULT_LLM_MODEL: str = os.getenv("DEFAULT_LLM_MODEL", "llama-3.3-70b-versatile")
+    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "groq")
 
     # LangSmith Tracing & Evaluation
     LANGCHAIN_TRACING_V2: bool = os.getenv("LANGCHAIN_TRACING_V2", "false").lower() == "true"
@@ -60,10 +60,24 @@ class Settings(BaseSettings):
     APP_NAME: str = "DataPilot AI"
     DEBUG: bool = False
     # Default LLM provider (used when no provider is specified in runtime settings)
-    DEFAULT_LLM_PROVIDER: str = "groq"
+    DEFAULT_LLM_PROVIDER: str = os.getenv("DEFAULT_LLM_PROVIDER", "groq")
 
-    # Security
+
+    # Security & CORS
     APPROVAL_TTL_SECONDS: int = int(os.getenv("APPROVAL_TTL_SECONDS", "3600"))
+    ALLOW_ORIGINS: str = os.getenv("ALLOW_ORIGINS", "*")
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
+    # Storage
+    STORAGE_TYPE: str = os.getenv("STORAGE_TYPE", "local")
+    UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", "./uploads")
+    AZURE_STORAGE_CONNECTION_STRING: Optional[str] = None
+    AZURE_STORAGE_ACCOUNT_NAME: Optional[str] = None
+    AZURE_STORAGE_CONTAINER_NAME: Optional[str] = None
+
+    # File Upload
+    MAX_UPLOAD_SIZE_MB: int = int(os.getenv("MAX_UPLOAD_SIZE_MB", "100"))
+    ALLOWED_FILE_EXTENSIONS: str = os.getenv("ALLOWED_FILE_EXTENSIONS", ".csv,.db,.sqlite,.sqlite3,.xlsx,.json")
 
     model_config = SettingsConfigDict(
         env_file=".env",

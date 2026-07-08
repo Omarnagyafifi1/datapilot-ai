@@ -9,14 +9,48 @@ services:
     ports:
       - "8000:8000"
     environment:
+      # LLM Provider
       - LLM_PROVIDER=groq
+      - DEFAULT_LLM_PROVIDER=groq
+      - DEFAULT_LLM_MODEL=llama-3.3-70b-versatile
+      
+      # API Keys
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GROQ_API_KEY=${GROQ_API_KEY:-}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      
+      # Security
       - ENCRYPTION_KEY=${ENCRYPTION_KEY:-}
+      
+      # Database
       - DATABASE_URL=sqlite+aiosqlite:///./dev.db
       - DATA_SOURCES_DB_URL=sqlite:///./data_sources.db
       - QUERY_HISTORY_DB_URL=sqlite:///./query_history.db
+      
+      # LangGraph Memory (PostgreSQL for production)
+      - LANGGRAPH_MEMORY_DB_URI=
+      - LANGGRAPH_RUN_MIGRATIONS_ON_START=false
+      
+      # Storage Configuration
+      - STORAGE_TYPE=local
+      - UPLOAD_DIR=./uploads
+      
+      # CORS & Frontend
+      - ALLOW_ORIGINS=*
+      - FRONTEND_URL=http://localhost:5173
+      
+      # File Upload Limits
+      - MAX_UPLOAD_SIZE_MB=100
+      - ALLOWED_FILE_EXTENSIONS=.csv,.db,.sqlite,.sqlite3,.xlsx,.json
+      
+      # LangSmith (optional)
+      - LANGCHAIN_TRACING_V2=false
+      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY:-}
+      - LANGCHAIN_PROJECT=datapilot-ai
+      
+      # Security
+      - APPROVAL_TTL_SECONDS=3600
     volumes:
       # Persistent storage volume for SQLite metadata and databases
       - datapilot-data:/app/backend/data
@@ -33,6 +67,7 @@ services:
       - "5173:5173"
     environment:
       - VITE_API_TARGET=http://backend:8000
+      # Note: VITE_API_TARGET can be overridden via environment for production
     volumes:
       # Mount source for hot-reload (optional, uncomment for live editing)
       # - ./frontend/src:/app/frontend/src

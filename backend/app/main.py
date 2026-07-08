@@ -11,6 +11,7 @@ from fastapi import Response
 
 from app.api.deps import close_graph_orchestrator
 from app.api.routes import router as api_router
+from app.core.config import settings
 from app.core.exceptions import CSVValidationError, DataCleaningError, DatabaseIngestionError
 from app.models.schemas import UploadResponse, UploadMetadata
 from app.services.database import engine
@@ -34,34 +35,24 @@ app = FastAPI(
 def _shutdown() -> None:
     close_graph_orchestrator()
 
-# CORS configuration
+
+# CORS configuration - environment-based for Azure compatibility
+# Parse ALLOW_ORIGINS as comma-separated list, or use ["*"] as fallback
+_raw_origins = settings.ALLOW_ORIGINS.strip()
+if _raw_origins == "*":
+    _cors_origins = ["*"]
+elif _raw_origins:
+    _cors_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+else:
+    _cors_origins = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For development, allow all. In production, restrict this.
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-# Fallback middleware to ensure CORS headers are present on all responses
-@app.middleware("http")
-async def _ensure_cors_headers(request, call_next):
-    # Short-circuit preflight OPTIONS requests to ensure CORS headers are present
-    if request.method == "OPTIONS":
-        headers = {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-            "Access-Control-Allow-Headers": "*",
-        }
-        return Response(status_code=200, headers=headers)
-
-    response = await call_next(request)
-    # these are safe to set in development; in production refine as needed
-    response.headers.setdefault("Access-Control-Allow-Origin", "*")
-    response.headers.setdefault("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
-    response.headers.setdefault("Access-Control-Allow-Headers", "*")
-    return response
 
 
 @app.middleware("http")
@@ -81,16 +72,6 @@ async def _rate_limit(request: Request, call_next):
         bucket.append(now)
     return await call_next(request)
 
-
-# Catch-all OPTIONS handler to ensure preflight requests return CORS headers
-@app.options("/{full_path:path}")
-async def catch_all_options(full_path: str):
-    headers = {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-        "Access-Control-Allow-Headers": "*",
-    }
-    return Response(status_code=200, headers=headers)
 
 # Include API router FIRST so it handles /api/* routes before static files
 app.include_router(api_router)
