@@ -29,13 +29,13 @@ def _abs_sqlite_url(relative_url: str) -> str:
 class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = ""
-    DATA_SOURCES_DB_URL: str = "sqlite:///./data_sources.db"
-    QUERY_HISTORY_DB_URL: str = "sqlite:///./query_history.db"
+    data_sources_db_url: str = "sqlite:///./data_sources.db"
+    query_history_db_url: str = "sqlite:///./query_history.db"
     encryption_key: str = ""
     langgraph_memory_db_uri: str = ""
     langgraph_run_migrations_on_start: bool = False
 
-    # LLM API Keys (runtime-configurable, defaults to .env values)
+    # LLM API Keys
     OPENAI_API_KEY: Optional[str] = None
     ANTHROPIC_API_KEY: Optional[str] = None
     GEMINI_API_KEY: Optional[str] = None
@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     AZURE_OPENAI_DEPLOYMENT: Optional[str] = None
     AZURE_OPENAI_API_VERSION: str = "2024-02-15-preview"
 
-    # Default model (used when no model is specified in runtime settings)
+    # Default model
     DEFAULT_LLM_MODEL: str = "llama-3.3-70b-versatile"
     LLM_PROVIDER: str = "groq"
 

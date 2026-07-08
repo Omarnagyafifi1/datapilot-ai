@@ -31,22 +31,27 @@ def validate_environment() -> None:
     """Validate required environment variables at startup. Fail fast if missing."""
     from app.core.config import settings
 
-    required_vars = ["ENCRYPTION_KEY"]
+    required_vars: list[tuple[str, str]] = [("encryption_key", "ENCRYPTION_KEY")]
 
     provider = (settings.LLM_PROVIDER or os.getenv("LLM_PROVIDER", "")).strip().lower()
     if not provider:
         provider = settings.DEFAULT_LLM_PROVIDER
 
     if provider == "azure":
-        required_vars.append("AZURE_OPENAI_ENDPOINT")
+        required_vars.append(("AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_ENDPOINT"))
     elif provider == "groq":
-        required_vars.append("GROQ_API_KEY")
+        required_vars.append(("GROQ_API_KEY", "GROQ_API_KEY"))
     elif provider == "openrouter":
-        required_vars.append("OPENROUTER_API_KEY")
+        required_vars.append(("OPENROUTER_API_KEY", "OPENROUTER_API_KEY"))
     elif provider == "gemini":
-        required_vars.append("GEMINI_API_KEY")
+        required_vars.append(("GEMINI_API_KEY", "GEMINI_API_KEY"))
 
-    missing = [v for v in required_vars if not os.getenv(v) and not getattr(settings, v, None)]
+    def _get_val(attr: str) -> str | None:
+        if attr == "encryption_key":
+            return settings.encryption_key
+        return getattr(settings, attr, None) or os.getenv(attr)
+
+    missing = [display for attr, display in required_vars if not _get_val(attr)]
     if missing:
         msg = f"Missing required environment variables for provider '{provider}': {', '.join(missing)}"
         logger.error(msg)
