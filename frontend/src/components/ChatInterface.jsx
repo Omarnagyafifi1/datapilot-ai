@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   Send, Loader2, User, ChevronDown, 
   Activity, Zap, Plus, Trash2, Edit2, Check, Search, 
@@ -8,6 +8,7 @@ import { api } from '../lib/api';
 import { COPY } from '../lib/copy';
 import { ResultVisualizer } from './ResultVisualizer';
 import { cn } from '../lib/utils';
+import { getSessionId, regenerateSessionId, chatService } from '../services/chatService';
 
 // Helper to format timestamps
 function formatTime(isoString) {
@@ -59,19 +60,9 @@ export default function ChatInterface({
   onUpdateSources,
   onSelectSource
 }) {
-  // Conversational history system
-  const [conversations, setConversations] = useState(() => {
-    const saved = localStorage.getItem('dp_conversations');
-    if (saved) {
-      try { return JSON.parse(saved); } catch { return []; }
-    }
-    return [];
-  });
-
-  const [activeChatId, setActiveChatId] = useState(() => {
-    const saved = localStorage.getItem('dp_active_chat_id');
-    return saved || null;
-  });
+  // Conversational history system - synced with backend
+  const [conversations, setConversations] = useState([]);
+  const [activeChatId, setActiveChatId] = useState(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [editingTitleId, setEditingTitleId] = useState(null);
@@ -133,14 +124,38 @@ export default function ChatInterface({
       });
   }, []);
 
-  // Load current messages when activeChatId changes
+  // On mount: load sessions from backend and setup session_id
   useEffect(() => {
-    if (activeChatId) {
-      const activeChat = conversations.find(c => c.id === activeChatId);
-      if (activeChat) {
-        setMessages(activeChat.messages || []);
-      }
-    } else {
+    // Ensure session_id exists in localStorage
+    getSessionId();
+    
+    // Load sessions from backend
+    chatService.listSessions()
+      .then(sessions => {
+        // Convert to local format with messages array
+        const localSessions = sessions.map(s => ({
+          id: s.session_id,
+          title: s.title || 'Chat',
+          messages: [],
+          timestamp: s.updated_at || s.created_at,
+          preview: s.preview || '',
+        }));
+        setConversations(localSessions);
+        
+        // If there's a saved active session, try to restore it
+        const savedActiveId = localStorage.getItem('dp_active_session_id');
+        if (savedActiveId && localSessions.some(s => s.id === savedActiveId)) {
+          setActiveChatId(savedActiveId);
+        }
+      })
+      .catch(err => {
+        console.warn('Failed to load chat sessions from backend:', err);
+      });
+  }, []);
+
+  // Load messages from backend when activeChatId changes
+  useEffect(() => {
+    if (!activeChatId) {
       setMessages([
         { 
           id: 'welcome', 
@@ -149,20 +164,45 @@ export default function ChatInterface({
           timestamp: new Date().toISOString()
         }
       ]);
+      return;
     }
-  }, [activeChatId]);
 
-  // Save conversations to localStorage
-  useEffect(() => {
-    localStorage.setItem('dp_conversations', JSON.stringify(conversations));
-  }, [conversations]);
+    // Save active session to localStorage
+    localStorage.setItem('dp_active_session_id', activeChatId);
 
-  useEffect(() => {
-    if (activeChatId) {
-      localStorage.setItem('dp_active_chat_id', activeChatId);
-    } else {
-      localStorage.removeItem('dp_active_chat_id');
-    }
+    // Load history from backend
+    chatService.getHistory(activeChatId)
+      .then(messages => {
+        if (messages && messages.length > 0) {
+          const formatted = messages.map(m => ({
+            id: m.id,
+            type: m.role === 'user' ? 'user' : 'bot',
+            content: m.content,
+            timestamp: m.created_at,
+          }));
+          setMessages(formatted);
+        } else {
+          setMessages([
+            { 
+              id: 'welcome', 
+              type: 'bot', 
+              content: 'Welcome operators — ask a question about your database to get started. Choose your connected database relay above to configure context.',
+              timestamp: new Date().toISOString()
+            }
+          ]);
+        }
+      })
+      .catch(err => {
+        console.warn('Failed to load chat history:', err);
+        setMessages([
+          { 
+            id: 'welcome', 
+            type: 'bot', 
+            content: 'Welcome operators — ask a question about your database to get started.',
+            timestamp: new Date().toISOString()
+          }
+        ]);
+      });
   }, [activeChatId]);
 
   // Fetch schema when DB source changes
@@ -228,24 +268,42 @@ const fetchSchema = async () => {
 
   // Create new conversation session
   const startNewChat = () => {
-    const newId = Date.now().toString();
+    // Generate new UUID and replace session_id
+    const newId = regenerateSessionId();
+    
+    // Create in backend
+    chatService.newSession(newId).catch(err => {
+      console.warn('Failed to create new session on backend:', err);
+    });
+    
     const newChat = {
       id: newId,
-      title: 'New conversation ' + new Date().toLocaleDateString(),
+      title: 'New Chat',
       messages: [],
-      selectedSourceId: initialSelectedSourceId,
-      provider: llmSettings.provider,
-      model: llmSettings.model,
       timestamp: new Date().toISOString()
     };
     setConversations(prev => [newChat, ...prev]);
     setActiveChatId(newId);
+    setMessages([
+      { 
+        id: 'welcome', 
+        type: 'bot', 
+        content: 'Welcome operators — ask a question about your database to get started. Choose your connected database relay above to configure context.',
+        timestamp: new Date().toISOString()
+      }
+    ]);
   };
 
   // Delete conversation
   const deleteConversation = (id, e) => {
     e.stopPropagation();
     if (!confirm("Are you sure you want to delete this chat history?")) return;
+    
+    // Delete from backend
+    chatService.deleteSession(id).catch(err => {
+      console.warn('Failed to delete session on backend:', err);
+    });
+    
     setConversations(prev => prev.filter(c => c.id !== id));
     if (activeChatId === id) {
       setActiveChatId(null);
@@ -261,16 +319,23 @@ const fetchSchema = async () => {
 
   const saveRename = (id) => {
     if (editTitleText.trim()) {
+      // Update on backend
+      chatService.renameSession(id, editTitleText).catch(err => {
+        console.warn('Failed to rename session on backend:', err);
+      });
       setConversations(prev => prev.map(c => c.id === id ? { ...c, title: editTitleText } : c));
     }
     setEditingTitleId(null);
   };
 
-  // Send Message Flow
+  // Send Message Flow - uses backend chat service with persistent memory
   const handleSend = async (e, textOverride = null) => {
     if (e) e.preventDefault();
     const queryText = textOverride || input;
     if (!queryText.trim() || !initialSelectedSourceId || loading) return;
+
+    // Get the current session_id (will be created if first time)
+    const sessionId = getSessionId();
 
     const userMsgId = Date.now().toString();
     const userMessage = {
@@ -279,13 +344,6 @@ const fetchSchema = async () => {
       content: queryText,
       timestamp: new Date().toISOString()
     };
-
-    let chatSessionId = activeChatId;
-    let isNew = false;
-    if (!chatSessionId) {
-      chatSessionId = Date.now().toString();
-      isNew = true;
-    }
 
     // Add user message to current list
     setMessages(prev => [...prev.filter(m => m.id !== 'welcome'), userMessage]);
@@ -307,58 +365,53 @@ const fetchSchema = async () => {
       loadingTimers.push(setTimeout(() => setLoadingStage('Generating optimized SQL plan...'), 2200));
       loadingTimers.push(setTimeout(() => setLoadingStage('Executing query & building analytics...'), 3500));
 
-      const resp = await api.query(queryText, initialSelectedSourceId, chatSessionId, false, null, {
-        signal: controller.signal,
-      }, llmSettings);
-
-      const payload = resp.data?.data ?? resp.data ?? {};
-      const derivedDoc = {
-        ...(payload.documentation || {}),
-        sql: payload.sql || null,
-        results: payload.results || [],
-        results_count: payload.results_count ?? (payload.results || []).length,
-        visualization: payload.visualization || payload.documentation?.visualization || null,
-        insights: payload.insights || [],
-        suggestions: payload.suggestions || [],
-        thread_id: payload.thread_id || chatSessionId,
-        source_id: initialSelectedSourceId,
-        question: queryText,
-        executed_at: payload.executed_at || new Date().toISOString(),
-        status: payload.status || 'completed',
-      };
+      // Use the chat service which sends through /api/chat/message
+      // This persists messages and injects conversation history into LLM context
+      const result = await chatService.sendMessage(queryText, initialSelectedSourceId, llmSettings);
 
       clearLoadingTimers();
+
+      const derivedDoc = {
+        sql: result.sql || null,
+        results: result.results || [],
+        results_count: result.results_count ?? (result.results || []).length,
+        visualization: result.visualization || result.documentation?.visualization || null,
+        insights: result.insights || [],
+        suggestions: result.suggestions || [],
+        thread_id: result.thread_id || sessionId,
+        source_id: initialSelectedSourceId,
+        question: queryText,
+        executed_at: result.executed_at || new Date().toISOString(),
+        status: result.status || 'completed',
+      };
 
       const botMessage = {
         id: (Date.now() + 1).toString(),
         type: 'bot',
-        content: payload.answer || payload.message || (payload.requires_approval ? 'This query will modify data. Approve or deny below.' : 'Completed execution of generated query.'),
+        content: result.answer || result.message || (result.requires_approval ? 'This query will modify data. Approve or deny below.' : 'Completed execution of generated query.'),
         doc: derivedDoc,
-        requiresApproval: !!payload.requires_approval,
-        approvalRequest: payload.approval_request || null,
-        approvalThreadId: payload.requires_approval ? (payload.thread_id || chatSessionId) : null,
+        requiresApproval: !!result.requires_approval,
+        approvalRequest: result.approval_request || null,
+        approvalThreadId: result.requires_approval ? (result.thread_id || sessionId) : null,
         timestamp: new Date().toISOString()
       };
 
       const updatedMsgs = [...messages.filter(m => m.id !== 'welcome'), userMessage, botMessage];
       setMessages(updatedMsgs);
 
-      // Save/Update conversation
-      if (isNew) {
+      // Update conversation list
+      let convExists = conversations.some(c => c.id === sessionId);
+      if (!convExists) {
+        // Add new conversation to list
         const newChat = {
-          id: chatSessionId,
-          title: queryText.slice(0, 30) + (queryText.length > 30 ? '...' : ''),
-          messages: updatedMsgs,
-          selectedSourceId: initialSelectedSourceId,
-          provider: llmSettings.provider,
-          model: llmSettings.model,
+          id: sessionId,
+          title: queryText.slice(0, 40) + (queryText.length > 40 ? '...' : ''),
+          messages: [],
           timestamp: new Date().toISOString()
         };
         setConversations(prev => [newChat, ...prev]);
-        setActiveChatId(chatSessionId);
-      } else {
-        setConversations(prev => prev.map(c => c.id === chatSessionId ? { ...c, messages: updatedMsgs, timestamp: new Date().toISOString() } : c));
       }
+      setActiveChatId(sessionId);
 
     } catch (err) {
       clearLoadingTimers();
@@ -372,9 +425,6 @@ const fetchSchema = async () => {
       };
       const updatedMsgs = [...messages.filter(m => m.id !== 'welcome'), userMessage, errMsg];
       setMessages(updatedMsgs);
-      if (!isNew) {
-        setConversations(prev => prev.map(c => c.id === chatSessionId ? { ...c, messages: updatedMsgs } : c));
-      }
     } finally {
       clearLoadingTimers();
       setLoading(false);

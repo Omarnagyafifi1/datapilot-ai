@@ -6,8 +6,14 @@ backend/uploads/
 backend/employees_data_*
 backend/test_data_*
 backend/app.db
+backend/.env
 frontend/node_modules/
 frontend/dist/
 .git/
 .gitignore
 .env
+.env.local
+*.md
+__pycache__/
+*.pyc
+.pytest_cache/

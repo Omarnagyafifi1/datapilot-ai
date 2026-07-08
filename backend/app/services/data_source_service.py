@@ -108,14 +108,19 @@ def _get_store_engine() -> Engine:
     if not db_url:
         db_url = "sqlite:///./data_sources.db"
 
-    connect_args = {"timeout": 5} if db_url.startswith("sqlite:///") else {"connect_timeout": 5}
+    connect_args: dict = {}
+    if db_url.startswith("sqlite:///"):
+        connect_args = {"timeout": 5}
+    elif db_url.startswith("postgresql"):
+        connect_args = {"connect_timeout": 5}
     _REGISTRY_ENGINE = create_engine(
         db_url,
         pool_pre_ping=True,
         connect_args=connect_args,
     )
     _METADATA.create_all(_REGISTRY_ENGINE, tables=[_DATA_SOURCES, _DATASET_METADATA])
-    _migrate_sqlite_paths()
+    if db_url.startswith("sqlite:///"):
+        _migrate_sqlite_paths()
     return _REGISTRY_ENGINE
 
 

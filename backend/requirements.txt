@@ -1,40 +1,44 @@
 fastapi
-uvicorn
+uvicorn[standard]
 pydantic
+pydantic-settings
 python-dotenv
-redis
+python-multipart
+greenlet
 
+# Database
+sqlalchemy
+asyncpg
+aiosqlite
+psycopg2-binary
+pymysql
+pymssql
+oracledb
+
+# LLM / AI
+openai
 langchain
 langchain-core
 langchain-groq
+langchain-google-genai
 langgraph
 langgraph-checkpoint-postgres
 langsmith
-psycopg[binary,pool]
-
 groq
 
-sqlalchemy
-psycopg2-binary
-pymysql
-
-
+# Data
 pandas
-plotly
 numpy
+plotly
+
+# Vector Store
 faiss-cpu
 
+# Utilities
 tenacity
 loguru
 cryptography
-pydantic-settings
-openai
-langchain-google-genai
-python-multipart
-pymssql
-oracledb
+redis
+
+# Testing
 pytest
-
-
-
-

@@ -962,17 +962,25 @@ class AgentGraph:
         thread_id: str | None = None,
         preview_only: bool = False,
         sql: str | None = None,
+        chat_history: list[dict[str, str]] | None = None,
     ) -> dict[str, Any]:
         resolved_thread_id = thread_id or str(uuid4())
+        documentation = {
+            "dialect": self.db_service.get_dialect(source_id),
+            "cli_mode": cli_mode,
+            "preview_only": preview_only,
+        }
+
+        # Inject chat history into documentation so nodes can use it
+        if chat_history:
+            # Only include the conversation context (last N messages before current)
+            documentation["chat_history"] = chat_history
+
         initial_state = {
             "question": question,
             "source_id": source_id,
             "sql": sql or "",
-            "documentation": {
-                "dialect": self.db_service.get_dialect(source_id),
-                "cli_mode": cli_mode,
-                "preview_only": preview_only,
-            },
+            "documentation": documentation,
         }
         config = {"configurable": {"thread_id": resolved_thread_id}}
         config["configurable"]["user_id"] = source_id

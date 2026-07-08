@@ -1,4 +1,5 @@
 import logging
+import os
 import time
 from collections import defaultdict, deque
 from pathlib import Path
@@ -11,10 +12,12 @@ from fastapi import Response
 
 from app.api.deps import close_graph_orchestrator
 from app.api.routes import router as api_router
+from app.api.chat import router as chat_router
 from app.core.exceptions import CSVValidationError, DataCleaningError, DatabaseIngestionError
 from app.models.schemas import UploadResponse, UploadMetadata
 from app.services.database import engine
 from app.services.data_service import DataSourceService
+from sqlalchemy import text
 
 # Setup basic logging
 logging.basicConfig(level=logging.INFO)
@@ -22,6 +25,37 @@ logger = logging.getLogger(__name__)
 _RATE_BUCKETS: dict[str, deque[float]] = defaultdict(deque)
 RATE_LIMIT_WINDOW_SECONDS = 60
 RATE_LIMIT_MAX_REQUESTS = 120
+
+
+def validate_environment() -> None:
+    """Validate required environment variables at startup. Fail fast if missing."""
+    from app.core.config import settings
+
+    required_vars = ["ENCRYPTION_KEY"]
+
+    provider = (settings.LLM_PROVIDER or os.getenv("LLM_PROVIDER", "")).strip().lower()
+    if not provider:
+        provider = settings.DEFAULT_LLM_PROVIDER
+
+    if provider == "azure":
+        required_vars.extend(["AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_API_KEY", "AZURE_OPENAI_DEPLOYMENT"])
+    elif provider == "groq":
+        required_vars.append("GROQ_API_KEY")
+    elif provider == "openrouter":
+        required_vars.append("OPENROUTER_API_KEY")
+    elif provider == "gemini":
+        required_vars.append("GEMINI_API_KEY")
+
+    missing = [v for v in required_vars if not os.getenv(v) and not getattr(settings, v, None)]
+    if missing:
+        msg = f"Missing required environment variables for provider '{provider}': {', '.join(missing)}"
+        logger.error(msg)
+        raise RuntimeError(msg)
+
+    logger.info("Environment validation passed for provider '%s'", provider)
+
+
+validate_environment()
 
 app = FastAPI(
     title="AI Text-to-SQL Data Analyst System API",
@@ -35,30 +69,54 @@ def _shutdown() -> None:
     close_graph_orchestrator()
 
 # CORS configuration
+ALLOW_ORIGINS = os.getenv("ALLOW_ORIGINS", "*").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For development, allow all. In production, restrict this.
+    allow_origins=ALLOW_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
+# Health, Readiness, Liveness endpoints (before any middleware)
+@app.get("/health")
+async def health():
+    return {"status": "healthy", "version": "1.0.0"}
+
+
+@app.get("/ready")
+async def ready():
+    try:
+        from app.services.database import engine
+        if engine is None:
+            return JSONResponse(status_code=503, content={"status": "not ready", "detail": "Database not configured"})
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        return {"status": "ready"}
+    except Exception as e:
+        return JSONResponse(status_code=503, content={"status": "not ready", "detail": str(e)})
+
+
+@app.get("/live")
+async def live():
+    return {"status": "alive"}
+
+
 # Fallback middleware to ensure CORS headers are present on all responses
 @app.middleware("http")
 async def _ensure_cors_headers(request, call_next):
-    # Short-circuit preflight OPTIONS requests to ensure CORS headers are present
+    allowed_origin = ALLOW_ORIGINS[0] if ALLOW_ORIGINS[0] != "*" else "*"
     if request.method == "OPTIONS":
         headers = {
-            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Origin": allowed_origin,
             "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
             "Access-Control-Allow-Headers": "*",
         }
         return Response(status_code=200, headers=headers)
 
     response = await call_next(request)
-    # these are safe to set in development; in production refine as needed
-    response.headers.setdefault("Access-Control-Allow-Origin", "*")
+    response.headers.setdefault("Access-Control-Allow-Origin", allowed_origin)
     response.headers.setdefault("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
     response.headers.setdefault("Access-Control-Allow-Headers", "*")
     return response
@@ -85,15 +143,17 @@ async def _rate_limit(request: Request, call_next):
 # Catch-all OPTIONS handler to ensure preflight requests return CORS headers
 @app.options("/{full_path:path}")
 async def catch_all_options(full_path: str):
+    allowed_origin = ALLOW_ORIGINS[0] if ALLOW_ORIGINS[0] != "*" else "*"
     headers = {
-        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Origin": allowed_origin,
         "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
         "Access-Control-Allow-Headers": "*",
     }
     return Response(status_code=200, headers=headers)
 
-# Include API router FIRST so it handles /api/* routes before static files
+# Include API routers FIRST so they handle /api/* routes before static files
 app.include_router(api_router)
+app.include_router(chat_router)
 
 # Mount frontend static files when available (built via `npm run build` into frontend/dist)
 dist_dir = Path(__file__).resolve().parents[2] / "frontend" / "dist"

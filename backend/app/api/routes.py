@@ -11,7 +11,6 @@ from app.models.schemas import (
     DataSourceResponse,
     EvalRequest,
     EvalResponse,
-    HealthResponse,
     QueryApprovalRequest,
     QueryRequest,
     QueryPageRequest,
@@ -81,14 +80,9 @@ def _resp(success: bool, message: str, data: dict | list | None) -> JSONResponse
         "message": message,
         "data": data,
     }
-    headers = {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-        "Access-Control-Allow-Headers": "*",
-    }
     # Use custom serializer to handle datetime objects
     content_str = _json.dumps(payload, default=_default_serializer)
-    return JSONResponse(content=_json.loads(content_str), headers=headers)
+    return JSONResponse(content=_json.loads(content_str))
 
 
 def _get_provider(file: UploadFile) -> Optional[object]:
@@ -105,11 +99,6 @@ def _get_provider(file: UploadFile) -> Optional[object]:
         return _PROVIDERS.get('sqlite')
     
     return None
-
-
-@router.get("/health", response_model=HealthResponse)
-def health_check() -> HealthResponse:
-    return HealthResponse(status="ok")
 
 
 @router.post("/query")
@@ -134,12 +123,7 @@ def query_endpoint(
         )
         if result.get("requires_approval"):
             result["message"] = "Approval required for write query."
-        headers = {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-            "Access-Control-Allow-Headers": "*",
-        }
-        return JSONResponse(content=jsonable_encoder(result), headers=headers)
+        return JSONResponse(content=jsonable_encoder(result))
     except Exception as e:
         status = "ERROR"
         logger.exception("Query failed")

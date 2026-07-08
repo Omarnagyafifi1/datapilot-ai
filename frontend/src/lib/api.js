@@ -1,14 +1,15 @@
 import axios from 'axios';
 
-// When running in Vite dev server, requests to /api will be proxied to backend
-// In production, the backend serves the frontend and handles /api directly
-const API_BASE_URL = '/api';
+// API URL from environment (Vite prefix) or default to '/api' for proxied/dev mode
+// In production (Azure Static Web Apps), set VITE_API_URL to your backend URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 const client = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 60000,
 });
 
 export const api = {
@@ -85,6 +86,15 @@ export const api = {
   settings: {
     get: () => client.get('/settings'),
     update: (data) => client.post('/settings', data),
+  },
+
+  chat: {
+    sendMessage: (data) => client.post('/chat/message', data),
+    getHistory: (sessionId) => client.get('/chat/history', { params: { session_id: sessionId } }),
+    listSessions: () => client.get('/chat/list'),
+    newSession: (data) => client.post('/chat/new', data),
+    deleteSession: (sessionId) => client.delete(`/chat/${sessionId}`),
+    renameSession: (sessionId, title) => client.patch(`/chat/${sessionId}/rename`, { title }),
   },
 };
 

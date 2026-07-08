@@ -7,12 +7,13 @@ from app.llm.providers.groq_llm import GroqLLM
 from app.llm.providers.openrouter_llm import OpenRouterLLM
 from app.llm.providers.gemini_llm import GeminiLLM
 from app.llm.providers.lite_llm import LiteLLMProvider
+from app.llm.providers.azure_openai_llm import AzureOpenAILLM
 from app.services.settings_service import _load
 from app.core.logger import get_logger
 
 logger = get_logger(__name__)
 
-VALID_PROVIDERS = {"groq", "openrouter", "gemini", "litellm", "mock"}
+VALID_PROVIDERS = {"groq", "openrouter", "gemini", "litellm", "mock", "azure"}
 
 
 class FallbackLLM(BaseLLM):
@@ -61,6 +62,10 @@ def get_llm(provider: str | None = None) -> BaseLLM:
     groq_key = _sanitize_key(api_keys.get("groq") or settings.GROQ_API_KEY)
     openrouter_key = _sanitize_key(api_keys.get("openrouter") or settings.OPENROUTER_API_KEY)
     gemini_key = _sanitize_key(api_keys.get("gemini") or settings.GEMINI_API_KEY)
+    azure_endpoint = settings.AZURE_OPENAI_ENDPOINT or ""
+    azure_api_key = settings.AZURE_OPENAI_API_KEY or ""
+    azure_deployment = settings.AZURE_OPENAI_DEPLOYMENT or ""
+    azure_api_version = settings.AZURE_OPENAI_API_VERSION or "2024-02-15-preview"
 
     provider = provider or dynamic_settings.get("llm_provider") or getattr(settings, "DEFAULT_LLM_PROVIDER", "groq")
     if provider:
@@ -73,6 +78,19 @@ def get_llm(provider: str | None = None) -> BaseLLM:
     if provider == "mock":
         from app.llm.providers.mock_llm import MockLLM
         return MockLLM()
+
+    # Azure OpenAI is selected directly, no fallback needed
+    if provider == "azure":
+        if not azure_endpoint or not azure_api_key:
+            logger.warning("Azure OpenAI endpoint or API key not configured, falling back to mock")
+            from app.llm.providers.mock_llm import MockLLM
+            return MockLLM()
+        return AzureOpenAILLM(
+            endpoint=azure_endpoint,
+            api_key=azure_api_key,
+            deployment=azure_deployment,
+            api_version=azure_api_version,
+        )
 
     # Build the fallback map of available configured providers
     providers_map = {}

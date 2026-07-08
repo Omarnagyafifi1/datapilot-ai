@@ -1,0 +1,28 @@
+# Environment
+.env
+
+# Database
+*.db
+data/*.db
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+
+# Test & upload artifacts
+uploads/*
+!uploads/.gitkeep
+data/*
+!data/.gitkeep
+employees_data_*
+test_data_*
+test
+final_test/
+bird_data/
+
+# IDE
+.vscode/
+.idea/

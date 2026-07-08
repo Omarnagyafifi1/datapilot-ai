@@ -9,7 +9,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - LLM_PROVIDER=groq
+      - LLM_PROVIDER=${LLM_PROVIDER:-groq}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GROQ_API_KEY=${GROQ_API_KEY:-}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
@@ -17,8 +17,9 @@ services:
       - DATABASE_URL=sqlite+aiosqlite:///./dev.db
       - DATA_SOURCES_DB_URL=sqlite:///./data_sources.db
       - QUERY_HISTORY_DB_URL=sqlite:///./query_history.db
+      - ALLOW_ORIGINS=*
+      - DEBUG=true
     volumes:
-      # Persistent storage volume for SQLite metadata and databases
       - datapilot-data:/app/backend/data
     restart: unless-stopped
     networks:
@@ -33,10 +34,6 @@ services:
       - "5173:5173"
     environment:
       - VITE_API_TARGET=http://backend:8000
-    volumes:
-      # Mount source for hot-reload (optional, uncomment for live editing)
-      # - ./frontend/src:/app/frontend/src
-      # - ./frontend/public:/app/frontend/public
     restart: unless-stopped
     networks:
       - datapilot-network
