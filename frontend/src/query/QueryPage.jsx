@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import QueryInput from './components/QueryInput';
 import SQLViewer from './components/SQLViewer';
 import ResultsTable from './components/ResultsTable';

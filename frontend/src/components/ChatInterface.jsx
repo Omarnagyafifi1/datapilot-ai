@@ -150,7 +150,7 @@ export default function ChatInterface({
         }
       ]);
     }
-  }, [activeChatId]);
+  }, [activeChatId, conversations]);
 
   // Save conversations to localStorage
   useEffect(() => {

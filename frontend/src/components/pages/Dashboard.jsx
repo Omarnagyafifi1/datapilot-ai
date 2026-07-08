@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Sparkles, Terminal, ArrowRight, Zap, Database, Loader2, Activity, CheckCircle, BarChart3, PieChart, Clock, Globe } from 'lucide-react';
 import { api } from '../../lib/api';
 
