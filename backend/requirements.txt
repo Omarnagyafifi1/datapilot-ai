@@ -3,6 +3,7 @@ uvicorn
 pydantic
 python-dotenv
 redis
+azure-storage-blob
 
 langchain
 langchain-core

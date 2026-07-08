@@ -40,13 +40,29 @@ dist/
 *.log
 *.sqlite3
 *.db
+*.err
 
-# IDE/editor
-.vscode/
-.idea/
+# Uploaded data (generated at runtime)
+backend/uploads/
+backend/data/
+backend/app/uploads/
+employees_data_*
+test_data_*
+
+# Test artifacts
+test_*.py
+test_fix.py
+!backend/final_test/test_*.py
+!backend/bird_data/
+test_*.txt
 
 # OS files
 .DS_Store
 Thumbs.db
 CONTEXT.md
 terminal.txt
+AGENTS.md
+
+# IDE/editor
+.vscode/
+.idea/

@@ -10,13 +10,13 @@ import json
 
 from cryptography.fernet import Fernet
 from fastapi import HTTPException
-from sqlalchemy import Column, DateTime, Integer, MetaData, String, Table, create_engine, delete, insert, select, update, Text
-from sqlalchemy.engine import Engine
+from sqlalchemy import Column, DateTime, Integer, MetaData, String, Table, delete, insert, select, update, Text
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import settings
 from app.core.logger import get_logger
 from app.services import db_service
+from app.services.database import get_sync_engine
 
 
 logger = get_logger(__name__)
@@ -56,7 +56,6 @@ _DATASET_METADATA = Table(
     Column("ai_summary", Text, nullable=True),
 )
 
-_REGISTRY_ENGINE: Engine | None = None
 _SESSION_FACTORY: sessionmaker | None = None
 
 
@@ -66,14 +65,24 @@ def _get_fernet() -> Fernet:
         raise HTTPException(status_code=500, detail="Encryption key is not configured")
     try:
         return Fernet(key.encode("utf-8"))
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.exception("Invalid ENCRYPTION_KEY configuration")
         raise HTTPException(status_code=500, detail="Encryption key is invalid") from exc
 
 
+def _init_tables() -> None:
+    """Create tables if they don't exist (safe for both SQLite and PostgreSQL)."""
+    engine = get_sync_engine()
+    _METADATA.create_all(engine, tables=[_DATA_SOURCES, _DATASET_METADATA])
+
+
 def _migrate_sqlite_paths() -> None:
-    """Migrate any SQLite source with a relative db_name to an absolute path."""
+    """Migrate any SQLite source with a relative db_name to an absolute path (SQLite only)."""
+    db_url = str(settings.DATABASE_URL or "").strip()
+    if db_url and not db_url.startswith("sqlite"):
+        return
     try:
+        _init_tables()
         session_local = _get_session_factory()
         session: Session = session_local()
         rows = session.execute(
@@ -98,32 +107,11 @@ def _migrate_sqlite_paths() -> None:
         logger.warning("Failed to migrate SQLite paths: %s", exc)
 
 
-def _get_store_engine() -> Engine:
-    global _REGISTRY_ENGINE
-
-    if _REGISTRY_ENGINE is not None:
-        return _REGISTRY_ENGINE
-
-    db_url = settings.data_sources_db_url.strip()
-    if not db_url:
-        db_url = "sqlite:///./data_sources.db"
-
-    connect_args = {"timeout": 5} if db_url.startswith("sqlite:///") else {"connect_timeout": 5}
-    _REGISTRY_ENGINE = create_engine(
-        db_url,
-        pool_pre_ping=True,
-        connect_args=connect_args,
-    )
-    _METADATA.create_all(_REGISTRY_ENGINE, tables=[_DATA_SOURCES, _DATASET_METADATA])
-    _migrate_sqlite_paths()
-    return _REGISTRY_ENGINE
-
-
 def _get_session_factory() -> sessionmaker:
     global _SESSION_FACTORY
-
     if _SESSION_FACTORY is None:
-        _SESSION_FACTORY = sessionmaker(bind=_get_store_engine(), autoflush=False, autocommit=False)
+        _init_tables()
+        _SESSION_FACTORY = sessionmaker(bind=get_sync_engine(), autoflush=False, autocommit=False)
     return _SESSION_FACTORY
 
 

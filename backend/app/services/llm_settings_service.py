@@ -6,12 +6,12 @@ This module provides functions to get and save LLM settings to the database.
 
 from typing import Optional
 from datetime import datetime
-from sqlalchemy import Column, DateTime, Float, Integer, MetaData, String, Table, create_engine, select, insert, update
-from sqlalchemy.engine import Engine
+from sqlalchemy import Column, DateTime, Float, Integer, MetaData, String, Table, select, insert, update
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import settings
 from app.core.logger import get_logger
+from app.services.database import get_sync_engine
 
 logger = get_logger(__name__)
 
@@ -24,33 +24,23 @@ _LLM_SETTINGS = Table(
     Column("model", String(128), nullable=False, default="llama-3.1-8b-instant"),
     Column("temperature", Float, nullable=False, default=0.2),
     Column("max_tokens", Integer, nullable=False, default=2048),
-    Column("api_keys", String(2048), nullable=True),  # JSON string containing encrypted API keys
+    Column("api_keys", String(2048), nullable=True),
     Column("updated_at", DateTime, nullable=False, default=datetime.utcnow),
 )
 
-_SETTINGS_ENGINE: Engine | None = None
 _SESSION_FACTORY: sessionmaker | None = None
 
 
-def _get_settings_engine() -> Engine:
-    global _SETTINGS_ENGINE
-
-    if _SETTINGS_ENGINE is not None:
-        return _SETTINGS_ENGINE
-
-    db_url = settings.data_sources_db_url.strip()
-    if not db_url:
-        db_url = "sqlite:///./data_sources.db"
-
-    _SETTINGS_ENGINE = create_engine(db_url, pool_pre_ping=True)
-    _METADATA.create_all(_SETTINGS_ENGINE, tables=[_LLM_SETTINGS])
-    return _SETTINGS_ENGINE
+def _init_tables() -> None:
+    engine = get_sync_engine()
+    _METADATA.create_all(engine, tables=[_LLM_SETTINGS])
 
 
 def _get_session_factory() -> sessionmaker:
     global _SESSION_FACTORY
     if _SESSION_FACTORY is None:
-        _SESSION_FACTORY = sessionmaker(bind=_get_settings_engine(), autoflush=False, autocommit=False)
+        _init_tables()
+        _SESSION_FACTORY = sessionmaker(bind=get_sync_engine(), autoflush=False, autocommit=False)
     return _SESSION_FACTORY
 
 

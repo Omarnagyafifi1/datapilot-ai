@@ -4,12 +4,13 @@ from datetime import datetime, timedelta
 from uuid import UUID, uuid4
 from typing import Any
 
-from sqlalchemy import Column, DateTime, Float, Integer, MetaData, String, Table, create_engine, select, insert, desc, func, text
+from sqlalchemy import Column, DateTime, Float, Integer, MetaData, String, Table, select, insert, desc, func, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import settings
 from app.core.logger import get_logger
+from app.services.database import get_sync_engine, get_sync_engine_for_history
 
 logger = get_logger(__name__)
 
@@ -27,19 +28,14 @@ _QUERY_HISTORY = Table(
     Column("executed_at", DateTime, nullable=False, default=datetime.utcnow),
 )
 
-_HISTORY_ENGINE: Engine | None = None
 _SESSION_FACTORY: sessionmaker | None = None
 
-def _get_history_engine() -> Engine:
-    global _HISTORY_ENGINE
-    if _HISTORY_ENGINE is not None:
-        return _HISTORY_ENGINE
 
-    db_url = settings.query_history_db_url.strip()
-    _HISTORY_ENGINE = create_engine(db_url, pool_pre_ping=True)
-    _METADATA.create_all(_HISTORY_ENGINE, tables=[_QUERY_HISTORY])
-    _migrate_history_schema(_HISTORY_ENGINE)
-    return _HISTORY_ENGINE
+def _get_history_engine() -> Engine:
+    engine = get_sync_engine_for_history()
+    _METADATA.create_all(engine, tables=[_QUERY_HISTORY])
+    _migrate_history_schema(engine)
+    return engine
 
 def _migrate_history_schema(engine: Engine) -> None:
     with engine.connect() as conn:
