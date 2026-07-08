@@ -1,11 +1,11 @@
 {
-  "llm_provider": "groq",
-  "model": "llama-3.3-70b-versatile",
+  "llm_provider": "azure",
+  "model": "gpt-5-mini",
   "temperature": 0.2,
   "max_tokens": 2048,
   "api_keys": {
-"groq": "YOUR_GROQ_API_KEY_HERE",
-    "openrouter": "YOUR_OPENROUTER_API_KEY_HERE",
+    "groq": "",
+    "openrouter": "",
     "gemini": "",
     "openai": ""
   },

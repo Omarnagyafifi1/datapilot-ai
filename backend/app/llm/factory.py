@@ -63,7 +63,12 @@ def get_llm(provider: str | None = None) -> BaseLLM:
     openrouter_key = _sanitize_key(api_keys.get("openrouter") or settings.OPENROUTER_API_KEY)
     gemini_key = _sanitize_key(api_keys.get("gemini") or settings.GEMINI_API_KEY)
 
-    provider = provider or dynamic_settings.get("llm_provider") or settings.LLM_PROVIDER or getattr(settings, "DEFAULT_LLM_PROVIDER", "groq")
+    provider = provider or dynamic_settings.get("llm_provider") or settings.LLM_PROVIDER or ""
+    if not provider:
+        if settings.AZURE_OPENAI_ENDPOINT and settings.AZURE_OPENAI_API_KEY:
+            provider = "azure"
+        else:
+            provider = getattr(settings, "DEFAULT_LLM_PROVIDER", "groq")
     if provider:
         provider = provider.strip().lower()
     # 'mock' is always valid; unknown providers fall back to litellm
