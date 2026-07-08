@@ -74,8 +74,7 @@ class AzureOpenAILLM(BaseLLM):
         kwargs = {
             "model": self.deployment,
             "messages": messages,
-            "temperature": 0.0,
-            "max_tokens": max_tokens or 1024,
+            "max_completion_tokens": max_tokens or 1024,
         }
         response = self.client.chat.completions.create(**kwargs)
         return response.choices[0].message.content or ""

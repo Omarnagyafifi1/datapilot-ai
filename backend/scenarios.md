@@ -1071,3 +1071,213 @@ Always verify the existence of tables and columns in the database schema before 
 }
 ```
 
+## 2026-07-08T06:43:36.485119+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-08T06:43:36.485119+00:00",
+  "status": "resolved",
+  "question": "how many rows",
+  "sql": "SELECT COUNT(*) AS cnt FROM imdb_movies_csv",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-08T06:43:37.591566+00:00 - failed
+
+```json
+{
+  "created_at": "2026-07-08T06:43:37.591566+00:00",
+  "status": "failed",
+  "question": "عايز اعلي  عشر افلام تقييم ",
+  "sql": "SELECT 'ERROR: Requested data or table not found in schema' AS error;",
+  "error": "SELECT 'ERROR: Requested data or table not found in schema' AS error;",
+  "validation_reason": null,
+  "lesson": ""
+}
+```
+
+## 2026-07-08T06:45:08.323530+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-08T06:45:08.323530+00:00",
+  "status": "resolved",
+  "question": "عايز اعلي  عشر افلام تقييم ",
+  "sql": "SELECT name, salary AS rating FROM results_csv ORDER BY salary DESC LIMIT 10;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-08T06:45:14.639274+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-08T06:45:14.639274+00:00",
+  "status": "resolved",
+  "question": "عايز اعلي  عشر افلام تقييم ",
+  "sql": "SELECT \"movie name \", \"RATING\" FROM imdb_movies_csv ORDER BY \"RATING\" DESC LIMIT 10;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-08T06:48:03.387299+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-08T06:48:03.387299+00:00",
+  "status": "resolved",
+  "question": "Show first 10 rows from imdb_movies_csv",
+  "sql": "SELECT * FROM imdb_movies_csv LIMIT 10;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-08T06:51:09.404175+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-08T06:51:09.404175+00:00",
+  "status": "resolved",
+  "question": "Show first 10 rows from employees",
+  "sql": "SELECT * FROM employees LIMIT 10;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-08T07:02:21.635796+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-08T07:02:21.635796+00:00",
+  "status": "resolved",
+  "question": "how many rows in imdb_movies_csv?",
+  "sql": "SELECT COUNT(*) AS cnt FROM imdb_movies_csv",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-08T07:02:58.616717+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-08T07:02:58.616717+00:00",
+  "status": "resolved",
+  "question": "Show first 10 rows from inventory",
+  "sql": "SELECT * FROM inventory LIMIT 10;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-08T07:04:11.274973+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-08T07:04:11.274973+00:00",
+  "status": "resolved",
+  "question": "Show first 10 rows from sales",
+  "sql": "SELECT * FROM sales LIMIT 10;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-08T07:05:32.513322+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-08T07:05:32.513322+00:00",
+  "status": "resolved",
+  "question": "Show first 10 rows from sales",
+  "sql": "SELECT * FROM sales LIMIT 10;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-08T07:06:36.308434+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-08T07:06:36.308434+00:00",
+  "status": "resolved",
+  "question": "what are the top 10 highest rated movies? show movie name and rating",
+  "sql": "SELECT \"movie name \", \"RATING\" FROM imdb_movies_csv ORDER BY \"RATING\" DESC LIMIT 10;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-08T07:07:57.822597+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-08T07:07:57.822597+00:00",
+  "status": "resolved",
+  "question": "Show first 10 rows from inventory",
+  "sql": "SELECT * FROM inventory LIMIT 10;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-08T07:22:08.996973+00:00 - failed
+
+```json
+{
+  "created_at": "2026-07-08T07:22:08.996973+00:00",
+  "status": "failed",
+  "question": "اعلي خمس ممقلين اجر ",
+  "sql": "SELECT 'ERROR: Requested data or table not found in schema' AS error;",
+  "error": "SELECT 'ERROR: Requested data or table not found in schema' AS error;",
+  "validation_reason": null,
+  "lesson": ""
+}
+```
+
+## 2026-07-08T07:23:59.948198+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-08T07:23:59.948198+00:00",
+  "status": "resolved",
+  "question": "show me the first 3 movies",
+  "sql": "SELECT * FROM imdb_movies_csv LIMIT 3;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
+## 2026-07-08T10:58:48.475466+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-08T10:58:48.475466+00:00",
+  "status": "resolved",
+  "question": "Show first 10 rows from imdb_movies_csv",
+  "sql": "SELECT * FROM imdb_movies_csv LIMIT 10;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+

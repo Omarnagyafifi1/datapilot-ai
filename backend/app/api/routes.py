@@ -322,6 +322,43 @@ def _generate_and_cache_suggestions(source_id: str, graph) -> None:
         ).replace("{sample_data}", sample_data if sample_data else "No sample data available.")
         raw_response = graph.llm.generate(prompt)
         parsed = _parse_suggestions(raw_response)
+
+        # Fallback: if bilingual prompt fails, try English-only then translate
+        if not parsed:
+            en_prompt = (
+                "You are a data analyst assistant. Based on the database schema and sample data below, "
+                "suggest insightful starter questions the user might want to ask to explore their data.\n\n"
+                "### Instructions\n"
+                "- Analyze the table names, column names, and sample values to understand what kind of data is stored.\n"
+                "- Generate exactly 4 relevant, ready-to-ask questions.\n"
+                "- Questions must be SPECIFIC to actual column values you see in the samples.\n"
+                "- NEVER use generic placeholder terms.\n\n"
+                "### Sample Data\n"
+                f"{sample_data if sample_data else 'No sample data available.'}\n\n"
+                "### Critical Formatting Rules\n"
+                "Return ONLY a valid JSON array of objects. Do NOT wrap the JSON in markdown code blocks.\n\n"
+                "Strictly adhere to this format:\n"
+                '[{"en": "English question here?"}, {"en": "English question here?"}, {"en": "English question here?"}, {"en": "English question here?"}]\n\n'
+                f"### Database Schema\n{schema_summary}"
+            )
+            raw_response = graph.llm.generate(en_prompt)
+            parsed = _parse_suggestions(raw_response)
+
+            # Translate English suggestions to Arabic
+            if parsed:
+                en_texts = [s["en"] for s in parsed]
+                trans_prompt = (
+                    "Translate each of these questions to Arabic. Return ONLY a JSON array of objects "
+                    'with "ar" and "en" keys, exactly matching the English inputs.\n\n'
+                    "Format:\n"
+                    '[{"ar": "...Arabic...", "en": "English question here?"}]\n\n'
+                    f"Questions:\n" + "\n".join(f"- {t}" for t in en_texts)
+                )
+                trans_raw = graph.llm.generate(trans_prompt, max_tokens=512)
+                trans_result = _parse_suggestions(trans_raw)
+                if trans_result is not None:
+                    parsed = trans_result
+
         if parsed:
             _SUGGESTIONS_CACHE[source_id] = parsed[:4]
             return

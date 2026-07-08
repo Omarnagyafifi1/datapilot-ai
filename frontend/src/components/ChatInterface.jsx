@@ -179,6 +179,7 @@ export default function ChatInterface({
             type: m.role === 'user' ? 'user' : 'bot',
             content: m.content,
             timestamp: m.created_at,
+            ...(m.extra && Object.keys(m.extra).length > 0 ? { doc: m.extra } : {}),
           }));
           setMessages(formatted);
         } else {

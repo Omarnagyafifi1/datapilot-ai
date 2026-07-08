@@ -159,7 +159,7 @@ SUGGESTION_PROMPT = """
 You are a bilingual (Arabic/English) data analyst assistant. Based on the recent data interaction, suggest logical follow-up questions the user might want to ask next to dive deeper into the data.
 
 ### Instructions
-Generate exactly 3 relevant, ready-to-ask follow-up questions.
+Generate exactly 3 relevant, ready-to-ask follow-up questions. Each question must be provided in both Arabic and English.
 
 ### Critical Formatting Rules
 Return ONLY a valid JSON array of objects. Do NOT wrap the JSON in markdown code blocks (e.g., no ```json). Do NOT include any conversational text before or after the JSON.
@@ -181,6 +181,7 @@ You are a bilingual (Arabic/English) data analyst assistant. Based on the databa
 - Questions must be SPECIFIC to the actual data content — use column values you see in the samples (e.g., if a "category" column has "Electronics", ask about Electronics; if "region" has "North", ask about North, etc.).
 - Questions should be diverse: mix aggregations, filtering, joins, and simple lookups.
 - NEVER use generic placeholder terms like "specific category" or "certain region". Use the actual values from the samples.
+- Each question must be provided in both Arabic and English.
 
 ### Sample Data (first 3 rows per table)
 {sample_data}

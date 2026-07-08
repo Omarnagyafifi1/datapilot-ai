@@ -4,10 +4,11 @@ from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.api.deps import get_graph_orchestrator
+from app.api.deps import get_data_source_service, get_graph_orchestrator
 from app.agents.graph import AgentGraph
 from app.core.logger import get_logger
 from app.services.chat_service import ChatService
+from app.services.data_source_service import DataSourceService
 
 logger = get_logger(__name__)
 
@@ -21,6 +22,7 @@ def _get_chat_service(graph: AgentGraph = Depends(get_graph_orchestrator)) -> Ch
 @router.post("/message")
 def send_message(
     body: dict[str, Any],
+    data_source_service: DataSourceService = Depends(get_data_source_service),
     chat_service: ChatService = Depends(_get_chat_service),
 ) -> dict[str, Any]:
     """
@@ -41,6 +43,8 @@ def send_message(
 
     if not session_id or not question or not source_id:
         raise HTTPException(status_code=400, detail="session_id, question, and source_id are required")
+
+    data_source_service.get_conn_string(source_id)
 
     try:
         result = chat_service.send_message(

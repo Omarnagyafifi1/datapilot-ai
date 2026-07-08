@@ -193,15 +193,21 @@ def _normalize_suggestions(payload: Any) -> list[dict[str, str]] | None:
         if not isinstance(item, dict):
             continue
 
-        ar_value = item.get("ar")
         en_value = item.get("en")
-        if not isinstance(ar_value, str) or not isinstance(en_value, str):
+        if not isinstance(en_value, str):
             continue
 
-        ar_value = ar_value.strip()
         en_value = en_value.strip()
-        if ar_value and en_value:
-            normalized.append({"ar": ar_value, "en": en_value})
+        if not en_value:
+            continue
+
+        ar_value = item.get("ar")
+        if not isinstance(ar_value, str) or not ar_value.strip():
+            ar_value = en_value
+        else:
+            ar_value = ar_value.strip()
+
+        normalized.append({"ar": ar_value, "en": en_value})
 
     if not normalized:
         return None
@@ -661,16 +667,48 @@ def suggestion_node(state: AgentState, llm: BaseLLM) -> dict:
 
     schema_summary = "\n".join(schema_lines) if schema_lines else "N/A"
 
-    prompt = (
-        f"{SUGGESTION_PROMPT}\n\n"
+    base_prompt = (
         f"Question:\n{state.question}\n\n"
         f"Generated SQL:\n{state.sql}\n\n"
         f"Database Schema:\n{schema_summary}\n\n"
         f"Sample Results (first {len(results_preview)} rows):\n{json.dumps(results_preview, ensure_ascii=False)}"
     )
 
+    prompt = f"{SUGGESTION_PROMPT}\n\n{base_prompt}"
     raw_response = llm.generate(prompt, max_tokens=512)
     parsed_suggestions = _parse_suggestions(raw_response)
+
+    # Fallback: if bilingual prompt returns empty, try English-only then translate
+    if parsed_suggestions is None:
+        en_prompt = (
+            "You are a data analyst assistant. Based on the recent data interaction, suggest "
+            "logical follow-up questions the user might want to ask next to dive deeper into the data.\n\n"
+            "### Instructions\n"
+            "Generate exactly 3 relevant, ready-to-ask follow-up questions.\n\n"
+            "### Critical Formatting Rules\n"
+            "Return ONLY a valid JSON array of objects. Do NOT wrap the JSON in markdown code blocks.\n\n"
+            "Strictly adhere to this format:\n"
+            '[{"en": "English question here?"}, {"en": "English question here?"}, {"en": "English question here?"}]\n\n'
+            f"{base_prompt}"
+        )
+        raw_response = llm.generate(en_prompt, max_tokens=512)
+        parsed_suggestions = _parse_suggestions(raw_response)
+
+        # Translate English suggestions to Arabic
+        if parsed_suggestions is not None:
+            en_texts = [s["en"] for s in parsed_suggestions]
+            trans_prompt = (
+                "Translate each of these questions to Arabic. Return ONLY a JSON array of objects "
+                'with "ar" and "en" keys, exactly matching the English inputs.\n\n'
+                "Format:\n"
+                '[{"ar": "...Arabic...", "en": "English question here?"}]\n\n'
+                f"Questions:\n" + "\n".join(f"- {t}" for t in en_texts)
+            )
+            trans_raw = llm.generate(trans_prompt, max_tokens=512)
+            trans_result = _parse_suggestions(trans_raw)
+            if trans_result is not None:
+                parsed_suggestions = trans_result
+
     return {"suggestions": parsed_suggestions if parsed_suggestions is not None else []}
 
 

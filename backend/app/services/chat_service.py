@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any, Optional
 
 from app.core.config import settings
@@ -8,6 +9,20 @@ from app.repositories.chat_repository import ChatRepository
 from app.agents.graph import AgentGraph
 
 logger = get_logger(__name__)
+
+
+def _extract_content_text(content: str) -> str:
+    """Extract display text from a stored message, handling JSON agent responses."""
+    if not content:
+        return ""
+    if content.startswith("{"):
+        try:
+            data = json.loads(content)
+            if isinstance(data, dict) and data.get("__type") == "agent_message":
+                return data.get("answer") or "Query executed."
+        except (json.JSONDecodeError, TypeError):
+            pass
+    return content
 
 
 class ChatService:
@@ -82,12 +97,10 @@ class ChatService:
             limit=self._history_limit,
         )
 
-        # Convert to LLM-friendly format
+        # Convert to LLM-friendly format (extract plain text from JSON agent messages)
         chat_history: list[dict[str, str]] = [
-            {"role": msg["role"], "content": msg["content"]}
+            {"role": msg["role"], "content": _extract_content_text(msg["content"])}
             for msg in recent_messages
-            # Exclude the just-saved user message if we only want prior context
-            # But including it is fine; the LLM can use full context
         ]
 
         # ── 4. Call the existing LLM flow with history injected ─────────
@@ -104,16 +117,20 @@ class ChatService:
             logger.exception("Chat LLM call failed")
             raise
 
-        # Extract assistant response content
-        assistant_content = (
-            result.get("answer")
-            or result.get("message")
-            or result.get("documentation", {}).get("sql", "")
-        )
-        if not assistant_content:
-            assistant_content = "Query executed successfully."
+        # ── 5. Save full assistant response as structured JSON ──────────
+        assistant_content = json.dumps({
+            "__type": "agent_message",
+            "answer": result.get("answer") or result.get("message") or "",
+            "sql": result.get("sql", ""),
+            "results": result.get("results", []),
+            "results_count": result.get("results_count", len(result.get("results", []))),
+            "insights": result.get("insights", []),
+            "suggestions": result.get("suggestions", []),
+            "visualization": result.get("visualization"),
+            "thread_id": result.get("thread_id"),
+            "status": result.get("status", "completed"),
+        }, ensure_ascii=False)
 
-        # ── 5. Save assistant response ──────────────────────────────────
         self._repo.save_message(
             chat_session_id=chat_session_id,
             role="assistant",
@@ -134,28 +151,42 @@ class ChatService:
     # ── History retrieval ───────────────────────────────────────────────
 
     def get_history(self, session_id: str, limit: Optional[int] = None) -> list[dict[str, Any]]:
-        """Get all messages for a session."""
+        """Get all messages for a session, parsing JSON agent messages."""
         session_record = self._repo.find_session_by_session_id(session_id)
         if session_record is None:
             return []
-        return self._repo.get_messages(
+        messages = self._repo.get_messages(
             chat_session_id=session_record["id"],
             limit=limit or self._history_limit,
         )
+        result = []
+        for msg in messages:
+            content = msg.get("content", "")
+            enriched = dict(msg)
+            enriched["extra"] = {}
+            if content.startswith("{") and msg.get("role") == "assistant":
+                try:
+                    data = json.loads(content)
+                    if isinstance(data, dict) and data.get("__type") == "agent_message":
+                        enriched["content"] = data.get("answer") or "Query executed."
+                        enriched["extra"] = {k: v for k, v in data.items() if k != "__type" and k != "answer"}
+                except (json.JSONDecodeError, TypeError):
+                    pass
+            result.append(enriched)
+        return result
 
     # ── Session listing ─────────────────────────────────────────────────
 
     def list_sessions(self) -> list[dict[str, Any]]:
         """List all chat sessions."""
         sessions = self._repo.list_sessions()
-        # Add a preview of the last message for each session
         enriched = []
         for ses in sessions:
             messages = self._repo.get_messages(
                 chat_session_id=ses["id"],
-                limit=1,
+                limit=self._history_limit,
             )
-            preview = messages[-1]["content"][:100] if messages else ""
+            preview = _extract_content_text(messages[-1]["content"])[:100] if messages else ""
             enriched.append({**ses, "preview": preview})
         return enriched
 
