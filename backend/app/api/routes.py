@@ -36,7 +36,7 @@ from app.services.data_source_service import DataSourceService, save_dataset_met
 from app.services.history_service import HistoryService
 from app.services import db_service
 from app.services.data_service import DataSourceService as CSVService
-from app.services.database import engine
+
 from app.services.import_providers import ImportPreview, ImportOptions
 from app.services.import_providers.csv_provider import CSVProvider
 from app.services.import_providers.sqlite_provider import SQLiteProvider

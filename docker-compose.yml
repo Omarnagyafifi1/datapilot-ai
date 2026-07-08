@@ -1,4 +1,3 @@
-version: "3.8"
 
 services:
   # ── Production simulation (with PostgreSQL) ─────────────────────────
@@ -30,15 +29,19 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - LLM_PROVIDER=groq
+      - LLM_PROVIDER=${LLM_PROVIDER:-groq}
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:-}
+      - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT:-gpt-5-mini}
+      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION:-2024-02-15-preview}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GROQ_API_KEY=${GROQ_API_KEY:-}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY:-}
-      # Use PostgreSQL when running with --profile prod
+      - LANGSMITH_TRACING=${LANGSMITH_TRACING:-false}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY:-}
+      - LANGSMITH_PROJECT=${LANGSMITH_PROJECT:-datapilot-ai}
       - DATABASE_URL=postgresql+psycopg2://datapilot:datapilot@postgres:5432/datapilot
-      - DATA_SOURCES_DB_URL=sqlite:///./data_sources.db
-      - QUERY_HISTORY_DB_URL=sqlite:///./query_history.db
       - FRONTEND_URL=http://localhost:5173
     volumes:
       - datapilot-data:/app/backend/data
@@ -49,7 +52,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-        required: false
     profiles: ["prod"]
 
   # ── Development (SQLite, default) ───────────────────────────────────
@@ -62,14 +64,19 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - LLM_PROVIDER=groq
+      - LLM_PROVIDER=${LLM_PROVIDER:-groq}
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:-}
+      - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT:-gpt-5-mini}
+      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION:-2024-02-15-preview}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GROQ_API_KEY=${GROQ_API_KEY:-}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY:-}
+      - LANGSMITH_TRACING=${LANGSMITH_TRACING:-false}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY:-}
+      - LANGSMITH_PROJECT=${LANGSMITH_PROJECT:-datapilot-ai}
       - DATABASE_URL=sqlite+aiosqlite:///./dev.db
-      - DATA_SOURCES_DB_URL=sqlite:///./data_sources.db
-      - QUERY_HISTORY_DB_URL=sqlite:///./query_history.db
     volumes:
       - datapilot-data:/app/backend/data
     restart: unless-stopped
@@ -81,6 +88,7 @@ services:
       context: .
       dockerfile: frontend/Dockerfile.dev
     container_name: datapilot-ai-frontend
+    profiles: ["dev"]
     ports:
       - "5173:5173"
     environment:

@@ -4,6 +4,7 @@ pydantic
 python-dotenv
 redis
 azure-storage-blob
+aiosqlite
 
 langchain
 langchain-core

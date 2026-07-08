@@ -15,7 +15,7 @@ from app.core.config import settings
 from app.core.exceptions import CSVValidationError, DataCleaningError, DatabaseIngestionError
 from app.core.logger import generate_request_id, set_request_id
 from app.models.schemas import UploadResponse, UploadMetadata
-from app.services.database import engine
+from app.services.database import async_engine as engine
 from app.services.data_service import DataSourceService
 
 # Setup basic logging
