@@ -1071,3 +1071,17 @@ Always verify the existence of tables and columns in the database schema before 
 }
 ```
 
+## 2026-07-08T16:33:00.156365+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-08T16:33:00.156365+00:00",
+  "status": "resolved",
+  "question": "Show first 10 rows from finally_csv",
+  "sql": "SELECT Id, Drafted FROM finally_csv LIMIT 10;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+
