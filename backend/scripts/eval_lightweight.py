@@ -6,6 +6,12 @@ Fits within free-tier limits (~24 LLM calls per full eval).
 import json, time, sqlite3, re, sys
 from pathlib import Path
 
+try:
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
+except AttributeError:
+    pass
+
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BACKEND_DIR))
 
@@ -100,7 +106,7 @@ def main():
     gen.create_databases()
     gen.generate_dev_set()
 
-    with open(gen.DEV_SET_DIR / "dev.json") as f:
+    with open(gen.DEV_SET_DIR / "dev.json", encoding="utf-8") as f:
         examples = json.load(f)
 
     llm = get_llm(provider=settings.LLM_PROVIDER)
@@ -117,7 +123,7 @@ def main():
         db_path = str(gen.DATABASES_DIR / f"{db_id}.db")
 
         schema_str = build_schema_str(db_id)
-        prompt = SQL_GENERATION_PROMPT.format(schema=schema_str, max_rows=1000, question=question)
+        prompt = SQL_GENERATION_PROMPT.format(schema=schema_str, max_rows=1000, question=question, scenario_context="")
 
         print(f"  [{i}/{total}] {YELLOW}{db_id}{RESET} [{ex['difficulty']}] {question[:70]}")
         start = time.time()

@@ -132,7 +132,7 @@ def _normalize_conn_string_for_sync(conn_string: str) -> str:
     return conn_string
 
 
-def upload_csv_to_sqlite(csv_path: str, source_id: str) -> tuple:
+def upload_csv_to_sqlite(csv_path: str, source_id: str, table_name: str = None) -> tuple:
     """Uploads a CSV to a temporary SQLite database and returns (conn_string, table_name)."""
     try:
         df = pd.read_csv(csv_path)
@@ -145,8 +145,11 @@ def upload_csv_to_sqlite(csv_path: str, source_id: str) -> tuple:
         conn_string = f"sqlite:///{db_path}"
         
         engine = create_engine(conn_string)
-        # Use the filename (without extension) as the table name
-        table_name = os.path.splitext(os.path.basename(csv_path))[0].replace(" ", "_").replace("(", "").replace(")", "").lower()
+        if not table_name:
+            # Use the filename (without extension) as the table name
+            table_name = os.path.splitext(os.path.basename(csv_path))[0].replace(" ", "_").replace("(", "").replace(")", "").lower()
+            if table_name and table_name[0].isdigit():
+                table_name = f"table_{table_name}"
         
         df.to_sql(table_name, engine, if_exists="replace", index=False)
         

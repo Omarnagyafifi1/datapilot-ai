@@ -95,9 +95,8 @@ class CSVProvider(ImportProvider):
         except Exception as e:
             return False, str(e)
     
-    async def preview(self, file: UploadFile) -> ImportPreview:
-        """Generate preview of CSV data without importing."""
-        content = await file.read()
+    def _generate_preview(self, content: bytes, filename: str) -> ImportPreview:
+        """Generate preview of CSV data from bytes content."""
         file_size = len(content)
         file_hash = self._calculate_file_hash(content)
         
@@ -115,13 +114,17 @@ class CSVProvider(ImportProvider):
                 name=sanitized,
                 original_name=str(col),
                 data_type=self._detect_data_type(df[col]),
-                nullable=df[col].isna().any(),
-                is_numeric=self._is_numeric(df[col]),
-                is_date=self._is_date(df[col]),
+                nullable=bool(df[col].isna().any()),
+                is_numeric=bool(self._is_numeric(df[col])),
+                is_date=bool(self._is_date(df[col])),
             ))
         
+        preview_table_name = self._sanitize_column_name(filename)
+        if preview_table_name and preview_table_name[0].isdigit():
+            preview_table_name = f"table_{preview_table_name}"
+            
         table = TableMetadata(
-            name=self._sanitize_column_name(file.filename),
+            name=preview_table_name,
             original_name=None,
             row_count=len(df),
             columns=columns,
@@ -141,7 +144,7 @@ class CSVProvider(ImportProvider):
         )
         
         return ImportPreview(
-            filename=file.filename or "unknown.csv",
+            filename=filename or "unknown.csv",
             file_size=file_size,
             detected_format="csv",
             file_hash=file_hash,
@@ -149,9 +152,16 @@ class CSVProvider(ImportProvider):
             quality_report=quality_report,
             relationships=[],  # CSVs don't have relationships
         )
+
+    async def preview(self, file: UploadFile) -> ImportPreview:
+        """Generate preview of CSV data without importing."""
+        await file.seek(0)
+        content = await file.read()
+        return self._generate_preview(content, file.filename)
     
     async def parse(self, file: UploadFile, options: ImportOptions) -> Tuple[Any, ImportPreview]:
         """Parse CSV content."""
+        await file.seek(0)
         content = await file.read()
         preview = await self.preview(file)
         
@@ -190,6 +200,10 @@ class CSVProvider(ImportProvider):
         await file.seek(0)
         content = await file.read()
         file_hash = self._calculate_file_hash(content)
+        
+        # Generate the preview once from the loaded content bytes
+        preview = self._generate_preview(content, file.filename)
+        
         safe_name = "".join(c for c in file.filename or "uploaded.csv" if c.isalnum() or c in "._-")
         stored_filename = f"{file_hash[:8]}_{safe_name}"
         stored_path = os.path.join(UPLOAD_DIR, stored_filename)
@@ -208,7 +222,8 @@ class CSVProvider(ImportProvider):
         try:
             # Use db_service.upload_csv_to_sqlite to create SQLite DB from CSV
             # This handles everything without needing an external DATABASE_URL
-            conn_string, table_name = db_service.upload_csv_to_sqlite(stored_path, source_id)
+            target_table_name = preview.tables[0].name if preview.tables else "uploaded_csv"
+            conn_string, table_name = db_service.upload_csv_to_sqlite(stored_path, source_id, target_table_name)
         except Exception as e:
             raise CSVValidationError(f"Failed to import CSV to database: {str(e)}")
         
@@ -218,14 +233,36 @@ class CSVProvider(ImportProvider):
         # Create datasource entry for SQLite
         source_uuid = await self._register_datasource(dataset_name, db_path)
         
+        # Save dataset metadata for it to appear in the library
+        try:
+            from dataclasses import asdict
+            from app.services.data_source_service import save_dataset_metadata
+            
+            tables_dict = [asdict(t) for t in preview.tables]
+            relationships_dict = [asdict(r) for r in preview.relationships]
+            quality_report_dict = asdict(preview.quality_report)
+            
+            save_dataset_metadata(
+                source_id=source_uuid,
+                name=dataset_name,
+                source_type="csv",
+                original_filename=file.filename or "unknown.csv",
+                file_size=len(content),
+                file_hash=file_hash,
+                tables=tables_dict,
+                relationships=relationships_dict,
+                quality_report=quality_report_dict,
+            )
+        except Exception as e:
+            logger.exception("Failed to save dataset metadata during CSV import: %s", e)
+        
         # Get row count from the created table
         try:
             with db_service.get_engine(source_id, conn_string).connect() as conn:
-                result = conn.execute(sql_text(f"SELECT COUNT(*) FROM {table_name}"))
+                result = conn.execute(sql_text(f'SELECT COUNT(*) FROM "{table_name}"'))
                 total_rows = result.scalar()
         except Exception:
             # Fallback: estimate from preview
-            preview = await self.preview(file)
             total_rows = preview.tables[0].row_count if preview.tables else 0
         
         return ImportResult(
