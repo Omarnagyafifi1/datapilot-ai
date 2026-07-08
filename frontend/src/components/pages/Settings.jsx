@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  Settings as SettingsIcon, Brain, Key, Shield, ToggleLeft, Save, AlertCircle,
+  Settings as SettingsIcon, Brain, Key, ToggleLeft, Save, AlertCircle,
   RefreshCw, BarChart3, Info, CheckCircle2, Unlock,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { cn } from '../../lib/utils';
-import { PROVIDERS } from '../../lib/constants';
+import { PROVIDERS, MODELS } from '../../lib/constants';
 
 const FEATURES = [
   { key: 'scenario_memory', label: 'Scenario Memory', desc: 'Log SQL failures with lessons learned for future reference.' },
@@ -17,8 +17,8 @@ const FEATURES = [
 
 function Section({ icon, title, color, children }) {
   return (
-    <div className="glass p-6 rounded-2xl border-white/5">
-      <h3 className="text-sm font-mono font-bold text-white uppercase tracking-widest mb-6 flex items-center gap-2">
+    <div className="glass p-6 rounded-2xl border-border">
+      <h3 className="text-sm font-mono font-bold text-foreground uppercase tracking-widest mb-6 flex items-center gap-2">
         <span className={color}>{icon}</span> {title}
       </h3>
       {children}
@@ -32,7 +32,7 @@ function StatusBadge({ label, status }) {
     offline: 'bg-red-400/20 text-red-400',
     configured: 'bg-cyber-cyan/20 text-cyber-cyan',
     mock: 'bg-amber-400/20 text-amber-400',
-    loading: 'bg-white/10 text-muted',
+    loading: 'bg-foreground/10 text-muted',
     success: 'bg-cyber-lime text-black',
   };
   return (
@@ -51,10 +51,10 @@ function StatusBadge({ label, status }) {
 
 function SecurityCard({ icon, title, desc }) {
   return (
-    <div className="flex items-start gap-4 p-4 bg-white/[0.02] border border-white/5 rounded-xl">
+    <div className="flex items-start gap-4 p-4 bg-foreground/[0.02] border border-border rounded-xl">
       <span className="shrink-0 mt-0.5">{icon}</span>
       <div>
-        <p className="text-xs font-bold text-white mb-1">{title}</p>
+        <p className="text-xs font-bold text-foreground mb-1">{title}</p>
         <p className="text-xs text-muted leading-relaxed">{desc}</p>
       </div>
     </div>
@@ -63,15 +63,14 @@ function SecurityCard({ icon, title, desc }) {
 
 function AboutItem({ label, value }) {
   return (
-    <div className="p-4 bg-white/[0.02] border border-white/5 rounded-xl text-center">
+    <div className="p-4 bg-foreground/[0.02] border border-border rounded-xl text-center">
       <p className="text-[10px] font-mono font-bold text-muted uppercase tracking-widest mb-2">{label}</p>
-      <p className="text-sm font-bold text-white">{value}</p>
+      <p className="text-sm font-bold text-foreground">{value}</p>
     </div>
   );
 }
 
 export default function Settings() {
-  const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -79,6 +78,9 @@ export default function Settings() {
   const [healthStatus, setHealthStatus] = useState(null);
 
   const [llmProvider, setLlmProvider] = useState('mock');
+  const [selectedModel, setSelectedModel] = useState('llama-3.3-70b-versatile');
+  const [temperature, setTemperature] = useState(0.2);
+  const [maxTokens, setMaxTokens] = useState(2048);
   const [apiKeys, setApiKeys] = useState({ groq: '', openrouter: '', gemini: '', openai: '' });
   const [features, setFeatures] = useState({});
   const [vizConfig, setVizConfig] = useState({ default_chart_type: 'auto', max_bars: 20, theme: 'dark' });
@@ -97,13 +99,15 @@ export default function Settings() {
       const resp = await api.settings.get();
       if (resp.data?.success && resp.data?.data) {
         const s = resp.data.data;
-        setSettings(s);
         setLlmProvider(s.llm_provider || 'mock');
-        setApiKeys(prev => ({ ...prev, ...s.api_keys }));
+        setSelectedModel(s.model || 'llama-3.3-70b-versatile');
+        setTemperature(s.temperature ?? 0.2);
+        setMaxTokens(s.max_tokens ?? 2048);
+        setApiKeys({ groq: '', openrouter: '', gemini: '', openai: '', ...s.api_keys });
         setFeatures(s.features || {});
         setVizConfig(s.visualization || { default_chart_type: 'auto', max_bars: 20, theme: 'dark' });
       }
-    } catch (err) {
+    } catch {
       setError('Failed to load settings');
     } finally {
       setLoading(false);
@@ -117,6 +121,9 @@ export default function Settings() {
     try {
       const payload = {
         llm_provider: llmProvider,
+        model: selectedModel,
+        temperature: temperature,
+        max_tokens: maxTokens,
         api_keys: Object.fromEntries(Object.entries(apiKeys).filter(([, v]) => v)),
         visualization: vizConfig,
         features,
@@ -128,7 +135,7 @@ export default function Settings() {
       } else {
         setError(resp.data?.message || 'Save failed');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to save settings. Check backend connection.');
     } finally {
       setSaving(false);
@@ -179,8 +186,8 @@ export default function Settings() {
                 className={cn(
                   'p-4 rounded-xl border text-left transition-all',
                   llmProvider === p.id
-                    ? 'bg-cyber-lime/10 border-cyber-lime/40 text-white'
-                    : 'bg-white/[0.02] border-white/5 text-muted hover:border-white/20',
+                    ? 'bg-cyber-lime/10 border-cyber-lime/40 text-foreground'
+                    : 'bg-foreground/[0.02] border-border text-muted hover:border-cyber-cyan/20',
                 )}
               >
                 <div className="text-sm font-bold mb-1">{p.label}</div>
@@ -190,13 +197,57 @@ export default function Settings() {
           </div>
         </Section>
 
+        {/* LLM Model & Parameters */}
+        <Section icon={<Brain size={16} />} title="Model & Parameters" color="text-cyber-cyan">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-xl">
+            <div>
+              <label className="text-[10px] font-mono font-bold text-muted uppercase tracking-widest mb-1 block">Model</label>
+              <select
+                value={selectedModel}
+                onChange={e => setSelectedModel(e.target.value)}
+                className="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm text-foreground font-mono focus:outline-none focus:border-cyber-cyan/40"
+              >
+                {(MODELS[llmProvider] || MODELS.mock).map(m => (
+                  <option key={m.id} value={m.id} className="bg-card text-foreground">
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-mono font-bold text-muted uppercase tracking-widest mb-1 block">Temperature</label>
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.1}
+                value={temperature}
+                onChange={e => setTemperature(Number(e.target.value))}
+                className="w-full"
+              />
+              <div className="text-xs text-muted mt-1">{temperature.toFixed(1)}</div>
+            </div>
+            <div>
+              <label className="text-[10px] font-mono font-bold text-muted uppercase tracking-widest mb-1 block">Max Tokens</label>
+              <input
+                type="number"
+                min={256}
+                max={8192}
+                value={maxTokens}
+                onChange={e => setMaxTokens(Number(e.target.value) || 2048)}
+                className="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm text-foreground font-mono focus:outline-none focus:border-cyber-cyan/40"
+              />
+            </div>
+          </div>
+        </Section>
+
         {/* API Keys */}
         <Section icon={<Key size={16} />} title="API Keys" color="text-cyber-cyan">
           <p className="text-xs text-muted mb-4">API keys are stored encrypted in a local file. Keys are masked after saving.</p>
           <div className="space-y-3 max-w-xl">
             {Object.entries(apiKeys).map(([provider, value]) => (
               <div key={provider}>
-                <label className="text-[10px] font-mono font-bold text-white/40 uppercase tracking-widest mb-1 block">
+                <label className="text-[10px] font-mono font-bold text-muted uppercase tracking-widest mb-1 block">
                   {provider.toUpperCase()}_API_KEY
                 </label>
                 <input
@@ -204,7 +255,7 @@ export default function Settings() {
                   value={value}
                   onChange={e => setApiKeys(prev => ({ ...prev, [provider]: e.target.value }))}
                   placeholder={value && value.includes('•') ? 'Enter new key to change' : `Enter ${provider} API key`}
-                  className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white font-mono placeholder:text-white/20 focus:outline-none focus:border-cyber-cyan/40 transition-colors"
+                  className="w-full bg-foreground/5 border border-border rounded-lg px-4 py-2.5 text-sm text-foreground font-mono placeholder:text-muted focus:outline-none focus:border-cyber-cyan/40 transition-colors"
                 />
               </div>
             ))}
@@ -215,22 +266,22 @@ export default function Settings() {
         <Section icon={<ToggleLeft size={16} />} title="Feature Toggles" color="text-amber-400">
           <div className="space-y-3 max-w-xl">
             {FEATURES.map(f => (
-              <div key={f.key} className="flex items-start gap-4 p-4 bg-white/[0.02] border border-white/5 rounded-xl">
+              <div key={f.key} className="flex items-start gap-4 p-4 bg-foreground/[0.02] border border-border rounded-xl">
                 <button
                   type="button"
                   onClick={() => setFeatures(prev => ({ ...prev, [f.key]: !prev[f.key] }))}
                   className={cn(
                     'w-10 h-6 rounded-full transition-colors shrink-0 mt-0.5 relative',
-                    features[f.key] ? 'bg-cyber-lime/30' : 'bg-white/10',
+                    features[f.key] ? 'bg-cyber-lime/30' : 'bg-foreground/10',
                   )}
                 >
                   <div className={cn(
                     'w-4 h-4 rounded-full absolute top-1 transition-all',
-                    features[f.key] ? 'bg-cyber-lime left-[22px]' : 'bg-white/40 left-1',
+                    features[f.key] ? 'bg-cyber-lime left-[22px]' : 'bg-muted left-1',
                   )} />
                 </button>
                 <div>
-                  <p className="text-xs font-bold text-white mb-1">{f.label}</p>
+                  <p className="text-xs font-bold text-foreground mb-1">{f.label}</p>
                   <p className="text-[10px] text-muted leading-relaxed">{f.desc}</p>
                 </div>
               </div>
@@ -242,11 +293,11 @@ export default function Settings() {
         <Section icon={<BarChart3 size={16} />} title="Visualization" color="text-purple-400">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-xl">
             <div>
-              <label className="text-[10px] font-mono font-bold text-white/40 uppercase tracking-widest block mb-1">Default Chart</label>
+              <label className="text-[10px] font-mono font-bold text-muted uppercase tracking-widest block mb-1">Default Chart</label>
               <select
                 value={vizConfig.default_chart_type}
                 onChange={e => setVizConfig(prev => ({ ...prev, default_chart_type: e.target.value }))}
-                className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-purple-400/40"
+                className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-purple-400/40"
               >
                 <option value="auto">Auto-detect</option>
                 <option value="bar">Bar Chart</option>
@@ -257,22 +308,22 @@ export default function Settings() {
               </select>
             </div>
             <div>
-              <label className="text-[10px] font-mono font-bold text-white/40 uppercase tracking-widest block mb-1">Max Bars</label>
+              <label className="text-[10px] font-mono font-bold text-muted uppercase tracking-widest block mb-1">Max Bars</label>
               <input
                 type="number"
                 min={5}
                 max={50}
                 value={vizConfig.max_bars}
                 onChange={e => setVizConfig(prev => ({ ...prev, max_bars: Number(e.target.value) }))}
-                className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-purple-400/40"
+                className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-purple-400/40"
               />
             </div>
             <div>
-              <label className="text-[10px] font-mono font-bold text-white/40 uppercase tracking-widest block mb-1">Theme</label>
+              <label className="text-[10px] font-mono font-bold text-muted uppercase tracking-widest block mb-1">Theme</label>
               <select
                 value={vizConfig.theme}
                 onChange={e => setVizConfig(prev => ({ ...prev, theme: e.target.value }))}
-                className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-purple-400/40"
+                className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-purple-400/40"
               >
                 <option value="dark">Dark</option>
                 <option value="light">Light</option>
@@ -288,7 +339,7 @@ export default function Settings() {
             type="button"
             onClick={saveSettings}
             disabled={saving}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-cyber-cyan/20 border border-cyber-cyan/30 rounded-xl text-sm font-bold text-white hover:bg-cyber-cyan/30 transition-all disabled:opacity-40"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-cyber-cyan/20 border border-cyber-cyan/30 rounded-xl text-sm font-bold text-foreground hover:bg-cyber-cyan/30 transition-all disabled:opacity-40"
           >
             {saving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
             {saving ? 'Saving...' : 'Save Settings'}
@@ -296,7 +347,7 @@ export default function Settings() {
           <button
             type="button"
             onClick={loadSettings}
-            className="inline-flex items-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs text-muted hover:text-white transition-all"
+            className="inline-flex items-center gap-2 px-4 py-3 bg-foreground/5 border border-border rounded-xl text-xs text-muted hover:text-foreground transition-all"
           >
             <RefreshCw size={14} /> Refresh
           </button>

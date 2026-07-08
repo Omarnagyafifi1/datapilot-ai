@@ -282,9 +282,13 @@ def get_datasource_schema(
     id: str,
     data_source_service: DataSourceService = Depends(get_data_source_service),
 ) -> dict[str, Any]:
-    data_source_service.get_conn_string(id)
-    schema = db_service.get_source_schema(id)
-    return _resp(success=True, message="Schema fetched", data=schema.get("tables", []))
+    try:
+        data_source_service.get_conn_string(id)
+        schema = db_service.get_source_schema(id)
+        return _resp(success=True, message="Schema fetched", data=schema.get("tables", []))
+    except Exception as e:
+        logger.exception("Schema fetch failed for source_id=%s", id)
+        return _resp(success=False, message=f"Failed to fetch schema: {str(e)}", data=None)
 
 
 _SUGGESTIONS_CACHE: dict[str, list[dict[str, str]]] = {}
@@ -361,9 +365,13 @@ def get_datasource_suggestions(
     if id in _SUGGESTIONS_CACHE:
         return _resp(success=True, message="Suggestions fetched", data=_SUGGESTIONS_CACHE[id])
 
-    data_source_service.get_conn_string(id)
-    _generate_and_cache_suggestions(id, graph)
-    return _resp(success=True, message="Suggestions fetched", data=_SUGGESTIONS_CACHE.get(id, []))
+    try:
+        data_source_service.get_conn_string(id)
+        _generate_and_cache_suggestions(id, graph)
+        return _resp(success=True, message="Suggestions fetched", data=_SUGGESTIONS_CACHE.get(id, []))
+    except Exception as e:
+        logger.exception("Suggestions fetch failed for source_id=%s", id)
+        return _resp(success=False, message=f"Failed to fetch suggestions: {str(e)}", data=[])
 
 
 @router.get("/system/stats")
@@ -454,13 +462,61 @@ def update_dataset(
 
 @router.post('/data/csv')
 async def upload_csv(file: UploadFile = File(...)) -> dict[str, Any]:
-    """Upload a CSV and ingest it into the configured PostgreSQL database."""
+    """Upload a CSV and ingest it into the system (stores as SQLite locally)."""
     try:
-        metadata = await CSVService.process_csv(file, engine)
-        return _resp(success=True, message="CSV ingested", data=metadata)
+        import io as _io
+        import pandas as _pd
+        from app.services import db_service as _db
+        from app.services.data_source_service import save_source
+        from pathlib import Path as _Path
+        import hashlib
+        import os as _os
+        
+        # Save CSV temporarily for processing
+        content = await file.read()
+        await file.seek(0)
+        
+        # Get upload directory
+        upload_dir = _os.getenv("UPLOAD_DIR", "./uploads")
+        if not _os.path.isabs(upload_dir):
+            backend_dir = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+            upload_dir = _os.path.join(backend_dir, upload_dir.lstrip("./"))
+        _os.makedirs(upload_dir, exist_ok=True)
+        
+        # Save original file to uploads folder
+        file_hash = hashlib.sha256(content).hexdigest()
+        safe_name = "".join(c for c in file.filename or "uploaded.csv" if c.isalnum() or c in "._-")
+        stored_path = _os.path.join(upload_dir, f"{file_hash[:8]}_{safe_name}")
+        
+        # Ensure .csv extension
+        if not stored_path.lower().endswith('.csv'):
+            stored_path = stored_path + '.csv'
+        
+        with open(stored_path, "wb") as f:
+            f.write(content)
+        
+        # Use db_service.upload_csv_to_sqlite to create SQLite DB
+        source_id = f"legacy_csv_{file_hash[:8]}"
+        conn_string, table_name = _db.upload_csv_to_sqlite(stored_path, source_id)
+        
+        # Extract the SQLite file path for registry (strip sqlite:///)
+        db_path = conn_string[10:] if conn_string.startswith("sqlite:///") else conn_string
+        
+        # Register as a datasource
+        result = save_source({
+            "name": _Path(file.filename or "upload").stem,
+            "db_type": "sqlite",
+            "host": "",
+            "port": None,
+            "db_name": db_path,
+            "username": "",
+            "password": "",
+        })
+        
+        return _resp(success=True, message="CSV ingested successfully", data={"table_name": table_name, "source_id": result.get("id", source_id)})
     except Exception as e:
         logger.exception("CSV ingest failed")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=f"CSV ingest failed: {str(e)}")
 
 
 @router.post('/upload/preview')

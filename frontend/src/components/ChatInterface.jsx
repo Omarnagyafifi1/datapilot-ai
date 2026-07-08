@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { 
   Send, Loader2, User, ChevronDown, 
   Activity, Zap, Plus, Trash2, Edit2, Check, Search, 
-  Copy, RotateCcw, StopCircle, PanelRightOpen, PanelRightClose, BookOpen
+  Copy, RotateCcw, StopCircle, PanelRightOpen, PanelRightClose
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { COPY } from '../lib/copy';
@@ -172,25 +172,31 @@ export default function ChatInterface({
       setActiveSchemaTable(null);
       return;
     }
-    const fetchSchema = async () => {
-      try {
-        setSchemaLoading(true);
-        const resp = await api.schema.get(initialSelectedSourceId);
-        if (resp.data.success) {
-          setSchemaList(resp.data.data);
-          if (resp.data.data.length > 0) {
-            setActiveSchemaTable(resp.data.data[0]);
-          } else {
-            setActiveSchemaTable(null);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to fetch schema", err);
-        setSchemaList([]);
-      } finally {
-        setSchemaLoading(false);
-      }
-    };
+const fetchSchema = async () => {
+       try {
+         setSchemaLoading(true);
+         const resp = await api.schema.get(initialSelectedSourceId);
+         if (resp.data.success) {
+           setSchemaList(resp.data.data);
+           if (resp.data.data.length > 0) {
+             setActiveSchemaTable(resp.data.data[0]);
+           } else {
+             setActiveSchemaTable(null);
+           }
+         } else {
+           // Handle API error response (e.g., 500 errors that return success=false)
+           console.error("Schema fetch failed:", resp.data?.message || "Unknown error");
+           setSchemaList([]);
+         }
+       } catch (err) {
+         // Extract error message from response if available
+         const errorMsg = err.response?.data?.message || err.message || "Unknown error";
+         console.error("Failed to fetch schema:", errorMsg);
+         setSchemaList([]);
+       } finally {
+         setSchemaLoading(false);
+       }
+     };
     fetchSchema();
   }, [initialSelectedSourceId]);
 
@@ -1040,30 +1046,6 @@ export default function ChatInterface({
             )}
           </div>
         </aside>
-      )}
-    </div>
-  );
-}
-
-// Collapsible helper details card for intermediate steps
-function ExpandableDetails({ title, children }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="mt-4 border border-border bg-foreground/[0.01] rounded-xl overflow-hidden">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-foreground/[0.02] transition-colors"
-      >
-        <span className="text-[10px] font-mono font-bold text-muted uppercase tracking-widest flex items-center gap-2">
-          <BookOpen size={12} className="text-cyber-cyan" /> {title}
-        </span>
-        <ChevronDown size={14} className={cn("text-muted transition-transform", open && "transform rotate-180")} />
-      </button>
-
-      {open && (
-        <div className="p-4 border-t border-border animate-in slide-in-from-top-1 duration-200">
-          {children}
-        </div>
       )}
     </div>
   );

@@ -139,7 +139,7 @@ export function ResultVisualizer({ doc }) {
       {showPreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowPreview(false)} />
-          <div className="relative bg-card p-6 rounded-2xl w-[95%] max-w-5xl h-[85vh] border border-white/10 flex flex-col">
+<div className="relative bg-card p-6 rounded-2xl w-[95%] max-w-5xl h-[85vh] border border-border flex flex-col">
             <div className="flex items-center justify-between mb-4 gap-4 shrink-0">
               <h4 className="text-lg font-bold">
                 {hasPlotlySpec ? `Chart Preview — ${visualization.chart_type}` : 'Simple Chart Preview'}
@@ -244,13 +244,13 @@ function MetricCard({ icon, label, value, color }) {
     purple: 'text-purple-400 bg-purple-400/10',
     green: 'text-emerald-400 bg-emerald-400/10',
     amber: 'text-amber-400 bg-amber-400/10',
-    gray: 'text-white/30 bg-white/5',
+    gray: 'text-foreground/40 bg-foreground/5',
   };
   return (
-    <div className="glass p-4 rounded-2xl border-white/5">
+    <div className="glass p-4 rounded-2xl border-border">
       <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center mb-2', colors[color] || colors.gray)}>{icon}</div>
-      <p className="text-[10px] font-bold text-white/40 uppercase tracking-wider">{label}</p>
-      <p className="text-lg font-bold text-white mt-1">{value}</p>
+      <p className="text-[10px] font-bold text-muted uppercase tracking-wider">{label}</p>
+      <p className="text-lg font-bold text-foreground mt-1">{value}</p>
     </div>
   );
 }
@@ -380,7 +380,6 @@ function buildChartSVG(results = [], chartType = 'bar') {
   const numKeys = keys.filter((key) => Number.isFinite(Number(results[0][key])));
   const labelKey = strKey || numKeys[0] || keys[0];
   const valueKey = numKeys[0] || keys[0];
-  const valueKey2 = numKeys[1] || null;
 
   if (chartType === 'line' && strKey && numKeys.length >= 1) {
     const labels = results.slice(0, 20).map((row) => String(row[strKey] ?? ''));
@@ -411,15 +410,15 @@ function buildBarSVG(labels, values) {
     const h = Math.round((value / maxVal) * (height - 90));
     const x = 24 + i * barW + 8;
     const y = height - 44 - h;
-    return `<rect x="${x}" y="${y}" width="${Math.max(12, barW - 16)}" height="${h}" fill="#60A5FA"/><text x="${x + (barW - 16) / 2}" y="${height - 20}" font-size="10" text-anchor="middle" fill="#E5E7EB">${escapeXml(labels[i])}</text>`;
+    return `<rect x="${x}" y="${y}" width="${Math.max(12, barW - 16)}" height="${h}" fill="var(--cyber-blue)"/><text x="${x + (barW - 16) / 2}" y="${height - 20}" font-size="10" text-anchor="middle" fill="var(--foreground)">${escapeXml(labels[i])}</text>`;
   }).join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="#0b1220"/>${bars}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="var(--background)"/>${bars}</svg>`;
 }
 
 function buildPieSVG(labels, values) {
   const total = values.reduce((sum, value) => sum + Math.max(0, value), 0) || 1;
   let offset = 0;
-  const colors = ['#60A5FA', '#A78BFA', '#34D399', '#F59E0B', '#F472B6', '#22D3EE'];
+  const colors = ['var(--cyber-blue)', 'var(--cyber-pink)', 'var(--cyber-lime)', '#F59E0B', '#F472B6', '#22D3EE'];
   const slices = values.map((value, i) => {
     const pct = Math.max(0, value) / total;
     const dash = `${pct * 100} ${100 - pct * 100}`;
@@ -427,8 +426,8 @@ function buildPieSVG(labels, values) {
     offset += pct * 100;
     return slice;
   }).join('');
-  const legend = labels.map((label, i) => `<text x="230" y="${54 + i * 22}" font-size="12" fill="#E5E7EB">${escapeXml(label)}</text>`).join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="440" height="260"><rect width="100%" height="100%" fill="#0b1220"/>${slices}${legend}</svg>`;
+  const legend = labels.map((label, i) => `<text x="230" y="${54 + i * 22}" font-size="12" fill="var(--foreground)">${escapeXml(label)}</text>`).join('');
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="440" height="260"><rect width="100%" height="100%" fill="var(--background)"/>${slices}${legend}</svg>`;
 }
 
 function buildLineSVG(labels, values) {
@@ -444,18 +443,18 @@ function buildLineSVG(labels, values) {
     const y = padY + drawH - ((values[i] / maxVal) * drawH);
     return `${x.toFixed(1)},${y.toFixed(1)}`;
   }).join(' ');
-  const dots = labels.map((label, i) => {
+const dots = labels.map((label, i) => {
     const x = padX + (i / Math.max(1, labels.length - 1)) * drawW;
     const y = padY + drawH - ((values[i] / maxVal) * drawH);
     const skip = labels.length > 15 ? (i % 3 !== 0) : false;
-    return skip ? '' : `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="#60A5FA"/>`;
+    return skip ? '' : `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="var(--cyber-blue)"/>`;
   }).join('');
-  const xLabels = labels.filter((_, i) => labels.length > 15 ? i % 3 === 0 : true).map((label, idx, arr) => {
+  const xLabels = labels.filter((_, i) => labels.length > 15 ? i % 3 === 0 : true).map((label) => {
     const origIdx = labels.findIndex((l) => l === label);
     const x = padX + (origIdx / Math.max(1, labels.length - 1)) * drawW;
-    return `<text x="${x.toFixed(1)}" y="${height - 8}" font-size="9" text-anchor="end" transform="rotate(-35 ${x.toFixed(1)},${height - 8})" fill="#E5E7EB">${escapeXml(label)}</text>`;
+    return `<text x="${x.toFixed(1)}" y="${height - 8}" font-size="9" text-anchor="end" transform="rotate(-35 ${x.toFixed(1)},${height - 8})" fill="var(--foreground)">${escapeXml(label)}</text>`;
   }).join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="#0b1220"/><polyline points="${points}" fill="none" stroke="#60A5FA" stroke-width="2"/>${dots}${xLabels}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="var(--background)"/><polyline points="${points}" fill="none" stroke="var(--cyber-blue)" stroke-width="2"/>${dots}${xLabels}</svg>`;
 }
 
 function buildScatterSVG(xVals, yVals, xLabel, yLabel) {
@@ -473,9 +472,9 @@ function buildScatterSVG(xVals, yVals, xLabel, yLabel) {
   const dots = xVals.map((x, i) => {
     const cx = pad + ((x - minX) / rangeX) * drawW;
     const cy = pad + drawH - ((yVals[i] - minY) / rangeY) * drawH;
-    return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="3" fill="#60A5FA" opacity="0.7"/>`;
+    return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="3" fill="var(--cyber-blue)" opacity="0.7"/>`;
   }).join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="#0b1220"/><text x="20" y="${pad + drawH / 2}" font-size="10" fill="#64748b" transform="rotate(-90 20,${pad + drawH / 2})" text-anchor="middle">${escapeXml(yLabel)}</text><text x="${pad + drawW / 2}" y="${height - 4}" font-size="10" fill="#64748b" text-anchor="middle">${escapeXml(xLabel)}</text>${dots}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="var(--background)"/><text x="20" y="${pad + drawH / 2}" font-size="10" fill="var(--muted)" transform="rotate(-90 20,${pad + drawH / 2})" text-anchor="middle">${escapeXml(yLabel)}</text><text x="${pad + drawW / 2}" y="${height - 4}" font-size="10" fill="var(--muted)" text-anchor="middle">${escapeXml(xLabel)}</text>${dots}</svg>`;
 }
 
 function buildHistogramSVG(values, columnName) {
@@ -499,9 +498,9 @@ function buildHistogramSVG(values, columnName) {
     const h = Math.round((count / maxCount) * drawH);
     const x = pad + i * barW;
     const y = height - pad - h;
-    return `<rect x="${x.toFixed(1)}" y="${y}" width="${Math.max(4, barW - 2)}" height="${h}" fill="#60A5FA" opacity="0.8"/>`;
+    return `<rect x="${x.toFixed(1)}" y="${y}" width="${Math.max(4, barW - 2)}" height="${h}" fill="var(--cyber-blue)" opacity="0.8"/>`;
   }).join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="#0b1220"/><text x="20" y="${height / 2}" font-size="10" fill="#64748b" transform="rotate(-90 20,${height / 2})" text-anchor="middle">Count</text><text x="${pad + (width - pad - 20) / 2}" y="${height - 4}" font-size="10" fill="#64748b" text-anchor="middle">${escapeXml(columnName)}</text>${bars}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="var(--background)"/><text x="20" y="${height / 2}" font-size="10" fill="var(--muted)" transform="rotate(-90 20,${height / 2})" text-anchor="middle">Count</text><text x="${pad + (width - pad - 20) / 2}" y="${height - 4}" font-size="10" fill="var(--muted)" text-anchor="middle">${escapeXml(columnName)}</text>${bars}</svg>`;
 }
 
 function downloadSVG(svg) {
@@ -519,7 +518,7 @@ function downloadPNGFromSVG(svg) {
     canvas.width = img.width;
     canvas.height = img.height;
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#0b1220';
+    ctx.fillStyle = 'var(--background)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0);
     canvas.toBlob((blob) => {

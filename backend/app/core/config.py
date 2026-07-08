@@ -3,11 +3,36 @@ from typing import Optional
 import os
 
 
+def _get_project_root() -> str:
+    """Get the project root directory (d:/datapilot-ai-4)."""
+    # config.py is in backend/app/core/, so go up 3 levels
+    return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def _abs_sqlite_url(relative_url: str) -> str:
+    """Convert a relative or absolute path to an absolute sqlite URL.
+    
+    Handles paths like sqlite:///./data_sources.db or sqlite:///data_sources.db
+    and converts them to absolute paths based on the project root.
+    """
+    if relative_url.startswith("sqlite://"):
+        # Extract the path portion
+        actual_path = relative_url[len("sqlite://"):]
+        if actual_path.startswith("/"):
+            actual_path = actual_path[1:]  # Remove leading slash for Windows paths
+        if not os.path.isabs(actual_path):
+            # Make it absolute relative to project root
+            project_root = _get_project_root()
+            actual_path = os.path.join(project_root, actual_path)
+        return f"sqlite:///{actual_path}"
+    return relative_url
+
+
 class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = os.getenv("DATABASE_URL", "")
-    data_sources_db_url: str = os.getenv("DATA_SOURCES_DB_URL", "sqlite:///./data_sources.db")
-    query_history_db_url: str = os.getenv("QUERY_HISTORY_DB_URL", "sqlite:///./query_history.db")
+    data_sources_db_url: str = _abs_sqlite_url(os.getenv("DATA_SOURCES_DB_URL", "sqlite:///./data_sources.db"))
+    query_history_db_url: str = _abs_sqlite_url(os.getenv("QUERY_HISTORY_DB_URL", "sqlite:///./query_history.db"))
     encryption_key: str = os.getenv("ENCRYPTION_KEY", "")
     langgraph_memory_db_uri: str = os.getenv("LANGGRAPH_MEMORY_DB_URI", "")
     langgraph_run_migrations_on_start: bool = os.getenv("LANGGRAPH_RUN_MIGRATIONS_ON_START", "false").lower() == "true"

@@ -25,9 +25,21 @@ from app.services.import_providers import (
 
 logger = get_logger(__name__)
 
-# Directory to store uploaded SQLite files
-UPLOAD_DIR = os.getenv("UPLOAD_DIR", "./uploads")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+def _get_upload_dir() -> str:
+    """Get the absolute path for the upload directory."""
+    upload_dir = os.getenv("UPLOAD_DIR", "./uploads")
+    # If relative, resolve from the project root (backend/app)
+    if not os.path.isabs(upload_dir):
+        # Get the backend directory (parent of app/)
+        backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        upload_dir = os.path.join(backend_dir, upload_dir.lstrip("./"))
+    os.makedirs(upload_dir, exist_ok=True)
+    return upload_dir
+
+
+# Directory to store uploaded SQLite files (absolute path)
+UPLOAD_DIR = _get_upload_dir()
 
 
 class SQLiteProvider(ImportProvider):
@@ -74,6 +86,7 @@ class SQLiteProvider(ImportProvider):
                 return False, f"File extension must be one of {self.supported_extensions}"
             
             # Read first bytes to check SQLite magic header
+            await file.seek(0)
             content = await file.read(16)
             if not self._validate_sqlite_header(content):
                 return False, "Invalid SQLite file format - file header does not match"
@@ -84,6 +97,7 @@ class SQLiteProvider(ImportProvider):
     
     async def preview(self, file: UploadFile) -> ImportPreview:
         """Generate preview of SQLite database without importing."""
+        await file.seek(0)
         content = await file.read()
         file_size = len(content)
         file_hash = self._calculate_file_hash(content)
@@ -192,11 +206,13 @@ class SQLiteProvider(ImportProvider):
     
     async def parse(self, file: UploadFile, options: ImportOptions) -> Tuple[Any, ImportPreview]:
         """Parse SQLite content (just returns preview for SQLite)."""
+        await file.seek(0)
         preview = await self.preview(file)
         return {"preview": preview}, preview
     
     async def import_data(self, file: UploadFile, options: ImportOptions) -> ImportResult:
         """Import SQLite database into the system."""
+        await file.seek(0)
         content = await file.read()
         
         # Validate header
@@ -214,6 +230,7 @@ class SQLiteProvider(ImportProvider):
             f.write(content)
         
         # Get preview for table names
+        await file.seek(0)
         preview = await self.preview(file)
         
         # Filter selected tables if specified
@@ -238,6 +255,29 @@ class SQLiteProvider(ImportProvider):
         })
         
         source_id = result.get("id", "")
+        
+        # Save dataset metadata for it to appear in the library
+        try:
+            from dataclasses import asdict
+            from app.services.data_source_service import save_dataset_metadata
+            
+            tables_dict = [asdict(t) for t in preview.tables if t.original_name in table_names]
+            relationships_dict = [asdict(r) for r in preview.relationships]
+            quality_report_dict = asdict(preview.quality_report)
+            
+            save_dataset_metadata(
+                source_id=source_id,
+                name=dataset_name,
+                source_type="sqlite",
+                original_filename=file.filename or "unknown.db",
+                file_size=len(content),
+                file_hash=file_hash,
+                tables=tables_dict,
+                relationships=relationships_dict,
+                quality_report=quality_report_dict,
+            )
+        except Exception as e:
+            logger.exception("Failed to save dataset metadata during SQLite import: %s", e)
         
         return ImportResult(
             source_id=source_id,

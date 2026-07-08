@@ -4,8 +4,8 @@
   "temperature": 0.2,
   "max_tokens": 2048,
   "api_keys": {
-    "groq": "test_key",
-    "openrouter": "",
+"groq": "YOUR_GROQ_API_KEY_HERE",
+    "openrouter": "YOUR_OPENROUTER_API_KEY_HERE",
     "gemini": "",
     "openai": ""
   },

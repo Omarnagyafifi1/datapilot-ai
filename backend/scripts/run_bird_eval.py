@@ -4,6 +4,12 @@ DataPilot BIRD-Style Text-to-SQL Evaluation Runner
 import json, time, sqlite3, re, sys
 from pathlib import Path
 
+try:
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
+except AttributeError:
+    pass
+
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BACKEND_DIR))
 

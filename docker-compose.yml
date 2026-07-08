@@ -1,11 +1,11 @@
 version: "3.8"
 
 services:
-  datapilot-app:
+  backend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: datapilot-ai-app
+    container_name: datapilot-ai-backend
     ports:
       - "8000:8000"
     environment:
@@ -20,7 +20,32 @@ services:
     volumes:
       # Persistent storage volume for SQLite metadata and databases
       - datapilot-data:/app/backend/data
-    restart: always
+    restart: unless-stopped
+    networks:
+      - datapilot-network
+
+  frontend-dev:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile.dev
+    container_name: datapilot-ai-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_TARGET=http://backend:8000
+    volumes:
+      # Mount source for hot-reload (optional, uncomment for live editing)
+      # - ./frontend/src:/app/frontend/src
+      # - ./frontend/public:/app/frontend/public
+    restart: unless-stopped
+    networks:
+      - datapilot-network
+    depends_on:
+      - backend
 
 volumes:
   datapilot-data:
+
+networks:
+  datapilot-network:
+    driver: bridge

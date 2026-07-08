@@ -22,8 +22,7 @@ from app.services.import_providers import (
     DataQualityReport,
     ForeignKeyInfo,
 )
-from app.services.data_service import DataSourceService as CSVService
-from app.services.database import engine
+from app.services import db_service
 
 logger = get_logger(__name__)
 
@@ -96,9 +95,8 @@ class CSVProvider(ImportProvider):
         except Exception as e:
             return False, str(e)
     
-    async def preview(self, file: UploadFile) -> ImportPreview:
-        """Generate preview of CSV data without importing."""
-        content = await file.read()
+    def _generate_preview(self, content: bytes, filename: str) -> ImportPreview:
+        """Generate preview of CSV data from bytes content."""
         file_size = len(content)
         file_hash = self._calculate_file_hash(content)
         
@@ -116,13 +114,17 @@ class CSVProvider(ImportProvider):
                 name=sanitized,
                 original_name=str(col),
                 data_type=self._detect_data_type(df[col]),
-                nullable=df[col].isna().any(),
-                is_numeric=self._is_numeric(df[col]),
-                is_date=self._is_date(df[col]),
+                nullable=bool(df[col].isna().any()),
+                is_numeric=bool(self._is_numeric(df[col])),
+                is_date=bool(self._is_date(df[col])),
             ))
         
+        preview_table_name = self._sanitize_column_name(filename)
+        if preview_table_name and preview_table_name[0].isdigit():
+            preview_table_name = f"table_{preview_table_name}"
+            
         table = TableMetadata(
-            name=self._sanitize_column_name(file.filename),
+            name=preview_table_name,
             original_name=None,
             row_count=len(df),
             columns=columns,
@@ -142,7 +144,7 @@ class CSVProvider(ImportProvider):
         )
         
         return ImportPreview(
-            filename=file.filename or "unknown.csv",
+            filename=filename or "unknown.csv",
             file_size=file_size,
             detected_format="csv",
             file_hash=file_hash,
@@ -150,9 +152,16 @@ class CSVProvider(ImportProvider):
             quality_report=quality_report,
             relationships=[],  # CSVs don't have relationships
         )
+
+    async def preview(self, file: UploadFile) -> ImportPreview:
+        """Generate preview of CSV data without importing."""
+        await file.seek(0)
+        content = await file.read()
+        return self._generate_preview(content, file.filename)
     
     async def parse(self, file: UploadFile, options: ImportOptions) -> Tuple[Any, ImportPreview]:
         """Parse CSV content."""
+        await file.seek(0)
         content = await file.read()
         preview = await self.preview(file)
         
@@ -177,51 +186,95 @@ class CSVProvider(ImportProvider):
     
     async def import_data(self, file: UploadFile, options: ImportOptions) -> ImportResult:
         """Import CSV data into the system."""
+        from sqlalchemy import text as sql_text
         import os
-        UPLOAD_DIR = os.getenv("UPLOAD_DIR", "./uploads")
+        # Use absolute path for uploads directory
+        upload_dir = os.getenv("UPLOAD_DIR", "./uploads")
+        if not os.path.isabs(upload_dir):
+            backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            upload_dir = os.path.join(backend_dir, upload_dir.lstrip("./"))
+        UPLOAD_DIR = upload_dir
         os.makedirs(UPLOAD_DIR, exist_ok=True)
         
         # Save original file to uploads folder
         await file.seek(0)
         content = await file.read()
         file_hash = self._calculate_file_hash(content)
+        
+        # Generate the preview once from the loaded content bytes
+        preview = self._generate_preview(content, file.filename)
+        
         safe_name = "".join(c for c in file.filename or "uploaded.csv" if c.isalnum() or c in "._-")
         stored_filename = f"{file_hash[:8]}_{safe_name}"
         stored_path = os.path.join(UPLOAD_DIR, stored_filename)
         
+        # Ensure the stored path has .csv extension if not already
+        if not stored_path.endswith('.csv'):
+            stored_path = stored_path + '.csv'
+        
         with open(stored_path, "wb") as f:
             f.write(content)
-            
-        # Reset file seek position for CSVService ingestion
-        await file.seek(0)
-        
-        # Use existing CSV service to process
-        metadata = await CSVService.process_csv(file, engine)
         
         # Generate dataset name
         dataset_name = options.dataset_name or Path(file.filename or "upload").stem
+        source_id = f"csv_{file_hash[:8]}"
         
-        # The existing process_csv already creates a datasource entry
-        # We need to get or create the source_id
-        # For now, create a new source entry
-        from app.services.data_source_service import save_source
+        try:
+            # Use db_service.upload_csv_to_sqlite to create SQLite DB from CSV
+            # This handles everything without needing an external DATABASE_URL
+            target_table_name = preview.tables[0].name if preview.tables else "uploaded_csv"
+            conn_string, table_name = db_service.upload_csv_to_sqlite(stored_path, source_id, target_table_name)
+        except Exception as e:
+            raise CSVValidationError(f"Failed to import CSV to database: {str(e)}")
         
-        # Get the table name from metadata
-        table_name = metadata["table_name"]
+        # Extract the SQLite file path from the connection string for registry
+        db_path = conn_string[10:] if conn_string.startswith("sqlite:///") else conn_string
         
         # Create datasource entry for SQLite
-        source_uuid = await self._register_datasource(dataset_name, table_name)
+        source_uuid = await self._register_datasource(dataset_name, db_path)
+        
+        # Save dataset metadata for it to appear in the library
+        try:
+            from dataclasses import asdict
+            from app.services.data_source_service import save_dataset_metadata
+            
+            tables_dict = [asdict(t) for t in preview.tables]
+            relationships_dict = [asdict(r) for r in preview.relationships]
+            quality_report_dict = asdict(preview.quality_report)
+            
+            save_dataset_metadata(
+                source_id=source_uuid,
+                name=dataset_name,
+                source_type="csv",
+                original_filename=file.filename or "unknown.csv",
+                file_size=len(content),
+                file_hash=file_hash,
+                tables=tables_dict,
+                relationships=relationships_dict,
+                quality_report=quality_report_dict,
+            )
+        except Exception as e:
+            logger.exception("Failed to save dataset metadata during CSV import: %s", e)
+        
+        # Get row count from the created table
+        try:
+            with db_service.get_engine(source_id, conn_string).connect() as conn:
+                result = conn.execute(sql_text(f'SELECT COUNT(*) FROM "{table_name}"'))
+                total_rows = result.scalar()
+        except Exception:
+            # Fallback: estimate from preview
+            total_rows = preview.tables[0].row_count if preview.tables else 0
         
         return ImportResult(
             source_id=source_uuid,
-            dataset_id=source_uuid,  # Same as source_id for CSV
+            dataset_id=source_uuid,
             table_names=[table_name],
-            total_rows=metadata.get("row_count", len(metadata.get("sample_data", []))),
-            message=f"CSV '{dataset_name}' imported successfully with {len(metadata['columns'])} columns.",
+            total_rows=total_rows,
+            message=f"CSV '{dataset_name}' imported successfully into table '{table_name}'.",
             stored_path=stored_path,
         )
     
-    async def _register_datasource(self, name: str, table_name: str) -> str:
+    async def _register_datasource(self, name: str, db_path: str) -> str:
         """Register a datasource in the registry."""
         from app.services.data_source_service import save_source
 
@@ -230,7 +283,7 @@ class CSVProvider(ImportProvider):
             "db_type": "sqlite",
             "host": "",
             "port": None,
-            "db_name": table_name,
+            "db_name": db_path,
             "username": "",
             "password": "",
         })

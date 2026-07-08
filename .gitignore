@@ -21,6 +21,7 @@ backend/.env.*
 *.pem
 *.p12
 *.pfx
+backend/settings.json
 
 # Tooling cache
 .pytest_cache/
