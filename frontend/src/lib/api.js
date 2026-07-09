@@ -58,13 +58,9 @@ export const api = {
   },
 
   uploads: {
-    uploadCsv: (formData) => client.post('/data/csv', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
-    preview: (formData) => client.post('/upload/preview', formData, { 
-      headers: { 'Content-Type': 'multipart/form-data' } 
-    }),
-    import: (formData) => client.post('/upload/import', formData, { 
-      headers: { 'Content-Type': 'multipart/form-data' } 
-    }),
+    uploadCsv: (formData) => client.post('/data/csv', formData),
+    preview: (formData) => client.post('/upload/preview', formData),
+    import: (formData) => client.post('/upload/import', formData),
   },
   
   datasets: {
