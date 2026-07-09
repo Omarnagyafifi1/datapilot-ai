@@ -148,6 +148,17 @@ def _get_upload_dir() -> str:
     return upload_dir
 
 
+def _set_sqlite_pragmas_direct(db_path: str) -> None:
+    try:
+        import sqlite3 as _sqlite3
+        conn = _sqlite3.connect(db_path, timeout=30)
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=30000")
+        conn.execute("PRAGMA synchronous=NORMAL")
+        conn.close()
+    except Exception:
+        logger.exception("Failed to set SQLite pragmas on %s (non-fatal)", db_path)
+
 def _set_sqlite_pragmas(engine: Engine) -> None:
     with engine.connect() as conn:
         conn.execute(text("PRAGMA journal_mode=WAL"))
@@ -166,8 +177,8 @@ def upload_csv_to_sqlite(csv_path: str, source_id: str, table_name: str = None) 
         db_path = os.path.abspath(db_path)
         conn_string = f"sqlite:///{db_path}"
 
+        _set_sqlite_pragmas_direct(db_path)
         engine = create_engine(conn_string, connect_args={"timeout": 30})
-        _set_sqlite_pragmas(engine)
         if not table_name:
             table_name = os.path.splitext(os.path.basename(csv_path))[0].replace(" ", "_").replace("(", "").replace(")", "").lower()
             if table_name and table_name[0].isdigit():
