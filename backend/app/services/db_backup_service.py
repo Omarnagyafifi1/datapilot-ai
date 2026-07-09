@@ -1,5 +1,6 @@
 import os
 import shutil
+import sqlite3
 from app.core.logger import get_logger
 
 logger = get_logger(__name__)
@@ -39,6 +40,18 @@ def backup_db(source_id: str) -> str | None:
         return None
 
 
+def _set_pragmas(db_path: str) -> None:
+    try:
+        conn = sqlite3.connect(db_path, timeout=30)
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=30000")
+        conn.execute("PRAGMA synchronous=NORMAL")
+        conn.commit()
+        conn.close()
+    except Exception:
+        logger.exception("Failed to set pragmas on %s (non-fatal)", db_path)
+
+
 def restore_backup(source_id: str) -> str | None:
     dst = local_path(source_id)
     src = backup_path(source_id)
@@ -48,6 +61,7 @@ def restore_backup(source_id: str) -> str | None:
     os.makedirs(os.path.dirname(dst), exist_ok=True)
     try:
         shutil.copy2(src, dst)
+        _set_pragmas(dst)
         logger.info("Restored %s -> %s", src, dst)
         return dst
     except Exception:

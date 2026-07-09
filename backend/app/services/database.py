@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import AsyncGenerator, Optional
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
@@ -49,6 +49,13 @@ def _is_sqlite_url(url: str) -> bool:
     return url.startswith("sqlite") or url.startswith("sqlite+aiosqlite")
 
 
+def _set_sqlite_pragmas(engine: Engine) -> None:
+    with engine.connect() as conn:
+        conn.execute(text("PRAGMA journal_mode=WAL"))
+        conn.execute(text("PRAGMA busy_timeout=30000"))
+        conn.execute(text("PRAGMA synchronous=NORMAL"))
+        conn.commit()
+
 def get_sync_engine() -> Engine:
     """Return a shared sync engine for internal application state.
 
@@ -78,8 +85,10 @@ def get_sync_engine() -> Engine:
         _SYNC_ENGINE = create_engine(
             sqlite_url,
             pool_pre_ping=True,
-            connect_args={"timeout": 5} if _is_sqlite_url(sqlite_url) else {},
+            connect_args={"timeout": 30} if _is_sqlite_url(sqlite_url) else {},
         )
+        if _is_sqlite_url(sqlite_url):
+            _set_sqlite_pragmas(_SYNC_ENGINE)
         logger.info("Shared sync engine: SQLite (%s)", sqlite_url)
 
     return _SYNC_ENGINE

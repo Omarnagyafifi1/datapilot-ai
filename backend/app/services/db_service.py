@@ -148,6 +148,13 @@ def _get_upload_dir() -> str:
     return upload_dir
 
 
+def _set_sqlite_pragmas(engine: Engine) -> None:
+    with engine.connect() as conn:
+        conn.execute(text("PRAGMA journal_mode=WAL"))
+        conn.execute(text("PRAGMA busy_timeout=30000"))
+        conn.execute(text("PRAGMA synchronous=NORMAL"))
+        conn.commit()
+
 def upload_csv_to_sqlite(csv_path: str, source_id: str, table_name: str = None) -> tuple:
     """Uploads a CSV to a temporary SQLite database and returns (conn_string, table_name)."""
     try:
@@ -157,12 +164,11 @@ def upload_csv_to_sqlite(csv_path: str, source_id: str, table_name: str = None) 
         db_path = os.path.join(upload_dir, f"{source_id}.db")
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
         db_path = os.path.abspath(db_path)
-        # Use standard SQLAlchemy SQLite format (sqlite:///) for consistency
         conn_string = f"sqlite:///{db_path}"
 
-        engine = create_engine(conn_string)
+        engine = create_engine(conn_string, connect_args={"timeout": 30})
+        _set_sqlite_pragmas(engine)
         if not table_name:
-            # Use the filename (without extension) as the table name
             table_name = os.path.splitext(os.path.basename(csv_path))[0].replace(" ", "_").replace("(", "").replace(")", "").lower()
             if table_name and table_name[0].isdigit():
                 table_name = f"table_{table_name}"
@@ -184,6 +190,9 @@ def upload_csv_to_sqlite(csv_path: str, source_id: str, table_name: str = None) 
         raise HTTPException(status_code=500, detail=f"CSV upload failed: {str(e)}")
 
 
+def _is_sqlite_conn_string(conn_string: str) -> bool:
+    return conn_string.startswith("sqlite:///") or conn_string.startswith("sqlite__:/")
+
 def get_engine(source_id: str, conn_string: str) -> Engine:
     normalized_conn_string = _normalize_conn_string_for_sync(conn_string)
     cached = _ENGINE_CACHE.get(source_id)
@@ -193,9 +202,12 @@ def get_engine(source_id: str, conn_string: str) -> Engine:
     if _SOURCE_CONN_STRINGS.get(source_id, None) is not None and _SOURCE_CONN_STRINGS[source_id] != normalized_conn_string:
         _SCHEMA_CACHE.pop(source_id, None)
         logger.info("Schema cache invalidated for source_id=%s: conn_string changed", source_id)
-    engine = create_engine(normalized_conn_string)
+    connect_args = {"timeout": 30} if _is_sqlite_conn_string(normalized_conn_string) else {}
+    engine = create_engine(normalized_conn_string, connect_args=connect_args)
     if engine.dialect.name == "oracle":
         engine.dialect.exclude_tablespaces = ()
+    if engine.dialect.name == "sqlite":
+        _set_sqlite_pragmas(engine)
     _ENGINE_CACHE[source_id] = engine
     _SOURCE_CONN_STRINGS[source_id] = normalized_conn_string
     return engine
