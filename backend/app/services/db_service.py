@@ -153,11 +153,9 @@ def upload_csv_to_sqlite(csv_path: str, source_id: str, table_name: str = None) 
     try:
         df = pd.read_csv(csv_path)
         df = _normalize_numeric_text_columns(df)
-        # Use upload directory respecting UPLOAD_DIR env var
         upload_dir = _get_upload_dir()
         db_path = os.path.join(upload_dir, f"{source_id}.db")
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
-        # Normalize to absolute path before storing
         db_path = os.path.abspath(db_path)
         # Use standard SQLAlchemy SQLite format (sqlite:///) for consistency
         conn_string = f"sqlite:///{db_path}"
@@ -173,6 +171,13 @@ def upload_csv_to_sqlite(csv_path: str, source_id: str, table_name: str = None) 
 
         _SOURCE_CONN_STRINGS[source_id] = conn_string
         logger.info(f"Successfully uploaded {csv_path} to {db_path} as table {table_name}")
+
+        try:
+            from app.services.db_backup_service import backup_db
+            backup_db(source_id)
+        except Exception:
+            logger.exception("Failed to backup SQLite DB for source_id=%s (non-fatal)", source_id)
+
         return conn_string, table_name
     except Exception as e:
         logger.error(f"Failed to upload CSV: {e}")
@@ -385,8 +390,17 @@ def get_source_schema(source_id: str) -> dict:
         db_path = normalized_conn[len("sqlite:///"):]
         found_path = _find_sqlite_db_path(db_path)
         if found_path is None:
-            logger.error("SQLite database file not found: %s for source_id=%s", db_path, source_id)
-            raise HTTPException(status_code=404, detail=f"Database file not found: {db_path}")
+            try:
+                from app.services.db_backup_service import restore_backup
+                restored = restore_backup(source_id)
+                if restored:
+                    found_path = restored
+                    logger.info("Restored SQLite DB from backup for source_id=%s", source_id)
+                else:
+                    raise ValueError("No backup available")
+            except Exception as restore_err:
+                logger.error("SQLite database file not found: %s for source_id=%s (restore failed: %s)", db_path, source_id, restore_err)
+                raise HTTPException(status_code=404, detail=f"Database file not found: {db_path}")
         if found_path != db_path:
             logger.info("Fixed SQLite path for source_id=%s: %s -> %s", source_id, db_path, found_path)
             normalized_path = os.path.abspath(found_path)
