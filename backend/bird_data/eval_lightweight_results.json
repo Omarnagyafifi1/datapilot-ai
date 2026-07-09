@@ -4,8 +4,8 @@
     "passed": 26,
     "failed": 4,
     "execution_accuracy": 86.67,
-    "avg_latency": 6.43,
-    "timestamp": "2026-07-02T11:23:31Z"
+    "avg_latency": 5.5,
+    "timestamp": "2026-07-09T01:03:18Z"
   },
   "results": [
     {
@@ -14,7 +14,7 @@
       "expected_sql": "SELECT COUNT(*) FROM customers WHERE country = 'Egypt'",
       "generated_sql": "SELECT COUNT(*) FROM customers WHERE country = 'Egypt';",
       "execution_match": true,
-      "latency": 12.11
+      "latency": 2.56
     },
     {
       "db_id": "sales_db",
@@ -22,7 +22,7 @@
       "expected_sql": "SELECT product_name, unit_price FROM products WHERE category = 'Electronics'",
       "generated_sql": "SELECT product_name, unit_price FROM products WHERE category = 'Electronics' LIMIT 1000;",
       "execution_match": true,
-      "latency": 2.45
+      "latency": 1.95
     },
     {
       "db_id": "sales_db",
@@ -30,15 +30,15 @@
       "expected_sql": "SELECT SUM(total_amount) FROM orders WHERE status = 'Completed'",
       "generated_sql": "SELECT SUM(total_amount) FROM orders WHERE status = 'Completed';",
       "execution_match": true,
-      "latency": 17.92
+      "latency": 1.3
     },
     {
       "db_id": "sales_db",
       "question": "Which customer has spent the most on completed orders?",
       "expected_sql": "SELECT c.name, SUM(o.total_amount) as total_spent FROM customers c JOIN orders o ON c.customer_id = o.customer_id WHERE o.status = 'Completed' GROUP BY c.name ORDER BY total_spent DESC LIMIT 1",
-      "generated_sql": "SELECT c.name, SUM(o.total_amount) FROM customers c JOIN orders o ON c.customer_id = o.customer_id WHERE o.status = 'Completed' GROUP BY c.name ORDER BY SUM(o.total_amount) DESC LIMIT 1;",
+      "generated_sql": "SELECT c.name, SUM(o.total_amount) AS total_spent\nFROM customers c\nJOIN orders o ON c.customer_id = o.customer_id\nWHERE o.status = 'Completed'\nGROUP BY c.name\nORDER BY total_spent DESC\nLIMIT 1;",
       "execution_match": true,
-      "latency": 5.3
+      "latency": 2.72
     },
     {
       "db_id": "sales_db",
@@ -46,7 +46,7 @@
       "expected_sql": "SELECT p.product_name, SUM(oi.quantity) as total_qty FROM products p JOIN order_items oi ON p.product_id = oi.product_id GROUP BY p.product_name ORDER BY total_qty DESC LIMIT 3",
       "generated_sql": "SELECT p.product_name, SUM(oi.quantity) AS total_quantity\nFROM products p\nJOIN order_items oi ON p.product_id = oi.product_id\nGROUP BY p.product_name\nORDER BY total_quantity DESC\nLIMIT 3;",
       "execution_match": true,
-      "latency": 2.32
+      "latency": 2.42
     },
     {
       "db_id": "sales_db",
@@ -54,7 +54,7 @@
       "expected_sql": "SELECT c.name, ROUND(AVG(o.total_amount), 2) as avg_order FROM customers c JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.name",
       "generated_sql": "SELECT c.name, ROUND(AVG(o.total_amount), 2) FROM customers c JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.name;",
       "execution_match": true,
-      "latency": 28.87
+      "latency": 1.95
     },
     {
       "db_id": "sales_db",
@@ -62,15 +62,15 @@
       "expected_sql": "SELECT p.product_name FROM products p LEFT JOIN order_items oi ON p.product_id = oi.product_id WHERE oi.product_id IS NULL",
       "generated_sql": "SELECT DISTINCT p.product_name FROM products p WHERE p.product_id NOT IN (SELECT oi.product_id FROM order_items oi) LIMIT 1000;",
       "execution_match": true,
-      "latency": 2.27
+      "latency": 1.85
     },
     {
       "db_id": "sales_db",
       "question": "Find customers with more than one completed order",
       "expected_sql": "SELECT c.name, COUNT(o.order_id) as order_count FROM customers c JOIN orders o ON c.customer_id = o.customer_id WHERE o.status = 'Completed' GROUP BY c.name HAVING order_count > 1",
-      "generated_sql": "SELECT c.name, COUNT(o.order_id) FROM customers c JOIN orders o ON c.customer_id = o.customer_id WHERE o.status = 'Completed' GROUP BY c.name HAVING COUNT(o.order_id) > 1;",
+      "generated_sql": "SELECT c.name, COUNT(o.order_id)\nFROM customers c\nJOIN orders o ON c.customer_id = o.customer_id\nWHERE o.status = 'Completed'\nGROUP BY c.name\nHAVING COUNT(o.order_id) > 1;",
       "execution_match": true,
-      "latency": 3.98
+      "latency": 3.83
     },
     {
       "db_id": "employees_db",
@@ -78,7 +78,7 @@
       "expected_sql": "SELECT COUNT(*) FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE d.dept_name = 'Engineering'",
       "generated_sql": "SELECT COUNT(*) FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE d.dept_name = 'Engineering';",
       "execution_match": true,
-      "latency": 1.7
+      "latency": 1.61
     },
     {
       "db_id": "employees_db",
@@ -86,7 +86,7 @@
       "expected_sql": "SELECT first_name, last_name, salary FROM employees WHERE salary > 80000",
       "generated_sql": "SELECT first_name, last_name, salary FROM employees WHERE salary > 80000 LIMIT 1000;",
       "execution_match": true,
-      "latency": 2.69
+      "latency": 1.57
     },
     {
       "db_id": "employees_db",
@@ -94,39 +94,39 @@
       "expected_sql": "SELECT d.dept_name, ROUND(AVG(e.salary), 2) as avg_salary FROM employees e JOIN departments d ON e.dept_id = d.dept_id GROUP BY d.dept_name",
       "generated_sql": "SELECT d.dept_name, ROUND(AVG(e.salary), 2) FROM departments d JOIN employees e ON d.dept_id = e.dept_id GROUP BY d.dept_name;",
       "execution_match": true,
-      "latency": 4.81
+      "latency": 4.08
     },
     {
       "db_id": "employees_db",
       "question": "Find the department with the highest total salary budget",
       "expected_sql": "SELECT d.dept_name, SUM(e.salary) as total_salary FROM employees e JOIN departments d ON e.dept_id = d.dept_id GROUP BY d.dept_name ORDER BY total_salary DESC LIMIT 1",
-      "generated_sql": "SELECT d.dept_name, SUM(e.salary) FROM departments d JOIN employees e ON d.dept_id = e.dept_id GROUP BY d.dept_name ORDER BY SUM(e.salary) DESC LIMIT 1;",
+      "generated_sql": "SELECT d.dept_name, SUM(e.salary) AS total_salary\nFROM departments d\nJOIN employees e ON d.dept_id = e.dept_id\nGROUP BY d.dept_name\nORDER BY total_salary DESC\nLIMIT 1;",
       "execution_match": true,
-      "latency": 2.96
+      "latency": 2.39
     },
     {
       "db_id": "employees_db",
       "question": "Show departments with their project count and total project budget",
       "expected_sql": "SELECT d.dept_name, COUNT(p.project_id) as project_count, SUM(p.budget) as total_budget FROM departments d LEFT JOIN projects p ON d.dept_id = p.dept_id GROUP BY d.dept_name",
-      "generated_sql": "SELECT d.dept_name, COUNT(p.project_id), SUM(p.budget)\nFROM departments d\nJOIN projects p ON d.dept_id = p.dept_id\nGROUP BY d.dept_name;",
+      "generated_sql": "SELECT d.dept_name, COUNT(p.project_id), SUM(p.budget) FROM departments d JOIN projects p ON d.dept_id = p.dept_id GROUP BY d.dept_name;",
       "execution_match": true,
-      "latency": 4.48
+      "latency": 6.5
     },
     {
       "db_id": "employees_db",
       "question": "Who are the managers and which departments do they manage?",
       "expected_sql": "SELECT e.first_name, e.last_name, d.dept_name FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE e.is_manager = 1",
-      "generated_sql": "SELECT DISTINCT e.first_name, e.last_name, d.dept_name FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE e.is_manager = 1 LIMIT 1000;",
+      "generated_sql": "SELECT e.first_name, e.last_name, d.dept_name FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE e.is_manager = 1 LIMIT 1000;",
       "execution_match": true,
-      "latency": 8.79
+      "latency": 10.09
     },
     {
       "db_id": "employees_db",
       "question": "Find employees who earn more than their department average",
       "expected_sql": "SELECT e.first_name, e.last_name, e.salary, d.dept_name FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE e.salary > (SELECT AVG(e2.salary) FROM employees e2 WHERE e2.dept_id = e.dept_id)",
-      "generated_sql": "SELECT e.first_name, e.last_name, e.salary, d.dept_name\nFROM employees e\nJOIN departments d ON e.dept_id = d.dept_id\nWHERE e.salary > (\n    SELECT AVG(salary)\n    FROM employees e2\n    WHERE e2.dept_id = e.dept_id\n);",
+      "generated_sql": "SELECT e.first_name, e.last_name, e.salary, d.dept_name\nFROM employees e\nJOIN departments d ON e.dept_id = d.dept_id\nWHERE e.salary > (\n    SELECT AVG(e2.salary)\n    FROM employees e2\n    WHERE e2.dept_id = e.dept_id\n)\nLIMIT 1000;",
       "execution_match": true,
-      "latency": 22.39
+      "latency": 10.89
     },
     {
       "db_id": "employees_db",
@@ -134,63 +134,63 @@
       "expected_sql": "SELECT d.dept_name FROM departments d LEFT JOIN projects p ON d.dept_id = p.dept_id WHERE p.project_id IS NULL",
       "generated_sql": "SELECT DISTINCT d.dept_name FROM departments d WHERE d.dept_id NOT IN (SELECT p.dept_id FROM projects p) LIMIT 1000;",
       "execution_match": true,
-      "latency": 2.43
+      "latency": 9.47
     },
     {
       "db_id": "employees_ar_db",
-      "question": "\u0638\u2026\u0637\u00a7 \u0638\u2021\u0638\u02c6 \u0638\u2026\u0637\u06be\u0638\u02c6\u0637\u00b3\u0637\u00b7 \u0637\u00a7\u0638\u201e\u0637\u00b1\u0637\u00a7\u0637\u06be\u0637\u00a8 \u0638\u201e\u0638\u0192\u0638\u201e \u0638\u201a\u0637\u00b3\u0638\u2026\u0637\u06ba",
-      "expected_sql": "SELECT d.dept_name_ar AS '\u0637\u00a7\u0638\u201e\u0638\u201a\u0637\u00b3\u0638\u2026', ROUND(AVG(e.salary), 2) AS '\u0638\u2026\u0637\u06be\u0638\u02c6\u0637\u00b3\u0637\u00b7 \u0637\u00a7\u0638\u201e\u0637\u00b1\u0637\u00a7\u0637\u06be\u0637\u00a8' FROM employees e JOIN departments d ON e.dept_id = d.dept_id GROUP BY d.dept_name_ar",
-      "generated_sql": "SELECT d.dept_name_ar, ROUND(AVG(e.salary), 2) FROM departments d JOIN employees e ON d.dept_id = e.dept_id GROUP BY d.dept_name_ar;",
-      "execution_match": true,
-      "latency": 3.21
-    },
-    {
-      "db_id": "employees_ar_db",
-      "question": "\u0637\u00a7\u0637\u00b9\u0637\u00b1\u0637\u00b6 \u0637\u00a7\u0638\u201e\u0637\u00a3\u0638\u201a\u0637\u00b3\u0637\u00a7\u0638\u2026 \u0638\u2026\u0637\u00b9 \u0637\u00b9\u0637\u00af\u0637\u00af \u0637\u00a7\u0638\u201e\u0638\u2026\u0637\u00b4\u0637\u00a7\u0637\u00b1\u0638\u0679\u0637\u00b9 \u0638\u02c6\u0637\u00a5\u0637\u00ac\u0638\u2026\u0637\u00a7\u0638\u201e\u0638\u0679 \u0638\u2026\u0638\u0679\u0637\u00b2\u0637\u00a7\u0638\u2020\u0638\u0679\u0637\u06be\u0638\u2021\u0637\u00a7",
-      "expected_sql": "SELECT d.dept_name_ar AS '\u0637\u00a7\u0638\u201e\u0638\u201a\u0637\u00b3\u0638\u2026', COUNT(p.project_id) AS '\u0637\u00b9\u0637\u00af\u0637\u00af \u0637\u00a7\u0638\u201e\u0638\u2026\u0637\u00b4\u0637\u00a7\u0637\u00b1\u0638\u0679\u0637\u00b9', SUM(p.budget) AS '\u0637\u00a5\u0637\u00ac\u0638\u2026\u0637\u00a7\u0638\u201e\u0638\u0679 \u0637\u00a7\u0638\u201e\u0638\u2026\u0638\u0679\u0637\u00b2\u0637\u00a7\u0638\u2020\u0638\u0679\u0637\u00a9' FROM departments d LEFT JOIN projects p ON d.dept_id = p.dept_id GROUP BY d.dept_name_ar",
-      "generated_sql": "SELECT d.dept_name_ar, COUNT(p.project_id), SUM(p.budget) FROM departments d JOIN projects p ON d.dept_id = p.dept_id GROUP BY d.dept_name_ar;",
-      "execution_match": true,
-      "latency": 3.58
-    },
-    {
-      "db_id": "employees_ar_db",
-      "question": "\u0638\u2026\u0638\u2020 \u0638\u2021\u0638\u2026 \u0637\u00a7\u0638\u201e\u0638\u2026\u0637\u00af\u0637\u00b1\u0637\u00a7\u0637\u060c \u0638\u02c6\u0638\u2026\u0637\u00a7 \u0638\u2021\u0638\u0679 \u0637\u00a7\u0638\u201e\u0637\u00a3\u0638\u201a\u0637\u00b3\u0637\u00a7\u0638\u2026 \u0637\u00a7\u0638\u201e\u0637\u06be\u0638\u0679 \u0638\u0679\u0637\u00af\u0638\u0679\u0637\u00b1\u0638\u02c6\u0638\u2020\u0638\u2021\u0637\u00a7\u0637\u06ba",
-      "expected_sql": "SELECT e.first_name AS '\u0637\u00a7\u0638\u201e\u0637\u00a7\u0637\u00b3\u0638\u2026 \u0637\u00a7\u0638\u201e\u0637\u00a3\u0638\u02c6\u0638\u201e', e.last_name AS '\u0637\u00a7\u0637\u00b3\u0638\u2026 \u0637\u00a7\u0638\u201e\u0637\u00b9\u0637\u00a7\u0637\u00a6\u0638\u201e\u0637\u00a9', d.dept_name_ar AS '\u0637\u00a7\u0638\u201e\u0638\u201a\u0637\u00b3\u0638\u2026' FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE e.is_manager = 1",
-      "generated_sql": "SELECT DISTINCT e.first_name, e.last_name, d.dept_name_ar FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE e.is_manager = 1;",
-      "execution_match": true,
-      "latency": 8.08
-    },
-    {
-      "db_id": "employees_ar_db",
-      "question": "\u0638\u0192\u0638\u2026 \u0637\u00b9\u0637\u00af\u0637\u00af \u0637\u00a7\u0638\u201e\u0638\u2026\u0638\u02c6\u0637\u00b8\u0638\u067e\u0638\u0679\u0638\u2020 \u0638\u067e\u0638\u0679 \u0638\u201a\u0637\u00b3\u0638\u2026 \u0637\u00a7\u0638\u201e\u0638\u2021\u0638\u2020\u0637\u00af\u0637\u00b3\u0637\u00a9\u0637\u06ba",
-      "expected_sql": "SELECT COUNT(*) FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE d.dept_name_ar = '\u0637\u00a7\u0638\u201e\u0638\u2021\u0638\u2020\u0637\u00af\u0637\u00b3\u0637\u00a9'",
-      "generated_sql": "SELECT COUNT(*) FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE d.dept_name = 'Engineering';",
+      "question": "\u0645\u0627 \u0647\u0648 \u0645\u062a\u0648\u0633\u0637 \u0627\u0644\u0631\u0627\u062a\u0628 \u0644\u0643\u0644 \u0642\u0633\u0645\u061f",
+      "expected_sql": "SELECT d.dept_name_ar AS '\u0627\u0644\u0642\u0633\u0645', ROUND(AVG(e.salary), 2) AS '\u0645\u062a\u0648\u0633\u0637 \u0627\u0644\u0631\u0627\u062a\u0628' FROM employees e JOIN departments d ON e.dept_id = d.dept_id GROUP BY d.dept_name_ar",
+      "generated_sql": "SELECT d.dept_name, ROUND(AVG(e.salary), 2) FROM departments d JOIN employees e ON d.dept_id = e.dept_id GROUP BY d.dept_name;",
       "execution_match": false,
-      "latency": 11.64
+      "latency": 4.43
+    },
+    {
+      "db_id": "employees_ar_db",
+      "question": "\u0627\u0639\u0631\u0636 \u0627\u0644\u0623\u0642\u0633\u0627\u0645 \u0645\u0639 \u0639\u062f\u062f \u0627\u0644\u0645\u0634\u0627\u0631\u064a\u0639 \u0648\u0625\u062c\u0645\u0627\u0644\u064a \u0645\u064a\u0632\u0627\u0646\u064a\u062a\u0647\u0627",
+      "expected_sql": "SELECT d.dept_name_ar AS '\u0627\u0644\u0642\u0633\u0645', COUNT(p.project_id) AS '\u0639\u062f\u062f \u0627\u0644\u0645\u0634\u0627\u0631\u064a\u0639', SUM(p.budget) AS '\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0645\u064a\u0632\u0627\u0646\u064a\u0629' FROM departments d LEFT JOIN projects p ON d.dept_id = p.dept_id GROUP BY d.dept_name_ar",
+      "generated_sql": "SELECT d.dept_name, COUNT(p.project_id), SUM(p.budget)\nFROM departments d\nJOIN projects p ON d.dept_id = p.dept_id\nGROUP BY d.dept_name;",
+      "execution_match": false,
+      "latency": 8.04
+    },
+    {
+      "db_id": "employees_ar_db",
+      "question": "\u0645\u0646 \u0647\u0645 \u0627\u0644\u0645\u062f\u0631\u0627\u0621 \u0648\u0645\u0627 \u0647\u064a \u0627\u0644\u0623\u0642\u0633\u0627\u0645 \u0627\u0644\u062a\u064a \u064a\u062f\u064a\u0631\u0648\u0646\u0647\u0627\u061f",
+      "expected_sql": "SELECT e.first_name AS '\u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0623\u0648\u0644', e.last_name AS '\u0627\u0633\u0645 \u0627\u0644\u0639\u0627\u0626\u0644\u0629', d.dept_name_ar AS '\u0627\u0644\u0642\u0633\u0645' FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE e.is_manager = 1",
+      "generated_sql": "SELECT e.first_name, e.last_name, d.dept_name FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE e.is_manager = 1 LIMIT 1000;",
+      "execution_match": false,
+      "latency": 2.27
+    },
+    {
+      "db_id": "employees_ar_db",
+      "question": "\u0643\u0645 \u0639\u062f\u062f \u0627\u0644\u0645\u0648\u0638\u0641\u064a\u0646 \u0641\u064a \u0642\u0633\u0645 \u0627\u0644\u0647\u0646\u062f\u0633\u0629\u061f",
+      "expected_sql": "SELECT COUNT(*) FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE d.dept_name_ar = '\u0627\u0644\u0647\u0646\u062f\u0633\u0629'",
+      "generated_sql": "SELECT COUNT(*) FROM employees e JOIN departments d ON e.dept_id = d.dept_id WHERE d.dept_name = 'Engineering';",
+      "execution_match": true,
+      "latency": 3.05
     },
     {
       "db_id": "sales_ar_db",
-      "question": "\u0638\u2026\u0637\u00a7 \u0637\u00a5\u0637\u00ac\u0638\u2026\u0637\u00a7\u0638\u201e\u0638\u0679 \u0637\u00a7\u0638\u201e\u0637\u00a5\u0638\u0679\u0637\u00b1\u0637\u00a7\u0637\u00af\u0637\u00a7\u0637\u06be \u0638\u2026\u0638\u2020 \u0637\u00a7\u0638\u201e\u0637\u00b7\u0638\u201e\u0637\u00a8\u0637\u00a7\u0637\u06be \u0637\u00a7\u0638\u201e\u0638\u2026\u0638\u0192\u0637\u06be\u0638\u2026\u0638\u201e\u0637\u00a9\u0637\u06ba",
+      "question": "\u0645\u0627 \u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0625\u064a\u0631\u0627\u062f\u0627\u062a \u0645\u0646 \u0627\u0644\u0637\u0644\u0628\u0627\u062a \u0627\u0644\u0645\u0643\u062a\u0645\u0644\u0629\u061f",
       "expected_sql": "SELECT SUM(total_amount) FROM orders WHERE status = 'Completed'",
-      "generated_sql": "SELECT p.product_name FROM products p JOIN order_items oi ON p.product_id = oi.product_id JOIN orders o ON oi.order_id = o.order_id WHERE o.status = 'Completed' LIMIT 1000;",
-      "execution_match": false,
-      "latency": 5.08
+      "generated_sql": "SELECT SUM(total_amount) FROM orders WHERE status = 'Completed';",
+      "execution_match": true,
+      "latency": 2.86
     },
     {
       "db_id": "inventory_ar_db",
-      "question": "\u0637\u00a7\u0637\u00b9\u0637\u00b1\u0637\u00b6 \u0637\u00a7\u0638\u201e\u0638\u2026\u0638\u2020\u0637\u06be\u0637\u00ac\u0637\u00a7\u0637\u06be \u0637\u00a7\u0638\u201e\u0637\u06be\u0638\u0679 \u0637\u06be\u0637\u00ad\u0637\u06be\u0637\u00a7\u0637\u00ac \u0637\u00a5\u0637\u00b9\u0637\u00a7\u0637\u00af\u0637\u00a9 \u0637\u06be\u0637\u00ae\u0637\u00b2\u0638\u0679\u0638\u2020 \u0638\u2026\u0637\u00b9 \u0638\u2026\u0637\u00b9\u0638\u201e\u0638\u02c6\u0638\u2026\u0637\u00a7\u0637\u06be \u0637\u00a7\u0638\u201e\u0638\u2026\u0638\u02c6\u0637\u00b1\u0637\u00af",
-      "expected_sql": "SELECT p.product_name AS '\u0637\u00a7\u0637\u00b3\u0638\u2026 \u0637\u00a7\u0638\u201e\u0638\u2026\u0638\u2020\u0637\u06be\u0637\u00ac', i.quantity AS '\u0637\u00a7\u0638\u201e\u0638\u0192\u0638\u2026\u0638\u0679\u0637\u00a9', i.reorder_level AS '\u0638\u2026\u0637\u00b3\u0637\u06be\u0638\u02c6\u0638\u2030 \u0637\u00a5\u0637\u00b9\u0637\u00a7\u0637\u00af\u0637\u00a9 \u0637\u00a7\u0638\u201e\u0637\u00b7\u0638\u201e\u0637\u00a8', s.supplier_name AS '\u0637\u00a7\u0638\u201e\u0638\u2026\u0638\u02c6\u0637\u00b1\u0637\u00af' FROM products p JOIN inventory i ON p.product_id = i.product_id JOIN suppliers s ON p.supplier_id = s.supplier_id WHERE i.quantity < i.reorder_level",
-      "generated_sql": "SELECT p.product_name, ROUND(AVG(i.quantity), 2) FROM products p JOIN inventory i ON p.product_id = i.product_id GROUP BY p.product_name;",
+      "question": "\u0627\u0639\u0631\u0636 \u0627\u0644\u0645\u0646\u062a\u062c\u0627\u062a \u0627\u0644\u062a\u064a \u062a\u062d\u062a\u0627\u062c \u0625\u0639\u0627\u062f\u0629 \u062a\u062e\u0632\u064a\u0646 \u0645\u0639 \u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u0645\u0648\u0631\u062f",
+      "expected_sql": "SELECT p.product_name AS '\u0627\u0633\u0645 \u0627\u0644\u0645\u0646\u062a\u062c', i.quantity AS '\u0627\u0644\u0643\u0645\u064a\u0629', i.reorder_level AS '\u0645\u0633\u062a\u0648\u0649 \u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0637\u0644\u0628', s.supplier_name AS '\u0627\u0644\u0645\u0648\u0631\u062f' FROM products p JOIN inventory i ON p.product_id = i.product_id JOIN suppliers s ON p.supplier_id = s.supplier_id WHERE i.quantity < i.reorder_level",
+      "generated_sql": "SELECT p.product_name, s.supplier_name\nFROM inventory i\nJOIN products p ON i.product_id = p.product_id\nJOIN suppliers s ON",
       "execution_match": false,
-      "latency": 2.69
+      "latency": 8.3
     },
     {
       "db_id": "inventory_db",
       "question": "How many products are below their reorder level?",
       "expected_sql": "SELECT COUNT(*) FROM inventory WHERE quantity < reorder_level",
-      "generated_sql": "SELECT COUNT(*) FROM inventory i WHERE i.quantity < i.reorder_level;",
+      "generated_sql": "SELECT COUNT(*) FROM inventory WHERE quantity < reorder_level;",
       "execution_match": true,
-      "latency": 3.93
+      "latency": 1.76
     },
     {
       "db_id": "inventory_db",
@@ -198,15 +198,15 @@
       "expected_sql": "SELECT supplier_name, reliability_score FROM suppliers WHERE reliability_score > 4.0",
       "generated_sql": "SELECT supplier_name, reliability_score FROM suppliers WHERE reliability_score > 4.0 LIMIT 1000;",
       "execution_match": true,
-      "latency": 2.56
+      "latency": 1.51
     },
     {
       "db_id": "inventory_db",
       "question": "What is the total quantity of each product across all warehouses?",
       "expected_sql": "SELECT p.product_name, SUM(i.quantity) as total_qty FROM products p JOIN inventory i ON p.product_id = i.product_id GROUP BY p.product_name",
-      "generated_sql": "SELECT p.product_name, SUM(i.quantity)\nFROM products p\nJOIN inventory i ON p.product_id = i.product_id\nGROUP BY p.product_name;",
+      "generated_sql": "SELECT p.product_name, SUM(i.quantity) FROM products p JOIN inventory i ON p.product_id = i.product_id GROUP BY p.product_name;",
       "execution_match": true,
-      "latency": 6.48
+      "latency": 2.0
     },
     {
       "db_id": "inventory_db",
@@ -214,31 +214,31 @@
       "expected_sql": "SELECT DISTINCT w.warehouse_name FROM warehouses w JOIN inventory i ON w.warehouse_id = i.warehouse_id WHERE i.quantity < i.reorder_level",
       "generated_sql": "SELECT DISTINCT w.warehouse_name FROM warehouses w JOIN inventory i ON w.warehouse_id = i.warehouse_id WHERE i.quantity < i.reorder_level LIMIT 1000;",
       "execution_match": true,
-      "latency": 4.76
+      "latency": 52.4
     },
     {
       "db_id": "inventory_db",
       "question": "Which supplier provides the most expensive product?",
       "expected_sql": "SELECT s.supplier_name, p.product_name, p.unit_price FROM suppliers s JOIN products p ON s.supplier_id = p.supplier_id ORDER BY p.unit_price DESC LIMIT 1",
-      "generated_sql": "SELECT s.supplier_name, p.product_name, p.unit_price\nFROM products p\nJOIN suppliers s ON p.supplier_id = s.supplier_id\nORDER BY p.unit_price DESC\nLIMIT 1;",
+      "generated_sql": "SELECT s.supplier_name, p.product_name, p.unit_price\nFROM suppliers s\nJOIN products p ON s.supplier_id = p.supplier_id\nORDER BY p.unit_price DESC\nLIMIT 1;",
       "execution_match": true,
-      "latency": 2.79
+      "latency": 5.43
     },
     {
       "db_id": "inventory_db",
       "question": "Show products that need restocking (quantity below reorder level) with supplier info",
       "expected_sql": "SELECT p.product_name, s.supplier_name, i.quantity, i.reorder_level FROM products p JOIN inventory i ON p.product_id = i.product_id JOIN suppliers s ON p.supplier_id = s.supplier_id WHERE i.quantity < i.reorder_level",
-      "generated_sql": "SELECT DISTINCT p.product_name, s.supplier_name, i.quantity, i.reorder_level FROM inventory i JOIN products p ON i.product_id = p.product_id JOIN suppliers s ON p.supplier_id = s.supplier_id WHERE i.quantity < i.reorder_level LIMIT 1000;",
+      "generated_sql": "SELECT p.product_name, s.supplier_name, i.quantity, i.reorder_level FROM inventory i JOIN products p ON i.product_id = p.product_id JOIN suppliers s ON p.supplier_id = s.supplier_id WHERE i.quantity < i.reorder_level LIMIT 1000;",
       "execution_match": true,
-      "latency": 4.8
+      "latency": 2.74
     },
     {
       "db_id": "inventory_db",
       "question": "What is the total inventory value per warehouse?",
       "expected_sql": "SELECT w.warehouse_name, SUM(i.quantity * p.unit_price) as total_value FROM warehouses w JOIN inventory i ON w.warehouse_id = i.warehouse_id JOIN products p ON i.product_id = p.product_id GROUP BY w.warehouse_name",
-      "generated_sql": "SELECT w.warehouse_name, SUM(i.quantity *",
-      "execution_match": false,
-      "latency": 4.89
+      "generated_sql": "SELECT w.warehouse_name, SUM(i.quantity * p.unit_price) AS total_inventory_value\nFROM warehouses w\nJOIN inventory i ON w.warehouse_id = i.warehouse_id\nJOIN products p ON i.product_id = p.product_id\nGROUP BY w.warehouse_name;",
+      "execution_match": true,
+      "latency": 2.7
     },
     {
       "db_id": "inventory_db",
@@ -246,7 +246,7 @@
       "expected_sql": "SELECT p.category, SUM(i.quantity * p.unit_price) as total_value FROM products p JOIN inventory i ON p.product_id = i.product_id GROUP BY p.category HAVING total_value > 5000",
       "generated_sql": "SELECT p.category, SUM(p.unit_price * i.quantity) FROM products p JOIN inventory i ON p.product_id = i.product_id GROUP BY p.category HAVING SUM(p.unit_price * i.quantity) > 5000;",
       "execution_match": true,
-      "latency": 2.85
+      "latency": 2.42
     }
   ]
 }

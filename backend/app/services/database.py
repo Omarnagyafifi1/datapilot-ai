@@ -62,6 +62,9 @@ def get_sync_engine() -> Engine:
     db_url = str(settings.DATABASE_URL or "").strip()
     if db_url and not _is_sqlite_url(db_url):
         # Production — single PostgreSQL database for all internal state
+        if db_url.startswith("postgresql+asyncpg://"):
+            db_url = "postgresql+psycopg2://" + db_url[len("postgresql+asyncpg://"):]
+
         connect_args: dict = {}
         _SYNC_ENGINE = create_engine(
             db_url,

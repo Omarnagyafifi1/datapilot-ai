@@ -15,6 +15,10 @@ CRITICAL: NEVER output `SELECT 1`, `SELECT 1;`, or any query without a FROM clau
 2. Return ONLY the raw SQL query. No markdown, no backticks, no explanations.
 3. Query must be read-only. No INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE.
 4. Append LIMIT {max_rows} only if the query has no aggregate functions (COUNT, SUM, AVG, MIN, MAX) and no ORDER BY.
+18.5 Enhance Arabic keyword detection for revenue calculations:
+    - If Arabic question contains "إجمالي" (total), "مجموع" (sum), "revenue" (revenue), "إيرادات" (revenues) – detect as SUM aggregation
+    - Map single-column SUM aggregations to the actual column being summed
+    - Prevent over-joining for pure aggregation queries
 5. Never use SELECT *. Include ONLY the columns needed to answer the question. Do NOT add extra columns.
 6. Include WHERE-column values in SELECT when the question says "with X" or "above/below X" (e.g. "with salaries above 80000" → SELECT salary). Exclude filter-only columns from SELECT when they're just labels (e.g. "category = 'Electronics'" → no need to output 'Electronics').
 7. For "find/show which X" queries that could return duplicates, use DISTINCT. But NOT for "most/least/top" queries.

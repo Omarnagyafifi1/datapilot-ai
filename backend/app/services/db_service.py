@@ -79,7 +79,7 @@ def _rewrite_month_name_like_filters(sql: str) -> str:
         return f"SUBSTR({column_expr}, 4, 2) = '{month_number}'"
 
     pattern = re.compile(
-        r'(?P<column>"[^"]+"|`[^`]+`|\[[^\]]+\]|\w+)\s+LIKE\s+\'%(?P<month>[A-Za-z]+)%\',',
+        r'(?P<column>"[^"]+"|`[^`]+`|\[[^\]]+\]|\w+)\s+LIKE\s+\'%(?P<month>[A-Za-z]+)%\'',
         re.IGNORECASE,
     )
     return pattern.sub(replace, sql)
@@ -132,27 +132,45 @@ def _normalize_conn_string_for_sync(conn_string: str) -> str:
     return conn_string
 
 
+def _get_upload_dir() -> str:
+    """Get the upload directory, respecting UPLOAD_DIR env var."""
+    upload_dir = os.getenv("UPLOAD_DIR", "")
+    if upload_dir:
+        if not os.path.isabs(upload_dir):
+            backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            upload_dir = os.path.join(backend_dir, upload_dir.lstrip("./"))
+        os.makedirs(upload_dir, exist_ok=True)
+        return upload_dir
+    # Fallback to project_root/uploads/
+    project_root = _get_project_root()
+    upload_dir = os.path.join(project_root, "uploads")
+    os.makedirs(upload_dir, exist_ok=True)
+    return upload_dir
+
+
 def upload_csv_to_sqlite(csv_path: str, source_id: str, table_name: str = None) -> tuple:
     """Uploads a CSV to a temporary SQLite database and returns (conn_string, table_name)."""
     try:
         df = pd.read_csv(csv_path)
         df = _normalize_numeric_text_columns(df)
-        # Create a filename for the sqlite db based on source_id in project root
-        project_root = _get_project_root()
-        db_path = os.path.join(project_root, "uploads", f"{source_id}.db")
+        # Use upload directory respecting UPLOAD_DIR env var
+        upload_dir = _get_upload_dir()
+        db_path = os.path.join(upload_dir, f"{source_id}.db")
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        # Normalize to absolute path before storing
+        db_path = os.path.abspath(db_path)
         # Use standard SQLAlchemy SQLite format (sqlite:///) for consistency
         conn_string = f"sqlite:///{db_path}"
-        
+
         engine = create_engine(conn_string)
         if not table_name:
             # Use the filename (without extension) as the table name
             table_name = os.path.splitext(os.path.basename(csv_path))[0].replace(" ", "_").replace("(", "").replace(")", "").lower()
             if table_name and table_name[0].isdigit():
                 table_name = f"table_{table_name}"
-        
+
         df.to_sql(table_name, engine, if_exists="replace", index=False)
-        
+
         _SOURCE_CONN_STRINGS[source_id] = conn_string
         logger.info(f"Successfully uploaded {csv_path} to {db_path} as table {table_name}")
         return conn_string, table_name
@@ -166,6 +184,10 @@ def get_engine(source_id: str, conn_string: str) -> Engine:
     cached = _ENGINE_CACHE.get(source_id)
     if cached is not None and _SOURCE_CONN_STRINGS.get(source_id) == normalized_conn_string:
         return cached
+    # If conn_string changed, invalidate schema cache for this source
+    if _SOURCE_CONN_STRINGS.get(source_id, None) is not None and _SOURCE_CONN_STRINGS[source_id] != normalized_conn_string:
+        _SCHEMA_CACHE.pop(source_id, None)
+        logger.info("Schema cache invalidated for source_id=%s: conn_string changed", source_id)
     engine = create_engine(normalized_conn_string)
     if engine.dialect.name == "oracle":
         engine.dialect.exclude_tablespaces = ()
@@ -179,21 +201,37 @@ def _ensure_sqlite_path_resolved(source_id: str) -> str:
     conn_string = _SOURCE_CONN_STRINGS.get(source_id)
     if conn_string is None:
         return None
-    
+
     if conn_string.startswith("sqlite:///") or conn_string.startswith("sqlite__:/"):
         normalized_conn = conn_string
         if conn_string.startswith("sqlite__:/"):
             normalized_conn = "sqlite:///" + conn_string[len("sqlite__:/"):]
-        
+
         db_path = normalized_conn[len("sqlite:///"):]
         found_path = _find_sqlite_db_path(db_path)
         if found_path is None:
-            raise ValueError(f"Database file not found: {db_path}")
+            basename = os.path.basename(db_path)
+            searched = [
+                db_path,
+                os.path.join(os.getcwd(), basename),
+                os.path.join(os.getcwd(), "backend", basename),
+                os.path.join(os.getcwd(), "uploads", basename),
+                os.path.join(os.getcwd(), "backend", "uploads", basename),
+                os.path.join(os.getcwd(), "app", "services", "uploads", basename),
+                os.path.join(os.getcwd(), "backend", "app", "services", "uploads", basename),
+                os.path.join(_get_project_root(), "uploads", basename),
+                os.path.join(_get_project_root(), "backend", "uploads", basename),
+                os.path.join(_get_project_root(), "app", "services", "uploads", basename),
+            ]
+            raise ValueError(
+                f"Database file not found: {db_path}. "
+                f"Searched locations: {searched}"
+            )
         if found_path != db_path:
             normalized_path = os.path.abspath(found_path)
             _SOURCE_CONN_STRINGS[source_id] = f"sqlite:///{normalized_path}"
             return f"sqlite:///{normalized_path}"
-    
+
     return conn_string
 
 
@@ -301,43 +339,33 @@ def _find_sqlite_db_path(db_path: str) -> str | None:
     """Attempt to locate a SQLite database file by searching common locations."""
     if os.path.exists(db_path):
         return db_path
-    
-    # Try in current working directory
-    alt_path = os.path.join(os.getcwd(), os.path.basename(db_path))
-    if os.path.exists(alt_path):
-        return alt_path
-    
-    # Try in backend/ subdirectory (common project structure)
-    backend_path = os.path.join(os.getcwd(), "backend", os.path.basename(db_path))
-    if os.path.exists(backend_path):
-        return backend_path
-    
-    # Try in uploads/ subdirectory (relative to cwd)
-    uploads_path = os.path.join(os.getcwd(), "uploads", os.path.basename(db_path))
-    if os.path.exists(uploads_path):
-        return uploads_path
-    
-    # Try in backend/uploads/ subdirectory
-    backend_uploads_path = os.path.join(os.getcwd(), "backend", "uploads", os.path.basename(db_path))
-    if os.path.exists(backend_uploads_path):
-        return backend_uploads_path
-    
-    # Try in project root uploads/ directory
+
+    basename = os.path.basename(db_path)
+    cwd = os.getcwd()
     project_root = _get_project_root()
-    project_uploads_path = os.path.join(project_root, "uploads", os.path.basename(db_path))
-    if os.path.exists(project_uploads_path):
-        return project_uploads_path
-    
-    # Try in project root backend/uploads/ directory
-    project_backend_uploads = os.path.join(project_root, "backend", "uploads", os.path.basename(db_path))
-    if os.path.exists(project_backend_uploads):
-        return project_backend_uploads
-    
-    # Try in project root directory
-    project_root_file = os.path.join(project_root, os.path.basename(db_path))
-    if os.path.exists(project_root_file):
-        return project_root_file
-    
+
+    # All candidate locations, from most to least likely
+    candidates = [
+        # Relative to CWD
+        os.path.join(cwd, basename),
+        os.path.join(cwd, "backend", basename),
+        os.path.join(cwd, "uploads", basename),
+        os.path.join(cwd, "backend", "uploads", basename),
+        # app/services/uploads/ (where csv_provider stores CSV copies)
+        os.path.join(cwd, "app", "services", "uploads", basename),
+        os.path.join(cwd, "backend", "app", "services", "uploads", basename),
+        # Relative to project root
+        os.path.join(project_root, basename),
+        os.path.join(project_root, "uploads", basename),
+        os.path.join(project_root, "backend", basename),
+        os.path.join(project_root, "backend", "uploads", basename),
+        os.path.join(project_root, "app", "services", "uploads", basename),
+    ]
+
+    for candidate in candidates:
+        if os.path.exists(candidate):
+            return candidate
+
     return None
 
 
@@ -345,16 +373,14 @@ def get_source_schema(source_id: str) -> dict:
     conn_string = _SOURCE_CONN_STRINGS.get(source_id)
     if conn_string is None:
         raise HTTPException(status_code=404, detail="Data source not found")
-        
-    if source_id in _SCHEMA_CACHE:
-        return _SCHEMA_CACHE[source_id]
 
     # Normalize to standard format for path extraction (handle both formats)
     normalized_conn = conn_string
     if conn_string.startswith("sqlite__:/"):
         normalized_conn = "sqlite:///" + conn_string[len("sqlite__:/"):]
-    
+
     # Check if SQLite file exists and try to migrate path if needed
+    # Do this BEFORE the schema cache check so path migration doesn't serve stale data
     if normalized_conn.startswith("sqlite:///"):
         db_path = normalized_conn[len("sqlite:///"):]
         found_path = _find_sqlite_db_path(db_path)
@@ -366,6 +392,9 @@ def get_source_schema(source_id: str) -> dict:
             normalized_path = os.path.abspath(found_path)
             _SOURCE_CONN_STRINGS[source_id] = f"sqlite:///{normalized_path}"
             conn_string = f"sqlite:///{normalized_path}"
+
+    if source_id in _SCHEMA_CACHE:
+        return _SCHEMA_CACHE[source_id]
 
     try:
         engine = get_engine(source_id=source_id, conn_string=conn_string)

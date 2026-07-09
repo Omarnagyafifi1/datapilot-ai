@@ -118,20 +118,27 @@ def _get_session_factory() -> sessionmaker:
 def _find_sqlite_path_in_common_locations(db_path: str) -> str | None:
     """Search for a SQLite database file in common project locations."""
     basename = os.path.basename(db_path)
-    
-    # List of common search locations
+    cwd = os.getcwd()
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+    # List of common search locations (from most to least likely)
     search_locations = [
         db_path,  # As-is first
-        os.path.join(os.getcwd(), basename),  # CWD
-        os.path.join(os.getcwd(), "backend", basename),  # backend/
-        os.path.join(os.getcwd(), "uploads", basename),  # uploads/
-        os.path.join(os.getcwd(), "backend", "uploads", basename),  # backend/uploads/
-        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), basename),  # project root
-        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "backend", basename),  # project root backend/
-        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "uploads", basename),  # project root uploads/
-        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "backend", "uploads", basename),  # project root backend/uploads/
+        os.path.join(cwd, basename),  # CWD
+        os.path.join(cwd, "backend", basename),  # backend/
+        os.path.join(cwd, "uploads", basename),  # uploads/
+        os.path.join(cwd, "backend", "uploads", basename),  # backend/uploads/
+        # app/services/uploads/ (where csv_provider stores CSV copies)
+        os.path.join(cwd, "app", "services", "uploads", basename),
+        os.path.join(cwd, "backend", "app", "services", "uploads", basename),
+        # Relative to project root
+        os.path.join(project_root, basename),  # project root
+        os.path.join(project_root, "backend", basename),  # project root backend/
+        os.path.join(project_root, "uploads", basename),  # project root uploads/
+        os.path.join(project_root, "backend", "uploads", basename),  # project root backend/uploads/
+        os.path.join(project_root, "app", "services", "uploads", basename),
     ]
-    
+
     for loc in search_locations:
         if os.path.exists(loc):
             return loc
@@ -183,6 +190,13 @@ def save_source(params: dict) -> dict:
     db_name = str(params.get("db_name") or params.get("database") or params.get("path") or "")
     if db_type_lower == "sqlite" and db_name:
         db_name = os.path.abspath(db_name)
+        # Verify the file exists and try to resolve it if not
+        if not os.path.exists(db_name):
+            resolved = _find_sqlite_path_in_common_locations(db_name)
+            if resolved:
+                db_name = os.path.abspath(resolved)
+            else:
+                logger.warning("SQLite file not found at %s during save — will attempt path resolution at query time", db_name)
 
     source_uuid = str(uuid4())
     payload = {
