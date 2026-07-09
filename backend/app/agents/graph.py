@@ -626,7 +626,7 @@ def insight_node(state: AgentState, llm: BaseLLM) -> dict:
 
     prompt = _build_insight_prompt(state)
 
-    raw_response = llm.generate(prompt, max_tokens=512)
+    raw_response = llm.generate(prompt, max_tokens=1024)
     logger.info("insight_node raw_response=%s", raw_response[:500])
     parsed_insights = _parse_insights(raw_response)
     if parsed_insights is not None:
@@ -667,7 +667,7 @@ def suggestion_node(state: AgentState, llm: BaseLLM) -> dict:
         f"Question:\n{state.question}\n\n"
         f"Generated SQL:\n{state.sql}\n\n"
         f"Database Schema:\n{schema_summary}\n\n"
-        f"Sample Results (first {len(results_preview)} rows):\n{json.dumps(results_preview, ensure_ascii=False)}"
+        f"Sample Results (first {len(results_preview)} rows):\n{_json_dumps(results_preview)}"
     )
 
     raw_response = llm.generate(prompt, max_tokens=256)

@@ -59,7 +59,7 @@ class AzureOpenAILLM(BaseLLM):
         kwargs = {
             "model": self.deployment,
             "messages": messages,
-            "max_completion_tokens": max_tokens or 1024,
+            "max_tokens": max_tokens or 1024,
         }
 
         response = self.client.chat.completions.create(**kwargs)
