@@ -11,9 +11,11 @@ from fastapi import Response
 
 from app.api.deps import close_graph_orchestrator
 from app.api.routes import router as api_router
+from app.core.config import settings
 from app.core.exceptions import CSVValidationError, DataCleaningError, DatabaseIngestionError
+from app.core.logger import generate_request_id, set_request_id
 from app.models.schemas import UploadResponse, UploadMetadata
-from app.services.database import engine
+from app.services.database import async_engine as engine
 from app.services.data_service import DataSourceService
 
 # Setup basic logging
@@ -30,35 +32,72 @@ app = FastAPI(
 )
 
 
+@app.on_event("startup")
+def _startup() -> None:
+    try:
+        from app.services.db_backup_service import restore_all
+        restored = restore_all()
+        if restored:
+            from app.services.db_service import _SOURCE_CONN_STRINGS
+            _SOURCE_CONN_STRINGS.clear()
+    except Exception:
+        logger.exception("Failed to restore SQLite databases from backup (non-fatal)")
+
+
 @app.on_event("shutdown")
 def _shutdown() -> None:
     close_graph_orchestrator()
 
-# CORS configuration
+
+@app.get("/health")
+def health_check():
+    """Health check endpoint for Azure Container Apps."""
+    return {"status": "ok", "version": "1.0.0"}
+
+
+# ── CORS configuration ────────────────────────────────────────────────
+# Production: use FRONTEND_URL or ALLOW_ORIGINS from env
+_cors_origins = ["*"]
+_frontend_url = (settings.FRONTEND_URL or "").strip()
+_allow_origins = (settings.ALLOW_ORIGINS or "").strip() if hasattr(settings, 'ALLOW_ORIGINS') else ""
+if _frontend_url:
+    _cors_origins = [_frontend_url]
+elif _allow_origins and _allow_origins != "*":
+    _cors_origins = [o.strip() for o in _allow_origins.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For development, allow all. In production, restrict this.
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-# Fallback middleware to ensure CORS headers are present on all responses
+@app.middleware("http")
+async def _add_request_id(request: Request, call_next):
+    rid = request.headers.get("X-Request-ID", generate_request_id())
+    set_request_id(rid)
+    response = await call_next(request)
+    response.headers["X-Request-ID"] = rid
+    return response
+
+
 @app.middleware("http")
 async def _ensure_cors_headers(request, call_next):
-    # Short-circuit preflight OPTIONS requests to ensure CORS headers are present
+    origin = request.headers.get("origin", "")
+    allowed = origin if origin in _cors_origins or "*" in _cors_origins else _cors_origins[0] if _cors_origins else "*"
+
     if request.method == "OPTIONS":
         headers = {
-            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Origin": allowed,
             "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
             "Access-Control-Allow-Headers": "*",
         }
         return Response(status_code=200, headers=headers)
 
     response = await call_next(request)
-    # these are safe to set in development; in production refine as needed
-    response.headers.setdefault("Access-Control-Allow-Origin", "*")
+    response.headers.setdefault("Access-Control-Allow-Origin", allowed)
     response.headers.setdefault("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
     response.headers.setdefault("Access-Control-Allow-Headers", "*")
     return response

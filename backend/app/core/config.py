@@ -29,13 +29,23 @@ def _abs_sqlite_url(relative_url: str) -> str:
 
 
 class Settings(BaseSettings):
-    # Database
+    # Database — Primary connection string (PostgreSQL in production, SQLite for dev)
     DATABASE_URL: str = os.getenv("DATABASE_URL", "")
     data_sources_db_url: str = _abs_sqlite_url(os.getenv("DATA_SOURCES_DB_URL", "sqlite:///./data_sources.db"))
     query_history_db_url: str = _abs_sqlite_url(os.getenv("QUERY_HISTORY_DB_URL", "sqlite:///./query_history.db"))
     encryption_key: str = os.getenv("ENCRYPTION_KEY", "")
     langgraph_memory_db_uri: str = os.getenv("LANGGRAPH_MEMORY_DB_URI", "")
     langgraph_run_migrations_on_start: bool = os.getenv("LANGGRAPH_RUN_MIGRATIONS_ON_START", "false").lower() == "true"
+
+    # Azure Blob Storage
+    AZURE_STORAGE_CONNECTION_STRING: str = os.getenv("AZURE_STORAGE_CONNECTION_STRING", "")
+    AZURE_STORAGE_CONTAINER: str = os.getenv("AZURE_STORAGE_CONTAINER", "datasets")
+
+    # Azure Application Insights
+    APPLICATIONINSIGHTS_CONNECTION_STRING: str = os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING", "")
+
+    # Redis (optional, for distributed rate limiting across replicas)
+    REDIS_URL: str = os.getenv("REDIS_URL", "")
 
     # LLM API Keys (runtime-configurable, defaults to .env values)
     OPENAI_API_KEY: Optional[str] = None
@@ -45,10 +55,20 @@ class Settings(BaseSettings):
     DEEPSEEK_API_KEY: Optional[str] = None
     TOGETHER_API_KEY: Optional[str] = None
     OPENROUTER_API_KEY: Optional[str] = None
-    
+
+    # Azure OpenAI (AI Foundry)
+    AZURE_OPENAI_ENDPOINT: str = os.getenv("AZURE_OPENAI_ENDPOINT", "")
+    AZURE_OPENAI_API_KEY: str = os.getenv("AZURE_OPENAI_API_KEY", "")
+    AZURE_OPENAI_DEPLOYMENT: str = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o")
+    AZURE_OPENAI_API_VERSION: str = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
+
+    # Frontend URL (for CORS in production)
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "")
+    ALLOW_ORIGINS: str = os.getenv("ALLOW_ORIGINS", "*")
+
     # Default model (used when no model is specified in runtime settings)
     DEFAULT_LLM_MODEL: str = "llama-3.3-70b-versatile"
-    LLM_PROVIDER: str = "groq"
+    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "groq")
 
     # LangSmith Tracing & Evaluation
     LANGCHAIN_TRACING_V2: bool = os.getenv("LANGCHAIN_TRACING_V2", "false").lower() == "true"
@@ -59,11 +79,13 @@ class Settings(BaseSettings):
     # App Settings
     APP_NAME: str = "DataPilot AI"
     DEBUG: bool = False
-    # Default LLM provider (used when no provider is specified in runtime settings)
     DEFAULT_LLM_PROVIDER: str = "groq"
 
     # Security
     APPROVAL_TTL_SECONDS: int = int(os.getenv("APPROVAL_TTL_SECONDS", "3600"))
+
+    # Upload limits
+    MAX_UPLOAD_SIZE: int = int(os.getenv("MAX_UPLOAD_SIZE", str(50 * 1024 * 1024)))  # 50MB default
 
     model_config = SettingsConfigDict(
         env_file=".env",

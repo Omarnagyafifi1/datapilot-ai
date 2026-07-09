@@ -188,32 +188,39 @@ class CSVProvider(ImportProvider):
         """Import CSV data into the system."""
         from sqlalchemy import text as sql_text
         import os
-        # Use absolute path for uploads directory
         upload_dir = os.getenv("UPLOAD_DIR", "./uploads")
         if not os.path.isabs(upload_dir):
             backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             upload_dir = os.path.join(backend_dir, upload_dir.lstrip("./"))
         UPLOAD_DIR = upload_dir
         os.makedirs(UPLOAD_DIR, exist_ok=True)
-        
-        # Save original file to uploads folder
+
         await file.seek(0)
         content = await file.read()
         file_hash = self._calculate_file_hash(content)
-        
-        # Generate the preview once from the loaded content bytes
+
         preview = self._generate_preview(content, file.filename)
-        
+
         safe_name = "".join(c for c in file.filename or "uploaded.csv" if c.isalnum() or c in "._-")
         stored_filename = f"{file_hash[:8]}_{safe_name}"
+        if not stored_filename.endswith('.csv'):
+            stored_filename = stored_filename + '.csv'
         stored_path = os.path.join(UPLOAD_DIR, stored_filename)
-        
-        # Ensure the stored path has .csv extension if not already
-        if not stored_path.endswith('.csv'):
-            stored_path = stored_path + '.csv'
-        
+
+        # Save locally (required for SQLite conversion)
         with open(stored_path, "wb") as f:
             f.write(content)
+
+        # Also store in blob storage if configured
+        try:
+            from app.storage.blob_service import get_blob_service
+            blob = get_blob_service()
+            if blob.use_azure:
+                blob_name = f"datasets/{stored_filename}"
+                await blob.upload_bytes(content, blob_name, "text/csv")
+                logger.info("CSV also uploaded to blob storage: %s", blob_name)
+        except Exception:
+            pass
         
         # Generate dataset name
         dataset_name = options.dataset_name or Path(file.filename or "upload").stem

@@ -1,6 +1,26 @@
-version: "3.8"
 
 services:
+  # ── Production simulation (with PostgreSQL) ─────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: datapilot-pg
+    profiles: ["prod"]
+    environment:
+      POSTGRES_DB: datapilot
+      POSTGRES_USER: datapilot
+      POSTGRES_PASSWORD: datapilot
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U datapilot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - datapilot-network
+
   backend:
     build:
       context: .
@@ -9,16 +29,55 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - LLM_PROVIDER=groq
+      - LLM_PROVIDER=${LLM_PROVIDER:-groq}
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:-}
+      - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT:-gpt-5-mini}
+      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION:-2024-02-15-preview}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GROQ_API_KEY=${GROQ_API_KEY:-}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY:-}
-      - DATABASE_URL=sqlite+aiosqlite:///./dev.db
-      - DATA_SOURCES_DB_URL=sqlite:///./data_sources.db
-      - QUERY_HISTORY_DB_URL=sqlite:///./query_history.db
+      - LANGSMITH_TRACING=${LANGSMITH_TRACING:-false}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY:-}
+      - LANGSMITH_PROJECT=${LANGSMITH_PROJECT:-datapilot-ai}
+      - DATABASE_URL=postgresql+psycopg2://datapilot:datapilot@postgres:5432/datapilot
+      - FRONTEND_URL=http://localhost:5173
     volumes:
-      # Persistent storage volume for SQLite metadata and databases
+      - datapilot-data:/app/backend/data
+      - datapilot-uploads:/app/backend/uploads
+    restart: unless-stopped
+    networks:
+      - datapilot-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles: ["prod"]
+
+  # ── Development (SQLite, default) ───────────────────────────────────
+  backend-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: datapilot-ai-backend-dev
+    profiles: ["dev"]
+    ports:
+      - "8000:8000"
+    environment:
+      - LLM_PROVIDER=${LLM_PROVIDER:-groq}
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:-}
+      - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT:-gpt-5-mini}
+      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION:-2024-02-15-preview}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-}
+      - LANGSMITH_TRACING=${LANGSMITH_TRACING:-false}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY:-}
+      - LANGSMITH_PROJECT=${LANGSMITH_PROJECT:-datapilot-ai}
+      - DATABASE_URL=sqlite+aiosqlite:///./dev.db
+    volumes:
       - datapilot-data:/app/backend/data
     restart: unless-stopped
     networks:
@@ -29,22 +88,22 @@ services:
       context: .
       dockerfile: frontend/Dockerfile.dev
     container_name: datapilot-ai-frontend
+    profiles: ["dev"]
     ports:
       - "5173:5173"
     environment:
-      - VITE_API_TARGET=http://backend:8000
-    volumes:
-      # Mount source for hot-reload (optional, uncomment for live editing)
-      # - ./frontend/src:/app/frontend/src
-      # - ./frontend/public:/app/frontend/public
+      - VITE_API_TARGET=http://backend-dev:8000
     restart: unless-stopped
     networks:
       - datapilot-network
     depends_on:
-      - backend
+      backend-dev:
+        condition: service_started
 
 volumes:
   datapilot-data:
+  datapilot-uploads:
+  pgdata:
 
 networks:
   datapilot-network:

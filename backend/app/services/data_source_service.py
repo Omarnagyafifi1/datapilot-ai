@@ -10,13 +10,13 @@ import json
 
 from cryptography.fernet import Fernet
 from fastapi import HTTPException
-from sqlalchemy import Column, DateTime, Integer, MetaData, String, Table, create_engine, delete, insert, select, update, Text
-from sqlalchemy.engine import Engine
+from sqlalchemy import Column, DateTime, Integer, MetaData, String, Table, delete, insert, select, update, Text
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import settings
 from app.core.logger import get_logger
 from app.services import db_service
+from app.services.database import get_sync_engine
 
 
 logger = get_logger(__name__)
@@ -56,7 +56,6 @@ _DATASET_METADATA = Table(
     Column("ai_summary", Text, nullable=True),
 )
 
-_REGISTRY_ENGINE: Engine | None = None
 _SESSION_FACTORY: sessionmaker | None = None
 
 
@@ -66,14 +65,24 @@ def _get_fernet() -> Fernet:
         raise HTTPException(status_code=500, detail="Encryption key is not configured")
     try:
         return Fernet(key.encode("utf-8"))
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.exception("Invalid ENCRYPTION_KEY configuration")
         raise HTTPException(status_code=500, detail="Encryption key is invalid") from exc
 
 
+def _init_tables() -> None:
+    """Create tables if they don't exist (safe for both SQLite and PostgreSQL)."""
+    engine = get_sync_engine()
+    _METADATA.create_all(engine, tables=[_DATA_SOURCES, _DATASET_METADATA])
+
+
 def _migrate_sqlite_paths() -> None:
-    """Migrate any SQLite source with a relative db_name to an absolute path."""
+    """Migrate any SQLite source with a relative db_name to an absolute path (SQLite only)."""
+    db_url = str(settings.DATABASE_URL or "").strip()
+    if db_url and not db_url.startswith("sqlite"):
+        return
     try:
+        _init_tables()
         session_local = _get_session_factory()
         session: Session = session_local()
         rows = session.execute(
@@ -98,52 +107,38 @@ def _migrate_sqlite_paths() -> None:
         logger.warning("Failed to migrate SQLite paths: %s", exc)
 
 
-def _get_store_engine() -> Engine:
-    global _REGISTRY_ENGINE
-
-    if _REGISTRY_ENGINE is not None:
-        return _REGISTRY_ENGINE
-
-    db_url = settings.data_sources_db_url.strip()
-    if not db_url:
-        db_url = "sqlite:///./data_sources.db"
-
-    connect_args = {"timeout": 5} if db_url.startswith("sqlite:///") else {"connect_timeout": 5}
-    _REGISTRY_ENGINE = create_engine(
-        db_url,
-        pool_pre_ping=True,
-        connect_args=connect_args,
-    )
-    _METADATA.create_all(_REGISTRY_ENGINE, tables=[_DATA_SOURCES, _DATASET_METADATA])
-    _migrate_sqlite_paths()
-    return _REGISTRY_ENGINE
-
-
 def _get_session_factory() -> sessionmaker:
     global _SESSION_FACTORY
-
     if _SESSION_FACTORY is None:
-        _SESSION_FACTORY = sessionmaker(bind=_get_store_engine(), autoflush=False, autocommit=False)
+        _init_tables()
+        _SESSION_FACTORY = sessionmaker(bind=get_sync_engine(), autoflush=False, autocommit=False)
     return _SESSION_FACTORY
 
 
 def _find_sqlite_path_in_common_locations(db_path: str) -> str | None:
     """Search for a SQLite database file in common project locations."""
     basename = os.path.basename(db_path)
-    
-    # List of common search locations
+    cwd = os.getcwd()
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+    # List of common search locations (from most to least likely)
     search_locations = [
         db_path,  # As-is first
-        os.path.join(os.getcwd(), basename),  # CWD
-        os.path.join(os.getcwd(), "backend", basename),  # backend/
-        os.path.join(os.getcwd(), "uploads", basename),  # uploads/
-        os.path.join(os.getcwd(), "backend", "uploads", basename),  # backend/uploads/
-        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), basename),  # project root
-        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "backend", basename),  # project root backend/
-        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "uploads", basename),  # project root uploads/
-        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "backend", "uploads", basename),  # project root backend/uploads/
+        os.path.join(cwd, basename),  # CWD
+        os.path.join(cwd, "backend", basename),  # backend/
+        os.path.join(cwd, "uploads", basename),  # uploads/
+        os.path.join(cwd, "backend", "uploads", basename),  # backend/uploads/
+        # app/services/uploads/ (where csv_provider stores CSV copies)
+        os.path.join(cwd, "app", "services", "uploads", basename),
+        os.path.join(cwd, "backend", "app", "services", "uploads", basename),
+        # Relative to project root
+        os.path.join(project_root, basename),  # project root
+        os.path.join(project_root, "backend", basename),  # project root backend/
+        os.path.join(project_root, "uploads", basename),  # project root uploads/
+        os.path.join(project_root, "backend", "uploads", basename),  # project root backend/uploads/
+        os.path.join(project_root, "app", "services", "uploads", basename),
     ]
-    
+
     for loc in search_locations:
         if os.path.exists(loc):
             return loc
@@ -162,6 +157,16 @@ def _build_conn_string_from_source(source: dict, password: str) -> str:
                 db_path = found_path
             else:
                 db_path = os.path.abspath(db_path)  # Best effort if not found
+        if not os.path.exists(db_path):
+            try:
+                from app.services.db_backup_service import restore_backup
+                source_id = source.get("id", "")
+                if source_id:
+                    restored = restore_backup(source_id)
+                    if restored:
+                        db_path = restored
+            except Exception:
+                pass
         return f"sqlite:///{db_path}"
 
     encoded_password = quote_plus(password)
@@ -195,16 +200,23 @@ def save_source(params: dict) -> dict:
     db_name = str(params.get("db_name") or params.get("database") or params.get("path") or "")
     if db_type_lower == "sqlite" and db_name:
         db_name = os.path.abspath(db_name)
+        # Verify the file exists and try to resolve it if not
+        if not os.path.exists(db_name):
+            resolved = _find_sqlite_path_in_common_locations(db_name)
+            if resolved:
+                db_name = os.path.abspath(resolved)
+            else:
+                logger.warning("SQLite file not found at %s during save — will attempt path resolution at query time", db_name)
 
     source_uuid = str(uuid4())
     payload = {
         "id": source_uuid,
         "name": str(params.get("name", "")).strip() or source_uuid,
         "db_type": db_type_lower,
-        "host": str(params.get("host", "")),
+        "host": str(params.get("host", "")).strip(),
         "port": int(params["port"]) if params.get("port") is not None else None,
-        "db_name": db_name,
-        "username": str(params.get("username") or params.get("user") or ""),
+        "db_name": db_name.strip() if db_name else db_name,
+        "username": str(params.get("username") or params.get("user") or "").strip(),
         "enc_password": encrypted_password,
         "created_at": datetime.utcnow(),
     }

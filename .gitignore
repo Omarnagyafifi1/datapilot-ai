@@ -1,52 +1,34 @@
-# Python bytecode and cache
+# Python
 __pycache__/
 *.py[cod]
-*$py.class
-
-# Virtual environments
+*.egg-info/
 .venv/
 venv/
 env/
-ENV/
-backend/.venv/
-
-# Environment and secrets
-.env
-.env.*
-!.env.example
-backend/.env
-backend/.env.*
-!backend/.env.example
-*.key
-*.pem
-*.p12
-*.pfx
-backend/settings.json
-
-# Tooling cache
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.coverage
-.coverage.*
-htmlcov/
-
-# Build and distribution
-build/
-dist/
-*.egg-info/
-
-# Logs and local runtime files
-*.log
-*.sqlite3
 *.db
+*.sqlite3
 
-# IDE/editor
+# Node
+node_modules/
+dist/
+
+# Azure deployment
+ca_update.json
+
+# IDE
 .vscode/
 .idea/
 
-# OS files
+# OS
 .DS_Store
 Thumbs.db
-CONTEXT.md
-terminal.txt
+
+# Backend logs
+backend/*.log
+backend/err*.log
+backend/out*.log
+
+# Test artifacts
+backend/test
+backend/test_data*
+backend/employees_data*

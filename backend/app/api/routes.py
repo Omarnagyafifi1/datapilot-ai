@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query, 
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from app.api.deps import get_data_source_service, get_graph_orchestrator, get_history_service
+from app.core.config import settings
 from app.core.logger import get_logger
 from app.models.schemas import (
     ConnectRequest,
@@ -35,7 +36,7 @@ from app.services.data_source_service import DataSourceService, save_dataset_met
 from app.services.history_service import HistoryService
 from app.services import db_service
 from app.services.data_service import DataSourceService as CSVService
-from app.services.database import engine
+
 from app.services.import_providers import ImportPreview, ImportOptions
 from app.services.import_providers.csv_provider import CSVProvider
 from app.services.import_providers.sqlite_provider import SQLiteProvider
@@ -105,6 +106,23 @@ def _get_provider(file: UploadFile) -> Optional[object]:
         return _PROVIDERS.get('sqlite')
     
     return None
+
+
+_ALLOWED_UPLOAD_EXTENSIONS = {".csv", ".db", ".sqlite", ".sqlite3", ".xlsx", ".xls", ".json"}
+
+
+def _validate_upload_file(file: UploadFile) -> None:
+    """Validate uploaded file: check extension and size."""
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No filename provided")
+
+    import os
+    _, ext = os.path.splitext(file.filename.lower())
+    if ext not in _ALLOWED_UPLOAD_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File type '{ext}' not allowed. Allowed: {', '.join(sorted(_ALLOWED_UPLOAD_EXTENSIONS))}",
+        )
 
 
 @router.get("/health", response_model=HealthResponse)
@@ -463,6 +481,9 @@ def update_dataset(
 @router.post('/data/csv')
 async def upload_csv(file: UploadFile = File(...)) -> dict[str, Any]:
     """Upload a CSV and ingest it into the system (stores as SQLite locally)."""
+    # ── File validation ────────────────────────────────────────────────
+    _validate_upload_file(file)
+
     try:
         import io as _io
         import pandas as _pd
@@ -472,8 +493,13 @@ async def upload_csv(file: UploadFile = File(...)) -> dict[str, Any]:
         import hashlib
         import os as _os
         
-        # Save CSV temporarily for processing
         content = await file.read()
+
+        # File size check
+        max_size = settings.MAX_UPLOAD_SIZE
+        if len(content) > max_size:
+            raise HTTPException(status_code=400, detail=f"File too large. Maximum size is {max_size // (1024*1024)}MB")
+        
         await file.seek(0)
         
         # Get upload directory

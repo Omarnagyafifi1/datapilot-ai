@@ -8,6 +8,13 @@ SQL_GENERATION_PROMPT = """
 ### User Question
 {question}
 
+### Thinking Process (Internal Reasoning)
+Before generating the query, mentally perform these steps:
+Step 1. Column Analysis: Identify exactly which attributes the user requested.
+Step 2. Schema Mapping: Map each requested attribute to its specific table and column in the schema.
+Step 3. JOIN Identification: If the mapped columns span multiple tables, you MUST perform a JOIN. Do not substitute a missing attribute with a vaguely related column from the primary table.
+Step 4. Final Verification: Ensure the SELECT clause contains ONLY the requested columns. Do not add unrequested descriptive columns.
+
 ### Rules
 CRITICAL: NEVER output `SELECT 1`, `SELECT 1;`, or any query without a FROM clause referencing at least one schema table. A bare SELECT without FROM is NEVER a valid answer. If no schema table matches, use rule 21's error format.
 
@@ -15,7 +22,11 @@ CRITICAL: NEVER output `SELECT 1`, `SELECT 1;`, or any query without a FROM clau
 2. Return ONLY the raw SQL query. No markdown, no backticks, no explanations.
 3. Query must be read-only. No INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE.
 4. Append LIMIT {max_rows} only if the query has no aggregate functions (COUNT, SUM, AVG, MIN, MAX) and no ORDER BY.
-5. Never use SELECT *. Include ONLY the columns needed to answer the question. Do NOT add extra columns.
+18.5 Enhance Arabic keyword detection for revenue calculations:
+    - If Arabic question contains "إجمالي" (total), "مجموع" (sum), "revenue" (revenue), "إيرادات" (revenues) – detect as SUM aggregation
+    - Map single-column SUM aggregations to the actual column being summed
+    - Prevent over-joining for pure aggregation queries
+5. Never use SELECT *. Include ONLY the columns strictly requested. Do NOT add extra descriptive columns unless they are explicitly asked for or necessary to answer the question.
 6. Include WHERE-column values in SELECT when the question says "with X" or "above/below X" (e.g. "with salaries above 80000" → SELECT salary). Exclude filter-only columns from SELECT when they're just labels (e.g. "category = 'Electronics'" → no need to output 'Electronics').
 7. For "find/show which X" queries that could return duplicates, use DISTINCT. But NOT for "most/least/top" queries.
 8. For "top N" or "most/least/best/highest" queries, use ORDER BY + LIMIT (not DISTINCT). Include ALL descriptive columns (name, product_name, unit_price, etc.) in SELECT — not just one.
@@ -32,7 +43,7 @@ CRITICAL: NEVER output `SELECT 1`, `SELECT 1;`, or any query without a FROM clau
 16. For comparison queries ("more than", "less than", "above", "below", "higher than", "earn more than"), include the compared value column (e.g. salary) AND the grouping column (e.g. dept_name) in SELECT.
 17. NEVER use T1/T2/T3 aliases. Use meaningful first-letter aliases (c for customers, p for products, o for orders, s for suppliers, etc.).
 18. For 3-table JOINs: the table with the most relevant condition data is the anchor. Always JOIN it first, then add related tables. E.g., for "products with inventory and supplier info": FROM inventory i JOIN products p ON i.product_id = p.product_id JOIN suppliers s ON p.supplier_id = s.supplier_id.
-19. For JOIN queries, only include columns from the joined tables that directly answer the question. No extra columns.
+19. For JOIN queries, only include columns from the joined tables that directly answer the question. Rely on the JOIN Identification step: always JOIN related tables if requested attributes reside there.
 20. For IDs: include FK ID columns only if they help answer the question (e.g., "which department" = include dept_name, not dept_id).
 21. STRICT SCHEMA MATCHING: If the user asks for data, metrics, concepts, or tables (e.g., 'profit', 'sales', 'customers', 'orders') that DO NOT exist in the provided schema, DO NOT guess or substitute them with unrelated columns or tables. You MUST NOT continue generating a query. You must output exactly: SELECT 'ERROR: Requested data or table not found in schema' AS error;
 22. ARABIC QUESTIONS — follow these EXACT steps:

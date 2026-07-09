@@ -6,7 +6,7 @@ export function UploadZone({ onFileSelect }) {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState(null);
 
-  const validateAndSelect = (file) => {
+  const validateAndSelect = useCallback((file) => {
     setError(null);
     
     // Validate extension
@@ -17,7 +17,7 @@ export function UploadZone({ onFileSelect }) {
     }
     
     onFileSelect(file);
-  };
+  }, [onFileSelect]);
 
   const handleDragOver = useCallback((e) => {
     e.preventDefault();

@@ -1,4 +1,3 @@
-import React from 'react';
 import { COPY } from '../lib/copy';
 
 export function ConfirmationModal({ open, onClose, onConfirm, sql, source, requiresApproval }) {

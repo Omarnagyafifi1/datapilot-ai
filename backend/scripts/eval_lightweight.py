@@ -97,6 +97,30 @@ def execution_match(gen_sql: str, expected_sql: str, db_path: str) -> bool:
         print(f"    EXEC MATCH ERROR: {e}")
         return False
 
+def normalize_sql_for_comparison(sql: str) -> str:
+    """Normalize SQL for comparison by:
+    1. Lowercasing keywords
+    2. Removing extra whitespace
+    3. Collapsing redundant spaces around punctuation
+    """
+    if not sql:
+        return ""
+    normalized = sql.lower()
+    import re
+    normalized = re.sub(r'\s+', ' ', normalized)
+    normalized = re.sub(r'\s*([.,;()])\s*', r'\1', normalized)
+    return normalized.strip()
+
+def execution_match_hybrid(gen_sql: str, expected_sql: str, db_path: str) -> bool:
+    """Hybrid approach:
+    Level 1: Exact match (with normalization) - fastest
+    Level 2: Functional match (executes and compares results) - accurate
+    """
+    if normalize_sql_for_comparison(gen_sql) == normalize_sql_for_comparison(expected_sql):
+        return True
+    
+    return execution_match(gen_sql, expected_sql, db_path)
+
 def main():
     hdr("DataPilot BIRD Eval (Lightweight)")
     print(f"  LLM Provider: {settings.LLM_PROVIDER}")
@@ -160,7 +184,7 @@ def main():
         latency = time.time() - start
         total_latency += latency
         gen_sql_clean = gen_sql.strip()
-        em = execution_match(gen_sql_clean, expected_sql, db_path)
+        em = execution_match_hybrid(gen_sql_clean, expected_sql, db_path)
         if em: passed += 1
         else: failed += 1
 

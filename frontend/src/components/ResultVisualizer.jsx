@@ -25,19 +25,17 @@ export function ResultVisualizer({ doc }) {
   const chartRef = React.useRef(null);
   const [chartRendered, setChartRendered] = React.useState(false);
 
-  if (!doc) return null;
-
-  const rows = pageRows || doc.results || [];
-  const totalRows = doc.results_count || rows.length;
+  const rows = doc ? (pageRows || doc.results || []) : [];
+  const totalRows = doc ? (doc.results_count || rows.length) : 0;
   const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
-  const fallbackSlice = (doc.results || []).slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const fallbackSlice = doc ? (doc.results || []).slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) : [];
   const visibleRows = pageRows || fallbackSlice;
-  const visualization = doc.visualization || {};
+  const visualization = doc ? (doc.visualization || {}) : {};
   const hasPlotlySpec = visualization && visualization.spec && visualization.spec.data;
 
   async function loadPage(nextPage) {
     setPage(nextPage);
-    if (!doc.source_id || !doc.sql) return;
+    if (!doc || !doc.source_id || !doc.sql) return;
     setPageLoading(true);
     try {
       const resp = await api.queryPage({
@@ -78,6 +76,8 @@ export function ResultVisualizer({ doc }) {
       setChartRendered(false);
     }
   }, [showPreview]);
+
+  if (!doc) return null;
 
   return (
     <div className="mt-6 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -349,7 +349,7 @@ ${chartSection}
   const w = window.open(url, '_blank');
   if (w) {
     w.focus();
-    setTimeout(() => { try { w.print(); } catch {} }, 1000);
+    setTimeout(() => { try { w.print(); } catch { /* ignore popup-blocker */ } }, 1000);
   } else {
     const a = document.createElement('a');
     a.href = url;

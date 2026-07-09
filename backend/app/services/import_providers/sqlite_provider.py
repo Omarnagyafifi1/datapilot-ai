@@ -224,10 +224,21 @@ class SQLiteProvider(ImportProvider):
         safe_name = "".join(c for c in file.filename or "uploaded.db" if c.isalnum() or c in "._-")
         stored_filename = f"{file_hash[:8]}_{safe_name}"
         stored_path = os.path.join(UPLOAD_DIR, stored_filename)
-        
+
         # Save file to managed storage
         with open(stored_path, "wb") as f:
             f.write(content)
+
+        # Also store in blob storage if configured
+        try:
+            from app.storage.blob_service import get_blob_service
+            blob = get_blob_service()
+            if blob.use_azure:
+                blob_name = f"datasets/{stored_filename}"
+                await blob.upload_bytes(content, blob_name, "application/octet-stream")
+                logger.info("SQLite DB also uploaded to blob storage: %s", blob_name)
+        except Exception:
+            pass
         
         # Get preview for table names
         await file.seek(0)

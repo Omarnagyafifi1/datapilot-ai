@@ -17,14 +17,16 @@ except Exception:
     evaluate_sql = None
     post_evaluation_to_langsmith = None
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import StateGraph, START, END
 from langgraph.store.memory import InMemoryStore
 from langgraph.types import Command, interrupt
 from app.agents.nodes.sql_node import run_sql_node
 from app.agents.prompts import (
-    INSIGHT_PROMPT, 
-    SUGGESTION_PROMPT, 
+    INSIGHT_PROMPT,
+    SUGGESTION_PROMPT,
     SQL_ADD_PROMPT,
     SQL_UPDATE_PROMPT,
     SQL_DELETE_PROMPT,
@@ -619,26 +621,25 @@ def _build_insight_prompt(state: AgentState) -> str:
 
 def insight_node(state: AgentState, llm: BaseLLM) -> dict:
     if not state.query_results:
-        logger.debug("insight_node: no query_results, returning fallback")
+        logger.info("insight_node: query_results empty (%s rows), returning fallback", len(state.query_results))
         return {"insights": _fallback_insights()}
 
     prompt = _build_insight_prompt(state)
 
-    for attempt in range(2):
-        raw_response = llm.generate(prompt, max_tokens=1024)
-        logger.debug("insight_node attempt=%d raw_response=%.300s", attempt, raw_response)
-        parsed_insights = _parse_insights(raw_response)
-        logger.debug("insight_node attempt=%d parsed_insights=%s", attempt, parsed_insights)
-        if parsed_insights is not None:
-            logger.debug("insight_node: returning insights count=%d", len(parsed_insights))
-            return {"insights": parsed_insights}
+    raw_response = llm.generate(prompt, max_tokens=1024)
+    logger.info("insight_node raw_response=%s", raw_response[:500])
+    parsed_insights = _parse_insights(raw_response)
+    if parsed_insights is not None:
+        logger.info("insight_node: returning insights count=%d", len(parsed_insights))
+        return {"insights": parsed_insights}
 
-    logger.debug("insight_node: all attempts failed, returning fallback")
+    logger.info("insight_node: parse failed for raw_response=%s", raw_response[:300])
     return {"insights": _fallback_insights()}
 
 
 def suggestion_node(state: AgentState, llm: BaseLLM) -> dict:
-    if not state.query_results:
+    # Skip suggestions for trivial queries (1 row = list tables, count, etc.)
+    if not state.query_results or len(state.query_results) <= 1:
         return {"suggestions": []}
 
     schema_str = (state.documentation or {}).get("schema", "")
@@ -666,10 +667,10 @@ def suggestion_node(state: AgentState, llm: BaseLLM) -> dict:
         f"Question:\n{state.question}\n\n"
         f"Generated SQL:\n{state.sql}\n\n"
         f"Database Schema:\n{schema_summary}\n\n"
-        f"Sample Results (first {len(results_preview)} rows):\n{json.dumps(results_preview, ensure_ascii=False)}"
+        f"Sample Results (first {len(results_preview)} rows):\n{_json_dumps(results_preview)}"
     )
 
-    raw_response = llm.generate(prompt, max_tokens=512)
+    raw_response = llm.generate(prompt, max_tokens=256)
     parsed_suggestions = _parse_suggestions(raw_response)
     return {"suggestions": parsed_suggestions if parsed_suggestions is not None else []}
 
@@ -835,6 +836,43 @@ class AgentGraph:
         self.store = store or InMemoryStore()
         self.graph = self._build_graph()
 
+    def _post_process_node(self, state: AgentState) -> dict:
+        """Run visualization, insights, and suggestions in parallel via ThreadPoolExecutor."""
+        results: dict[str, Any] = {}
+
+        def run_vis(s: AgentState) -> dict:
+            return visualization_node(s)
+
+        def run_insights(s: AgentState) -> dict:
+            return insight_node(s, self.llm)
+
+        def run_suggestions(s: AgentState) -> dict:
+            return suggestion_node(s, self.llm)
+
+        tasks = {
+            "visualization": run_vis,
+            "insights": run_insights,
+            "suggestions": run_suggestions,
+        }
+
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            futures = {pool.submit(fn, state): key for key, fn in tasks.items()}
+            for future in as_completed(futures):
+                key = futures[future]
+                try:
+                    result = future.result()
+                    results.update(result)
+                except Exception as exc:
+                    logger.warning("post_process_node %s failed: %s", key, exc)
+                    if key == "insights":
+                        results["insights"] = _fallback_insights()
+                    elif key == "suggestions":
+                        results["suggestions"] = []
+                    elif key == "visualization":
+                        results["visualization"] = None
+
+        return results
+
     def _build_graph(self):
         workflow = StateGraph(AgentState)
 
@@ -852,9 +890,7 @@ class AgentGraph:
         workflow.add_node("scenario_success", scenario_success_node)
         workflow.add_node("scenario_failure", scenario_failure_node)
         workflow.add_node("scenario_lesson", lambda s: scenario_lesson_node(s, self.llm, self.schema_service))
-        workflow.add_node("generate_visualization", visualization_node)
-        workflow.add_node("generate_insights", lambda s: insight_node(s, self.llm))
-        workflow.add_node("generate_suggestions", lambda s: suggestion_node(s, self.llm))
+        workflow.add_node("post_process", self._post_process_node)
         workflow.add_node("document", documentation_node)
         workflow.add_node("persist_memory", _make_persist_long_term_memory_node(self.store))
 
@@ -916,10 +952,8 @@ class AgentGraph:
             return "execute_sql"
 
         workflow.add_conditional_edges("fix_sql", route_fix, ["scenario_success", "execute_sql", "scenario_failure"])
-        workflow.add_edge("scenario_success", "generate_visualization")
-        workflow.add_edge("scenario_success", "generate_insights")
-        workflow.add_edge("scenario_success", "generate_suggestions")
-        workflow.add_edge(["generate_visualization", "generate_insights", "generate_suggestions"], "document")
+        workflow.add_edge("scenario_success", "post_process")
+        workflow.add_edge("post_process", "document")
         workflow.add_edge("scenario_failure", "scenario_lesson")
         workflow.add_edge("scenario_lesson", "document")
         workflow.add_edge("document", "persist_memory")

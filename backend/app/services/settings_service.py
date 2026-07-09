@@ -9,7 +9,7 @@ logger = get_logger(__name__)
 SETTINGS_FILE = Path(__file__).resolve().parents[2] / "settings.json"
 
 DEFAULT_SETTINGS: dict[str, Any] = {
-    "llm_provider": "litellm",
+    "llm_provider": "azure",
     "model": "llama-3.3-70b-versatile",
     "temperature": 0.2,
     "max_tokens": 2048,

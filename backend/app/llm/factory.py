@@ -7,12 +7,13 @@ from app.llm.providers.groq_llm import GroqLLM
 from app.llm.providers.openrouter_llm import OpenRouterLLM
 from app.llm.providers.gemini_llm import GeminiLLM
 from app.llm.providers.lite_llm import LiteLLMProvider
+from app.llm.providers.azure_openai_llm import AzureOpenAILLM
 from app.services.settings_service import _load
 from app.core.logger import get_logger
 
 logger = get_logger(__name__)
 
-VALID_PROVIDERS = {"groq", "openrouter", "gemini", "litellm", "mock"}
+VALID_PROVIDERS = {"groq", "openrouter", "gemini", "litellm", "azure", "mock"}
 
 
 class FallbackLLM(BaseLLM):
@@ -23,7 +24,7 @@ class FallbackLLM(BaseLLM):
     def generate(self, prompt: str, system_message: Optional[str] = None, max_tokens: Optional[int] = None) -> str:
         # Determine fallback order starting with the primary provider
         order = [self.primary_provider]
-        for p in ["groq", "gemini", "openrouter"]:
+        for p in ["azure", "groq", "gemini", "openrouter"]:
             if p not in order and p in self.providers_map:
                 order.append(p)
 
@@ -62,7 +63,12 @@ def get_llm(provider: str | None = None) -> BaseLLM:
     openrouter_key = _sanitize_key(api_keys.get("openrouter") or settings.OPENROUTER_API_KEY)
     gemini_key = _sanitize_key(api_keys.get("gemini") or settings.GEMINI_API_KEY)
 
-    provider = provider or dynamic_settings.get("llm_provider") or getattr(settings, "DEFAULT_LLM_PROVIDER", "groq")
+    provider = provider or dynamic_settings.get("llm_provider") or settings.LLM_PROVIDER or ""
+    if not provider:
+        if settings.AZURE_OPENAI_ENDPOINT and settings.AZURE_OPENAI_API_KEY:
+            provider = "azure"
+        else:
+            provider = getattr(settings, "DEFAULT_LLM_PROVIDER", "groq")
     if provider:
         provider = provider.strip().lower()
     # 'mock' is always valid; unknown providers fall back to litellm
@@ -82,6 +88,12 @@ def get_llm(provider: str | None = None) -> BaseLLM:
         providers_map["gemini"] = GeminiLLM(api_key=gemini_key)
     if openrouter_key:
         providers_map["openrouter"] = OpenRouterLLM(api_key=openrouter_key)
+    # Azure is always available if AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY are set
+    if settings.AZURE_OPENAI_ENDPOINT and settings.AZURE_OPENAI_API_KEY:
+        try:
+            providers_map["azure"] = AzureOpenAILLM()
+        except Exception as exc:
+            logger.warning("Failed to initialize AzureOpenAILLM: %s", exc)
 
     primary = provider
     if primary not in providers_map:
