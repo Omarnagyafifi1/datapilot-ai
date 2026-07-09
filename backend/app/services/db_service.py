@@ -148,17 +148,6 @@ def _get_upload_dir() -> str:
     return upload_dir
 
 
-def _set_sqlite_pragmas_direct(db_path: str) -> None:
-    try:
-        import sqlite3 as _sqlite3
-        conn = _sqlite3.connect(db_path, timeout=30)
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA busy_timeout=30000")
-        conn.execute("PRAGMA synchronous=NORMAL")
-        conn.close()
-    except Exception:
-        logger.exception("Failed to set SQLite pragmas on %s (non-fatal)", db_path)
-
 def _set_sqlite_pragmas(engine: Engine) -> None:
     with engine.connect() as conn:
         conn.execute(text("PRAGMA journal_mode=WAL"))
@@ -177,14 +166,20 @@ def upload_csv_to_sqlite(csv_path: str, source_id: str, table_name: str = None) 
         db_path = os.path.abspath(db_path)
         conn_string = f"sqlite:///{db_path}"
 
-        _set_sqlite_pragmas_direct(db_path)
-        engine = create_engine(conn_string, connect_args={"timeout": 30})
         if not table_name:
             table_name = os.path.splitext(os.path.basename(csv_path))[0].replace(" ", "_").replace("(", "").replace(")", "").lower()
             if table_name and table_name[0].isdigit():
                 table_name = f"table_{table_name}"
 
-        df.to_sql(table_name, engine, if_exists="replace", index=False)
+        import sqlite3 as _sqlite3
+        conn = _sqlite3.connect(db_path, timeout=30)
+        try:
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.execute("PRAGMA busy_timeout=30000")
+            conn.execute("PRAGMA synchronous=NORMAL")
+            df.to_sql(table_name, conn, if_exists="replace", index=False)
+        finally:
+            conn.close()
 
         _SOURCE_CONN_STRINGS[source_id] = conn_string
         logger.info(f"Successfully uploaded {csv_path} to {db_path} as table {table_name}")
