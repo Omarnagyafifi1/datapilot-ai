@@ -621,20 +621,19 @@ def _build_insight_prompt(state: AgentState) -> str:
 
 def insight_node(state: AgentState, llm: BaseLLM) -> dict:
     if not state.query_results:
-        logger.debug("insight_node: no query_results, returning fallback")
+        logger.info("insight_node: query_results empty (%s rows), returning fallback", len(state.query_results))
         return {"insights": _fallback_insights()}
 
     prompt = _build_insight_prompt(state)
 
-    # Single attempt — was 2 retries; failure returns fallback immediately
     raw_response = llm.generate(prompt, max_tokens=512)
-    logger.debug("insight_node raw_response=%.300s", raw_response)
+    logger.info("insight_node raw_response=%s", raw_response[:500])
     parsed_insights = _parse_insights(raw_response)
     if parsed_insights is not None:
-        logger.debug("insight_node: returning insights count=%d", len(parsed_insights))
+        logger.info("insight_node: returning insights count=%d", len(parsed_insights))
         return {"insights": parsed_insights}
 
-    logger.debug("insight_node: parse failed, returning fallback")
+    logger.info("insight_node: parse failed for raw_response=%s", raw_response[:300])
     return {"insights": _fallback_insights()}
 
 
