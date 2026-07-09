@@ -1,11 +1,18 @@
-# DataPilot AI - Text-to-SQL Data Analyst System 🚀
+# DataPilot AI - Text-to-SQL Data Analyst System
 
 ![DataPilot Dashboard Concept](https://img.shields.io/badge/DataPilot-AI-00f0ff?style=for-the-badge&logo=react)
 ![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
 ![LangGraph](https://img.shields.io/badge/LangGraph-FF4F00?style=for-the-badge&logo=langchain)
-![Databases](https://img.shields.io/badge/Multi--DB-Supported-34D399?style=for-the-badge)
+![Azure](https://img.shields.io/badge/Azure-0078D4?style=for-the-badge&logo=microsoftazure)
+![GitHub Actions](https://img.shields.io/badge/CI/CD-GitHub%20Actions-2088FF?style=for-the-badge&logo=githubactions)
 
-DataPilot AI is an intelligent, agent-based Text-to-SQL system that empowers users to query databases using natural language (English & Arabic). It leverages a LangGraph-powered AI agent to understand intent, generate SQL, safely execute queries, and return the data alongside AI-generated insights and visualizations.
+DataPilot AI is an intelligent, agent-based Text-to-SQL system deployed on **Azure Container Apps**. It empowers users to query databases using natural language (English & Arabic), leveraging a LangGraph-powered AI agent to understand intent, generate SQL, safely execute queries, and return data alongside AI-generated insights and visualizations.
+
+### Default LLM Provider
+
+The system auto-detects **Azure OpenAI** when `AZURE_OPENAI_ENDPOINT` and `AZURE_OPENAI_API_KEY` are set. Fallback providers include Groq, Gemini, and OpenRouter. Users can override the provider from the frontend Settings panel at any time.
+
+> **Live URL:** [https://ca-datapilot.lemondesert-cbde89d5.italynorth.azurecontainerapps.io](https://ca-datapilot.lemondesert-cbde89d5.italynorth.azurecontainerapps.io)
 
 ---
 
@@ -52,7 +59,37 @@ Located in `/frontend`.
 
 ---
 
-## 🚀 Quick Start Guide
+## ☁️ Azure Deployment
+
+The project is deployed on **Azure Container Apps** with the following infrastructure:
+
+| Service | Resource |
+|---|---|
+| **Container App** | `ca-datapilot` (Italy North) |
+| **Container Registry** | `datapilotacr.azurecr.io` |
+| **PostgreSQL** | `datapilot-pg.postgres.database.azure.com` |
+| **Azure OpenAI** | `gpt-5-mini` deployment |
+| **File Storage** | `datapilotuploads` (Azure Files + Blob) |
+| **CI/CD** | GitHub Actions (`.github/workflows/deploy.yml`) |
+
+### Persistent Uploads
+
+Uploaded CSV files and SQLite databases are persisted via **Azure Files** backup:
+- **CSV raw files** stored at `/mnt/uploads/` (Azure Files mount)
+- **SQLite `.db` files** automatically backed up to `/mnt/uploads/db_backups/` and restored on container restart
+
+### CI/CD Pipeline
+
+On every push to `main` or `DEPLOYMENT`:
+1. Build Docker image (multi-stage: Node → Python)
+2. Push to Azure Container Registry
+3. Deploy new revision to Container App
+
+> **Required GitHub Secrets:** `AZURE_CREDENTIALS`, `ACR_USERNAME`, `ACR_PASSWORD`
+
+---
+
+## 🚀 Quick Start Guide (Development)
 
 ### Prerequisites
 *   Python 3.11+
@@ -76,10 +113,13 @@ Located in `/frontend`.
 4. Set up the Environment Variables:
    Copy `.env.example` to `.env` and fill in your keys:
    ```env
-   # Example .env configuration
-   LLM_PROVIDER=groq
+   # Default provider is Azure (auto-detected when AZURE_OPENAI_ENDPOINT is set)
+   # Override with LLM_PROVIDER=groq, openai, gemini, or openrouter
    GROQ_API_KEY=gsk_your_api_key_here
+   GEMINI_API_KEY=your_gemini_key_here
+   OPENROUTER_API_KEY=your_openrouter_key_here
    ENCRYPTION_KEY=generate_a_fernet_key_and_paste_here
+   DATABASE_URL=sqlite+aiosqlite:///./dev.db
    ```
 5. Run the FastAPI Server:
    ```bash
@@ -115,6 +155,10 @@ Here are the core endpoints provided by the backend. The full Swagger documentat
 | `GET` | `/api/datasources/{id}/schema` | Fetch the full schema (tables, columns, types) for a data source. |
 | `GET` | `/api/datasources/{id}/suggestions` | Auto-generate AI query suggestions based on the table schema. |
 | `POST` | `/api/data/csv` | Upload a CSV file. It is automatically cleaned and ingested into the local SQLite database. |
+| `GET` | `/api/settings` | Retrieve current LLM provider settings and feature flags. |
+| `PUT` | `/api/settings` | Update LLM provider, model, and API keys. |
+| `GET` | `/api/system/metrics` | Evaluation metrics and usage statistics. |
+| `GET` | `/health` | Health check endpoint (used by Azure Container Apps). |
 
 ---
 
