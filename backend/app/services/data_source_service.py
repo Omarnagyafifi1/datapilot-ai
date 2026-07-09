@@ -213,10 +213,10 @@ def save_source(params: dict) -> dict:
         "id": source_uuid,
         "name": str(params.get("name", "")).strip() or source_uuid,
         "db_type": db_type_lower,
-        "host": str(params.get("host", "")),
+        "host": str(params.get("host", "")).strip(),
         "port": int(params["port"]) if params.get("port") is not None else None,
-        "db_name": db_name,
-        "username": str(params.get("username") or params.get("user") or ""),
+        "db_name": db_name.strip() if db_name else db_name,
+        "username": str(params.get("username") or params.get("user") or "").strip(),
         "enc_password": encrypted_password,
         "created_at": datetime.utcnow(),
     }

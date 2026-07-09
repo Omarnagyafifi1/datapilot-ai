@@ -296,10 +296,10 @@ def test_connection(params: dict) -> dict:
     ``{"success": False, "error": "<message>"}`` on failure.
     """
     db_type = str(params.get("db_type", "")).lower().strip()
-    host = str(params.get("host", ""))
+    host = str(params.get("host", "")).strip()
     port = params.get("port")
-    db_name = str(params.get("db_name") or params.get("database") or params.get("path") or "")
-    username = str(params.get("username") or params.get("user") or "")
+    db_name = str(params.get("db_name") or params.get("database") or params.get("path") or "").strip()
+    username = str(params.get("username") or params.get("user") or "").strip()
     password = str(params.get("password", ""))
 
     try:
