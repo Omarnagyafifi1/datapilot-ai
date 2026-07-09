@@ -157,6 +157,16 @@ def _build_conn_string_from_source(source: dict, password: str) -> str:
                 db_path = found_path
             else:
                 db_path = os.path.abspath(db_path)  # Best effort if not found
+        if not os.path.exists(db_path):
+            try:
+                from app.services.db_backup_service import restore_backup
+                source_id = source.get("id", "")
+                if source_id:
+                    restored = restore_backup(source_id)
+                    if restored:
+                        db_path = restored
+            except Exception:
+                pass
         return f"sqlite:///{db_path}"
 
     encoded_password = quote_plus(password)

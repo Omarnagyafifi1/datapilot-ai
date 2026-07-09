@@ -32,6 +32,18 @@ app = FastAPI(
 )
 
 
+@app.on_event("startup")
+def _startup() -> None:
+    try:
+        from app.services.db_backup_service import restore_all
+        restored = restore_all()
+        if restored:
+            from app.services.db_service import _SOURCE_CONN_STRINGS
+            _SOURCE_CONN_STRINGS.clear()
+    except Exception:
+        logger.exception("Failed to restore SQLite databases from backup (non-fatal)")
+
+
 @app.on_event("shutdown")
 def _shutdown() -> None:
     close_graph_orchestrator()
