@@ -58,9 +58,15 @@ export const api = {
   },
 
   uploads: {
-    uploadCsv: (formData) => client.post('/data/csv', formData),
-    preview: (formData) => client.post('/upload/preview', formData),
-    import: (formData) => client.post('/upload/import', formData),
+    // Pass undefined for Content-Type so the browser sets the correct
+    // multipart/form-data boundary. The default 'application/json' header
+    // would break multipart parsing on the server (FastAPI 422).
+    uploadCsv: (formData) =>
+      client.post('/data/csv', formData, { headers: { 'Content-Type': undefined } }),
+    preview: (formData) =>
+      client.post('/upload/preview', formData, { headers: { 'Content-Type': undefined } }),
+    import: (formData) =>
+      client.post('/upload/import', formData, { headers: { 'Content-Type': undefined } }),
   },
   
   datasets: {

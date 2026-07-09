@@ -3,7 +3,7 @@ import { Database, Upload, Search, Trash2, FileText, Table2 } from 'lucide-react
 import { api } from '../../lib/api';
 import { UploadZone } from '../UploadZone';
 import { UploadPreview } from '../UploadPreview';
-import { cn } from '../../lib/utils';
+import { cn, getErrorMessage } from '../../lib/utils';
 
 export function Datasets({ onSelectSource, onNavigate }) {
   const [datasets, setDatasets] = useState([]);
@@ -47,7 +47,7 @@ export function Datasets({ onSelectSource, onNavigate }) {
         setUploadPreview(resp.data.data);
       }
     } catch (err) {
-      setImportError(err.response?.data?.detail || 'Failed to preview file');
+      setImportError(getErrorMessage(err, 'Failed to preview file'));
     }
   };
 
@@ -75,7 +75,7 @@ export function Datasets({ onSelectSource, onNavigate }) {
         }
       }
     } catch (err) {
-      setImportError(err.response?.data?.detail || 'Failed to import file');
+      setImportError(getErrorMessage(err, 'Failed to import file'));
     }
   };
 

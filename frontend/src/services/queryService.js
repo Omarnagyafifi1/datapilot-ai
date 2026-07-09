@@ -1,4 +1,5 @@
 import { api } from '../lib/api';
+import { getErrorMessage } from '../lib/utils';
 
 export const queryService = {
   generate: async (question, sourceId, llmConfig = {}) => {
@@ -18,7 +19,7 @@ export const queryService = {
         };
       }
     } catch (e) {
-      if (e.response?.data?.detail) throw new Error(e.response.data.detail, { cause: e });
+      if (e.response?.data?.detail) throw new Error(getErrorMessage(e, 'Query failed on backend'), { cause: e });
       throw e;
     }
   },
@@ -39,7 +40,7 @@ export const queryService = {
         };
       }
     } catch (e) {
-      if (e.response?.data?.detail) throw new Error(e.response.data.detail, { cause: e });
+      if (e.response?.data?.detail) throw new Error(getErrorMessage(e, 'Query execution failed'), { cause: e });
       throw e;
     }
   },
@@ -61,7 +62,7 @@ export const queryService = {
         };
       }
     } catch (e) {
-      if (e.response?.data?.detail) throw new Error(e.response.data.detail, { cause: e });
+      if (e.response?.data?.detail) throw new Error(getErrorMessage(e, 'Approval action failed'), { cause: e });
       throw e;
     }
     return { results: [], insights: [], requiresApproval: false, threadId: null };

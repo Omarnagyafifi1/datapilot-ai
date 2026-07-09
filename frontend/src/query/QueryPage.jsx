@@ -9,6 +9,7 @@ import EmptyState from '../components/EmptyState';
 import { queryService } from '../services/queryService';
 import { COPY } from '../lib/copy';
 import { api } from '../lib/api';
+import { getErrorMessage } from '../lib/utils';
 
 export default function QueryPage({ selectedSourceId, selectedSource }) {
   const [question, setQuestion] = useState('');
@@ -59,7 +60,7 @@ export default function QueryPage({ selectedSourceId, selectedSource }) {
       if (resp.results) setResults(resp.results || []);
       setPhase('preview');
     } catch (e) {
-      setError(e?.response?.data?.detail || e.message || 'Failed to generate SQL');
+      setError(getErrorMessage(e, 'Failed to generate SQL'));
     } finally {
       setLoading(false);
     }
@@ -81,7 +82,7 @@ export default function QueryPage({ selectedSourceId, selectedSource }) {
       setThreadId(resp.threadId || null);
       setPhase('executed');
     } catch (e) {
-      setError(e?.response?.data?.detail || e.message || 'Failed to execute SQL');
+      setError(getErrorMessage(e, 'Failed to execute SQL'));
     } finally {
       setLoading(false);
     }
