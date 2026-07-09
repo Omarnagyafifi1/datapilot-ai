@@ -63,4 +63,12 @@ class AzureOpenAILLM(BaseLLM):
         }
 
         response = self.client.chat.completions.create(**kwargs)
-        return response.choices[0].message.content or ""
+        msg = response.choices[0].message
+        finish_reason = response.choices[0].finish_reason
+        if msg.content:
+            return msg.content
+        if msg.refusal:
+            logger.warning("Azure OpenAI refused (finish=%s): %s", finish_reason, msg.refusal[:200])
+            return ""
+        logger.warning("Azure OpenAI returned empty content (finish=%s)", finish_reason)
+        return ""
