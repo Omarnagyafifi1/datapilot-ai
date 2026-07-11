@@ -262,6 +262,12 @@ class CSVProvider(ImportProvider):
             )
         except Exception as e:
             logger.exception("Failed to save dataset metadata during CSV import: %s", e)
+            try:
+                from app.services.data_source_service import delete_source
+                delete_source(source_uuid)
+            except Exception:
+                logger.exception("Failed to roll back datasource after metadata failure")
+            raise CSVValidationError(f"Failed to save dataset metadata: {str(e)}")
         
         # Get row count from the created table
         try:

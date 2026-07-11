@@ -108,7 +108,7 @@ def _get_provider(file: UploadFile) -> Optional[object]:
     return None
 
 
-_ALLOWED_UPLOAD_EXTENSIONS = {".csv", ".db", ".sqlite", ".sqlite3", ".xlsx", ".xls", ".json"}
+_ALLOWED_UPLOAD_EXTENSIONS = {".csv", ".db", ".sqlite", ".sqlite3"}
 
 
 def _validate_upload_file(file: UploadFile) -> None:

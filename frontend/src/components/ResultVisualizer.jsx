@@ -326,6 +326,14 @@ async function exportReport(doc) {
 <html><head><meta charset="utf-8"><title>${title}</title>
 <style>
   @page { margin: 20mm; size: A4; }
+  :root {
+    --cyber-blue: #3b82f6;
+    --cyber-pink: #ff00ff;
+    --cyber-lime: #ccff00;
+    --background: #ffffff;
+    --foreground: #1a1a2e;
+    --muted: #64748b;
+  }
   body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11pt; line-height: 1.6; color: #1a1a2e; max-width: 210mm; margin: 0 auto; padding: 20px; }
   h1 { font-size: 18pt; border-bottom: 2px solid #2563eb; padding-bottom: 6px; }
   h2 { font-size: 14pt; margin-top: 20px; }
@@ -410,15 +418,15 @@ function buildBarSVG(labels, values) {
     const h = Math.round((value / maxVal) * (height - 90));
     const x = 24 + i * barW + 8;
     const y = height - 44 - h;
-    return `<rect x="${x}" y="${y}" width="${Math.max(12, barW - 16)}" height="${h}" fill="var(--cyber-blue)"/><text x="${x + (barW - 16) / 2}" y="${height - 20}" font-size="10" text-anchor="middle" fill="var(--foreground)">${escapeXml(labels[i])}</text>`;
+    return `<rect x="${x}" y="${y}" width="${Math.max(12, barW - 16)}" height="${h}" fill="#3b82f6"/><text x="${x + (barW - 16) / 2}" y="${height - 20}" font-size="10" text-anchor="middle" fill="#1a1a2e">${escapeXml(labels[i])}</text>`;
   }).join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="var(--background)"/>${bars}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="#ffffff"/>${bars}</svg>`;
 }
 
 function buildPieSVG(labels, values) {
   const total = values.reduce((sum, value) => sum + Math.max(0, value), 0) || 1;
   let offset = 0;
-  const colors = ['var(--cyber-blue)', 'var(--cyber-pink)', 'var(--cyber-lime)', '#F59E0B', '#F472B6', '#22D3EE'];
+  const colors = ['#3b82f6', '#ff00ff', '#ccff00', '#F59E0B', '#F472B6', '#22D3EE'];
   const slices = values.map((value, i) => {
     const pct = Math.max(0, value) / total;
     const dash = `${pct * 100} ${100 - pct * 100}`;
@@ -426,8 +434,8 @@ function buildPieSVG(labels, values) {
     offset += pct * 100;
     return slice;
   }).join('');
-  const legend = labels.map((label, i) => `<text x="230" y="${54 + i * 22}" font-size="12" fill="var(--foreground)">${escapeXml(label)}</text>`).join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="440" height="260"><rect width="100%" height="100%" fill="var(--background)"/>${slices}${legend}</svg>`;
+  const legend = labels.map((label, i) => `<text x="230" y="${54 + i * 22}" font-size="12" fill="#1a1a2e">${escapeXml(label)}</text>`).join('');
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="440" height="260"><rect width="100%" height="100%" fill="#ffffff"/>${slices}${legend}</svg>`;
 }
 
 function buildLineSVG(labels, values) {
@@ -447,14 +455,14 @@ const dots = labels.map((label, i) => {
     const x = padX + (i / Math.max(1, labels.length - 1)) * drawW;
     const y = padY + drawH - ((values[i] / maxVal) * drawH);
     const skip = labels.length > 15 ? (i % 3 !== 0) : false;
-    return skip ? '' : `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="var(--cyber-blue)"/>`;
+    return skip ? '' : `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="#3b82f6"/>`;
   }).join('');
   const xLabels = labels.filter((_, i) => labels.length > 15 ? i % 3 === 0 : true).map((label) => {
     const origIdx = labels.findIndex((l) => l === label);
     const x = padX + (origIdx / Math.max(1, labels.length - 1)) * drawW;
-    return `<text x="${x.toFixed(1)}" y="${height - 8}" font-size="9" text-anchor="end" transform="rotate(-35 ${x.toFixed(1)},${height - 8})" fill="var(--foreground)">${escapeXml(label)}</text>`;
+    return `<text x="${x.toFixed(1)}" y="${height - 8}" font-size="9" text-anchor="end" transform="rotate(-35 ${x.toFixed(1)},${height - 8})" fill="#1a1a2e">${escapeXml(label)}</text>`;
   }).join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="var(--background)"/><polyline points="${points}" fill="none" stroke="var(--cyber-blue)" stroke-width="2"/>${dots}${xLabels}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="#ffffff"/><polyline points="${points}" fill="none" stroke="#3b82f6" stroke-width="2"/>${dots}${xLabels}</svg>`;
 }
 
 function buildScatterSVG(xVals, yVals, xLabel, yLabel) {
@@ -472,9 +480,9 @@ function buildScatterSVG(xVals, yVals, xLabel, yLabel) {
   const dots = xVals.map((x, i) => {
     const cx = pad + ((x - minX) / rangeX) * drawW;
     const cy = pad + drawH - ((yVals[i] - minY) / rangeY) * drawH;
-    return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="3" fill="var(--cyber-blue)" opacity="0.7"/>`;
+    return `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="3" fill="#3b82f6" opacity="0.7"/>`;
   }).join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="var(--background)"/><text x="20" y="${pad + drawH / 2}" font-size="10" fill="var(--muted)" transform="rotate(-90 20,${pad + drawH / 2})" text-anchor="middle">${escapeXml(yLabel)}</text><text x="${pad + drawW / 2}" y="${height - 4}" font-size="10" fill="var(--muted)" text-anchor="middle">${escapeXml(xLabel)}</text>${dots}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="#ffffff"/><text x="20" y="${pad + drawH / 2}" font-size="10" fill="#64748b" transform="rotate(-90 20,${pad + drawH / 2})" text-anchor="middle">${escapeXml(yLabel)}</text><text x="${pad + drawW / 2}" y="${height - 4}" font-size="10" fill="#64748b" text-anchor="middle">${escapeXml(xLabel)}</text>${dots}</svg>`;
 }
 
 function buildHistogramSVG(values, columnName) {
@@ -498,9 +506,9 @@ function buildHistogramSVG(values, columnName) {
     const h = Math.round((count / maxCount) * drawH);
     const x = pad + i * barW;
     const y = height - pad - h;
-    return `<rect x="${x.toFixed(1)}" y="${y}" width="${Math.max(4, barW - 2)}" height="${h}" fill="var(--cyber-blue)" opacity="0.8"/>`;
+    return `<rect x="${x.toFixed(1)}" y="${y}" width="${Math.max(4, barW - 2)}" height="${h}" fill="#3b82f6" opacity="0.8"/>`;
   }).join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="var(--background)"/><text x="20" y="${height / 2}" font-size="10" fill="var(--muted)" transform="rotate(-90 20,${height / 2})" text-anchor="middle">Count</text><text x="${pad + (width - pad - 20) / 2}" y="${height - 4}" font-size="10" fill="var(--muted)" text-anchor="middle">${escapeXml(columnName)}</text>${bars}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="#ffffff"/><text x="20" y="${height / 2}" font-size="10" fill="#64748b" transform="rotate(-90 20,${height / 2})" text-anchor="middle">Count</text><text x="${pad + (width - pad - 20) / 2}" y="${height - 4}" font-size="10" fill="#64748b" text-anchor="middle">${escapeXml(columnName)}</text>${bars}</svg>`;
 }
 
 function downloadSVG(svg) {
@@ -518,7 +526,7 @@ function downloadPNGFromSVG(svg) {
     canvas.width = img.width;
     canvas.height = img.height;
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = 'var(--background)';
+    ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0);
     canvas.toBlob((blob) => {

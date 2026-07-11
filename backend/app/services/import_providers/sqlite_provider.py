@@ -247,7 +247,8 @@ class SQLiteProvider(ImportProvider):
         # Filter selected tables if specified
         table_names = [t.original_name for t in preview.tables]
         if options.selected_tables:
-            table_names = [t for t in table_names if t in options.selected_tables]
+            sanitized_selected = {self._sanitize_table_name(t) for t in options.selected_tables}
+            table_names = [t for t in table_names if self._sanitize_table_name(t) in sanitized_selected]
         
         # Generate dataset name
         dataset_name = options.dataset_name or Path(file.filename or "sqlite_db").stem

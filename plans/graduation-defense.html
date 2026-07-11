@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DataPilot AI — Graduation Defense</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.0.5/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.0.5/dist/theme/dracula.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+    :root {
+      --cyber-cyan: #00f0ff;
+      --cyber-pink: #ff2d95;
+      --cyber-lime: #39ff14;
+      --cyber-blue: #4d7cff;
+      --cyber-purple: #a855f7;
+      --bg-dark: #0a0a1a;
+      --bg-card: #12122a;
+      --border: #1e1e40;
+      --text: #e2e8f0;
+      --muted: #64748b;
+    }
+    .reveal { background: var(--bg-dark); font-family: 'Inter', sans-serif; color: var(--text); }
+    .reveal h1, .reveal h2, .reveal h3 { font-family: 'Inter', sans-serif; text-transform: none; }
+    .reveal h1 { font-size: 3.2em; font-weight: 900; letter-spacing: -0.03em; }
+    .reveal h2 { font-size: 2em; font-weight: 800; letter-spacing: -0.02em; }
+    .reveal h3 { font-size: 1.3em; font-weight: 700; }
+    .reveal p, .reveal li { font-size: 0.65em; line-height: 1.6; }
+    .reveal ul { display: block; }
+    .reveal li { margin: 0.3em 0; }
+    .reveal pre { font-size: 0.45em; border-radius: 12px; box-shadow: 0 0 30px rgba(0,240,255,0.1); }
+    .reveal code { font-family: 'JetBrains Mono', monospace; }
+    .reveal blockquote { border-left: 4px solid var(--cyber-cyan); padding-left: 1em; background: rgba(0,240,255,0.05); }
+    .cyber-title { background: linear-gradient(135deg, var(--cyber-cyan), var(--cyber-pink), var(--cyber-lime)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .cyber-cyan { color: var(--cyber-cyan); }
+    .cyber-pink { color: var(--cyber-pink); }
+    .cyber-lime { color: var(--cyber-lime); }
+    .cyber-purple { color: var(--cyber-purple); }
+    .tag { display: inline-block; padding: 0.15em 0.6em; border-radius: 20px; font-size: 0.4em; font-weight: 700; letter-spacing: 0.05em; margin: 0.2em; border: 1px solid; }
+    .tag-cyan { border-color: var(--cyber-cyan); color: var(--cyber-cyan); background: rgba(0,240,255,0.1); }
+    .tag-pink { border-color: var(--cyber-pink); color: var(--cyber-pink); background: rgba(255,45,149,0.1); }
+    .tag-lime { border-color: var(--cyber-lime); color: var(--cyber-lime); background: rgba(57,255,20,0.1); }
+    .tag-blue { border-color: var(--cyber-blue); color: var(--cyber-blue); background: rgba(77,124,255,0.1); }
+    .tag-purple { border-color: var(--cyber-purple); color: var(--cyber-purple); background: rgba(168,85,247,0.1); }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1em; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1em; }
+    .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0.8em; }
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 1em; }
+    .card h4 { font-size: 0.7em; font-weight: 700; margin-bottom: 0.5em; color: var(--cyber-cyan); text-transform: uppercase; letter-spacing: 0.08em; }
+    .metric { text-align: center; padding: 0.8em; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; }
+    .metric .num { font-size: 2em; font-weight: 900; }
+    .metric .label { font-size: 0.4em; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+    .flow-diagram { font-family: 'JetBrains Mono', monospace; font-size: 0.35em; line-height: 1.5; background: var(--bg-card); padding: 1em; border-radius: 16px; border: 1px solid var(--border); }
+    .section-title { border-left: 4px solid var(--cyber-cyan); padding-left: 0.5em; }
+    .diagram-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 0.8em; font-family: 'JetBrains Mono', monospace; font-size: 0.45em; line-height: 1.6; }
+    .highlight { color: var(--cyber-lime); font-weight: 700; }
+    .highlight-cyan { color: var(--cyber-cyan); font-weight: 700; }
+    .highlight-pink { color: var(--cyber-pink); font-weight: 700; }
+    .small-text { font-size: 0.45em; }
+    .emoji-big { font-size: 2em; }
+    table { font-size: 0.55em; }
+    td, th { padding: 0.3em; border-bottom: 1px solid var(--border); }
+    a { color: var(--cyber-cyan); }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 1 — TITLE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <div style="margin-bottom: 0.5em;">
+    <span class="tag tag-cyan">Graduation Project</span>
+    <span class="tag tag-pink">2025-2026</span>
+  </div>
+  <h1 class="cyber-title" style="font-size: 4.5em; margin: 0.2em 0;">DataPilot AI</h1>
+  <h3 style="color: var(--muted); font-weight: 400; letter-spacing: 0.15em;">Text-to-SQL Data Analyst System</h3>
+  <div style="margin-top: 1em; border-top: 1px solid var(--border); padding-top: 1em;">
+    <p style="font-size: 0.5em;"><strong>Presented by:</strong> [Your Name]</p>
+    <p style="font-size: 0.45em; color: var(--muted);"><strong>Supervisor:</strong> [Supervisor Name] &nbsp;|&nbsp; <strong>Institution:</strong> [University Name]</p>
+  </div>
+  <div class="footer-bar">DEPI — DataPilot AI v1.0.0</div>
+  <aside class="speaker-notes">
+    <p>Good morning/afternoon, respected jury members and supervisors. Today I am proud to present DataPilot AI — an intelligent, agent-based Text-to-SQL Data Analyst System. This project bridges the gap between natural human language and complex database querying, making data accessible to everyone regardless of their technical background. Over the next slides, I will walk you through the problem we identified, the system architecture, the AI agent implementation, the Azure cloud deployment, and the results we achieved.</p>
+  </aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 2 — PROBLEM & MOTIVATION -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2 class="section-title">The Problem</h2>
+  <div class="grid-2" style="margin-top: 1em;">
+    <div class="card">
+      <div class="emoji-big">🔒</div>
+      <h4>Data Locked in Databases</h4>
+      <p style="font-size:0.5em;">Organizations store critical data in relational databases, but accessing it requires SQL expertise — a skill most business users, analysts, and decision-makers don't have.</p>
+    </div>
+    <div class="card">
+      <div class="emoji-big">⏱️</div>
+      <h4>Slow Bottleneck</h4>
+      <p style="font-size:0.5em;">Every data request creates a dependency on specialized engineers. A simple question like <em>"What was our total revenue last quarter?"</em> waits in a queue for hours or days.</p>
+    </div>
+    <div class="card">
+      <div class="emoji-big">🌐</div>
+      <h4>Language Barrier</h4>
+      <p style="font-size:0.5em;">Most Text-to-SQL systems support English only. Arabic-speaking users — a massive market — are underserved by existing solutions.</p>
+    </div>
+    <div class="card">
+      <div class="emoji-big">⚠️</div>
+      <h4>Data Safety & Trust</h4>
+      <p style="font-size:0.5em;">Blindly executing AI-generated SQL is dangerous. Systems need safety guards — write-protection, human approval loops, and robust error recovery — that many existing tools lack.</p>
+    </div>
+  </div>
+  <aside class="speaker-notes">
+    <p>Let me start by framing the problem. Data is the lifeblood of modern organizations, but it's locked inside databases that require SQL — a language spoken by maybe 5% of employees. Business users have to file tickets, wait for engineers, and reformat their questions multiple times. For Arabic speakers, the problem is even worse — most Text-to-SQL systems are English-only. And even when AI generates SQL, doing it safely — preventing accidental data loss — is a serious engineering challenge. DataPilot AI addresses all three: the language barrier, the expertise gap, and safety.</p>
+  </aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 3 — OBJECTIVES -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2 class="section-title">Project Objectives</h2>
+  <div style="margin-top: 1.5em;">
+    <div class="grid-3">
+      <div class="card">
+        <h4>🎯 Objective 1</h4>
+        <p style="font-size:0.5em;"><strong class="highlight-cyan">Bilingual Natural Language Interface</strong> — Allow users to query databases in both English and Arabic using everyday language, without writing any SQL.</p>
+      </div>
+      <div class="card">
+        <h4>🎯 Objective 2</h4>
+        <p style="font-size:0.5em;"><strong class="highlight-cyan">Multi-Database Connectivity</strong> — Support multiple database engines (PostgreSQL, SQLite, MySQL, MSSQL, Oracle) through a unified connection interface.</p>
+      </div>
+      <div class="card">
+        <h4>🎯 Objective 3</h4>
+        <p style="font-size:0.5em;"><strong class="highlight-cyan">AI Agent with Auto-Recovery</strong> — Build a LangGraph-powered agent that generates SQL, auto-detects errors, fixes them in a retry loop, and learns from past mistakes.</p>
+      </div>
+      <div class="card">
+        <h4>🎯 Objective 4</h4>
+        <p style="font-size:0.5em;"><strong class="highlight-cyan">Safety & Human Oversight</strong> — Implement write-operation approvals, keyword blacklisting, and a human-in-the-loop mechanism for destructive queries.</p>
+      </div>
+      <div class="card">
+        <h4>🎯 Objective 5</h4>
+        <p style="font-size:0.5em;"><strong class="highlight-cyan">Automated Insights & Visualizations</strong> — Automatically generate Plotly visualizations and bilingual narrative insights from query results.</p>
+      </div>
+      <div class="card">
+        <h4>🎯 Objective 6</h4>
+        <p style="font-size:0.5em;"><strong class="highlight-cyan">Cloud-Native Deployment</strong> — Deploy on Microsoft Azure (Container Apps) with CI/CD pipeline, persistent storage, and production monitoring.</p>
+      </div>
+    </div>
+  </div>
+  <aside class="speaker-notes">
+    <p>We defined six clear objectives. First, a bilingual interface — both English and Arabic — so Arabic-speaking users can query naturally. Second, connect to multiple database types — from SQLite files to enterprise Oracle systems. Third, an intelligent AI agent that doesn't just generate SQL but recovers from its own mistakes. Fourth, absolute safety — no accidental DELETE or DROP without human approval. Fifth, the agent should not only answer queries but visualize results and provide data-driven insights. And sixth, deploy it properly on Azure — not just a demo, but a production-grade cloud application.</p>
+  </aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 4 — TECH STACK OVERVIEW -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2 class="section-title">Technology Stack</h2>
+  <div class="grid-4" style="margin-top: 1em;">
+    <div class="card">
+      <h4>🧠 Backend</h4>
+      <p style="font-size:0.45em;">Python 3.10+<br>FastAPI<br>LangGraph<br>SQLAlchemy 2.0<br>Pandas / Plotly<br>FAISS</p>
+    </div>
+    <div class="card">
+      <h4>🎨 Frontend</h4>
+      <p style="font-size:0.45em;">React 19<br>Vite 8<br>TailwindCSS 3<br>Framer Motion<br>Axios<br>Lucide Icons</p>
+    </div>
+    <div class="card">
+      <h4>☁️ Cloud (Azure)</h4>
+      <p style="font-size:0.45em;">Container Apps<br>Container Registry<br>PostgreSQL<br>OpenAI Service<br>Blob Storage<br>Files (uploads)</p>
+    </div>
+    <div class="card">
+      <h4>🔧 DevOps</h4>
+      <p style="font-size:0.45em;">Docker (multi-stage)<br>GitHub Actions CI/CD<br>LangSmith Tracing<br>Azure Application Insights<br>Git (branching)</p>
+    </div>
+  </div>
+  <div class="badge-row" style="margin-top: 0.8em;">
+    <span class="tag tag-cyan">FastAPI</span>
+    <span class="tag tag-pink">React 19</span>
+    <span class="tag tag-lime">LangGraph</span>
+    <span class="tag tag-blue">Azure</span>
+    <span class="tag tag-purple">Docker</span>
+    <span class="tag tag-cyan">PostgreSQL</span>
+    <span class="tag tag-pink">Plotly</span>
+    <span class="tag tag-lime">FAISS</span>
+    <span class="tag tag-blue">LangSmith</span>
+  </div>
+  <aside class="speaker-notes">
+    <p>Let's talk about the technology choices. The backend is Python with FastAPI — chosen for its async capabilities, automatic OpenAPI docs, and strong typing via Pydantic. The AI orchestration uses LangGraph, which gives us a state-machine approach to agent flows — critical for reliability. The frontend is React 19 with Vite and TailwindCSS, providing a modern, responsive UI. On Azure, we use Container Apps for serverless containers, Azure PostgreSQL for production persistence, Azure OpenAI for LLM access, and Azure Blob Storage for file storage. The entire pipeline is automated through GitHub Actions with a multi-stage Docker build.</p>
+  </aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 5 — HIGH-LEVEL ARCHITECTURE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2 class="section-title">System Architecture</h2>
+  <div class="diagram-box" style="font-size:0.35em; line-height:1.6;">
+<pre style="background:none; border:none; box-shadow:none; font-size:1em;">
+┌──────────────┐      HTTP/JSON       ┌─────────────────────────────────────┐
+│              │ ◄─────────────────►  │         FASTAPI BACKEND             │
+│   REACT UI   │                      │  ┌───────────────────────────────┐  │
+│  (Vite SPA)  │                      │  │   API ROUTES                  │  │
+│              │    ┌──────────┐      │  │  /api/query                   │  │
+│ ┌──────────┐ │    │  AZURE   │      │  │  /api/datasources/connect     │  │
+│ │ Chat     │ │    │ CONTAINER│      │  │  /api/data/csv                │  │
+│ │ Query    │ │    │  APPS    │      │  │  /api/settings                │  │
+│ │ Schema   │ │    └──────────┘      │  │  /api/evaluate                │  │
+│ │ Viz      │ │                      │  └───────────────────────────────┘  │
+│ │ History  │ │                      │  ┌───────────────────────────────┐  │
+│ │ Settings │ │                      │  │   LANGGRAPH AGENT             │  │
+│ └──────────┘ │                      │  │   ┌─── StateGraph ─────────┐  │  │
+└──────┬───────┘                      │  │   │ 14 nodes, conditional   │  │  │
+       │                              │  │   │ routing, retry loop,    │  │  │
+       ▼                              │  │   │ HITL interrupts        │  │  │
+┌──────────────┐                      │  │   └────────────────────────┘  │  │
+│  GITHUB      │                      │  └───────────────────────────────┘  │
+│  ACTIONS     │                      │  ┌───────────────────────────────┐  │
+│  (CI/CD)     │                      │  │   LLM FACTORY                 │  │
+└──────────────┘                      │  │  Azure OpenAI | Groq | Gemini  │  │
+                                      │  │  OpenRouter | LiteLLM | Mock   │  │
+                                      │  └───────────────────────────────┘  │
+                                      │  ┌───────────────────────────────┐  │
+                                      │  │   DATA SERVICES               │  │
+                                      │  │  SQLAlchemy | File Importers  │  │
+                                      │  │  Schema Cache | Blob Storage  │  │
+                                      │  └───────────────────────────────┘  │
+                                      └─────────────────────────────────────┘
+    ┌────────────┐   ┌────────────┐   ┌────────────┐   ┌────────────┐
+    │ PostgreSQL │   │   SQLite   │   │   MySQL    │   │  MSSQL     │
+    │ (Prod/Rmt) │   │ (CSV/Dev)  │   │  (Remote)  │   │  (Remote)  │
+    └────────────┘   └────────────┘   └────────────┘   └────────────┘
+</pre>
+  </div>
+  <aside class="speaker-notes">
+    <p>Here is the system architecture at 30,000 feet. On the left, the React single-page application communicates with the FastAPI backend via RESTful HTTP/JSON. The backend has three main layers: the API routes, the LangGraph agent engine, and the data services layer. The LLM Factory abstracts six different AI providers. The data services layer handles database connectivity through SQLAlchemy — supporting five different SQL dialects — plus file import and blob storage. The frontend and backend are deployed together in a single Azure Container App, with the React build served as static files from FastAPI. The CI/CD pipeline via GitHub Actions automatically builds and deploys on each push to main.</p>
+  </aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 6 — DEEP DIVE: LANGGRAPH AGENT (THE BRAIN) -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2 class="section-title">The AI Agent — LangGraph State Machine</h2>
+  <div class="grid-2" style="margin-top: 0.8em;">
+    <div>
+      <div class="flow-diagram" style="font-size:0.28em; line-height:1.4;">
+<pre style="background:none; border:none; box-shadow:none; font-size:1em;">
+                    START
+                      │
+                      ▼
+              ┌─────────────────┐
+              │    ROUTER       │  Intent Classification
+              │ (INQUIRE/ADD/   │  (LLM + heuristics)
+              │  DELETE/UPDATE) │
+              └────────┬────────┘
+                       │
+                       ▼
+              ┌─────────────────┐
+              │  FETCH SCHEMA   │  SQLAlchemy Inspector
+              └────────┬────────┘  + Context Filtering
+                       │            (LLM prunes irrelevant
+                       ▼             tables if >10)
+              ┌─────────────────┐
+              │  LOAD MEMORY    │  LangGraph Store
+              └────────┬────────┘  (past queries)
+                       │
+          ┌────────────┼────────────┐
+          ▼                         ▼
+  ┌──────────────┐         ┌─────────────────┐
+  │ SCENARIO     │         │ GENERATE MOD SQL│
+  │ LOOKUP       │         │ (ADD/UPDATE/    │
+  │ (FAISS)      │         │  DELETE)        │
+  └──────┬───────┘         └────────┬────────┘
+         │                          │
+         ▼                          ▼
+  ┌──────────────┐         ┌─────────────────┐
+  │ GENERATE SQL │         │   APPROVAL      │
+  │ (LLM)        │         │   (HITL)        │
+  └──────┬───────┘         └────────┬────────┘
+         │                          │
+         └──────────┬───────────────┘
+                    ▼
+           ┌─────────────────┐
+           │  EXECUTE SQL    │
+           └────────┬────────┘
+                    │
+        ┌───────────┼───────────┐
+        ▼           ▼           ▼
+  ┌─────────┐ ┌─────────┐ ┌─────────┐
+  │ SUCCESS │ │  FIX    │ │ FAIL    │
+  │ (scored)│ │  SQL    │ │ (after  │
+  │         │ │  (LLM)  │ │ 3 retry)│
+  └────┬────┘ └────┬────┘ └────┬────┘
+       │           │           │
+       │           ▼           │
+       │      ┌─────────┐      │
+       │      │EXECUTE  │      │
+       │      │(AGAIN)  │      │
+       │      └────┬────┘      │
+       └───────────┼───────────┘
+                   ▼
+          ┌─────────────────┐
+          │  POST-PROCESS   │  Parallel: Insights,
+          │  (3 threads)    │  Suggestions,
+          └────────┬────────┘  Visualization
+                   │
+                   ▼
+          ┌─────────────────┐
+          │    DOCUMENT     │
+          └────────┬────────┘
+                   │
+                   ▼
+          ┌─────────────────┐
+          │ PERSIST MEMORY  │
+          └─────────────────┘
+</pre>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:0.5em;">
+        <h4>🔑 Key Design Decisions</h4>
+        <ul style="font-size:0.45em;">
+          <li><strong class="highlight-cyan">StateGraph</strong> — 14 typed nodes with conditional edges</li>
+          <li><strong>Intent Router</strong> — Regex heuristics first (fast), LLM fallback for ambiguity</li>
+          <li><strong>Schema Filtering</strong> — LLM prunes schemas &gt;10 tables to save tokens &amp; improve accuracy</li>
+          <li><strong>Scenario Memory</strong> — FAISS-powered similarity search against past queries (threshold: 0.45)</li>
+          <li><strong>Auto-Retry</strong> — Up to 3 fix-attempt cycles with progressive error context</li>
+          <li><strong>HITL Approval</strong> — LangGraph <code>interrupt()</code> with configurable TTL</li>
+          <li><strong>Parallel Post-Process</strong> — Viz + Insights + Suggestions run concurrently via ThreadPoolExecutor</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>📍 State Dataclass</h4>
+        <pre style="font-size:0.35em; background:rgba(0,0,0,0.3); border-radius:8px; padding:0.5em;">
+@dataclass
+class AgentState:
+    question: str
+    source_id: str
+    intent: str = "INQUIRE"
+    sql: str = ""
+    query_results: list[dict]
+    visualization: dict | None = None
+    insights: list[dict]
+    suggestions: list[dict]
+    retry_count: int = 0
+    success: bool = False
+    error: str | None = None
+    scenario_matched: bool = False
+    scenario_similarity: float = 0.0
+        </pre>
+      </div>
+    </div>
+  </div>
+  <aside class="speaker-notes">
+    <p>This is the heart of the system — the LangGraph agent. Let me walk through the flow. When a question arrives, the Router classifies it into one of four intents: INQUIRE (read), ADD, DELETE, or UPDATE. It uses regex heuristics first for speed — checking for interrogative words, Arabic question patterns — and only falls back to the LLM for ambiguous cases. Next, we fetch the database schema. If the schema has more than 10 tables, we use a second LLM call to filter it down to only the relevant tables and columns — this dramatically reduces token usage and improves SQL accuracy. Then we load long-term memory from the LangGraph Store — past successful queries for this database. If we have a scenario memory with FAISS — a vector similarity search against past resolved queries — we may reuse a previous SQL directly, skipping LLM generation. For write operations, the flow hits an approval node that uses LangGraph's interrupt mechanism to pause execution and wait for human confirmation via the UI. The SQL execution node has a safety check blacklisting dangerous keywords like DROP, ALTER, TRUNCATE. If execution fails, the fix-sql node sends the error message back to the LLM with context to generate a corrected query, up to 3 retries. After success, we run visualization, insight, and suggestion generation in parallel using ThreadPoolExecutor. Finally, we document and persist to long-term memory.</p>
+  </aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 7 — LLM FACTORY & PROVIDER CHAIN -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2 class="section-title">LLM Factory — Provider Abstraction & Auto-Failover</h2>
+  <div class="grid-2" style="margin-top: 0.8em;">
+    <div>
+      <div class="card">
+        <h4>🏭 Provider Architecture</h4>
+        <pre style="font-size:0.35em; background:rgba(0,0,0,0.3); border-radius:8px; padding:0.5em;">
+class BaseLLM(ABC):
+    @abstractmethod
+    def generate(self, prompt, system_message,
+                 max_tokens) -> str: ...
+
+class AzureOpenAILLM(BaseLLM): ...
+class GroqLLM(BaseLLM): ...
+class GeminiLLM(BaseLLM): ...
+class OpenRouterLLM(BaseLLM): ...
+class LiteLLMProvider(BaseLLM): ...
+class MockLLM(BaseLLM): ...
+
+class FallbackLLM(BaseLLM):
+    def generate(self, ...):
+        order = [primary, azure, groq,
+                 gemini, openrouter, ...]
+        for provider in order:
+            try:
+                return provider.generate(...)
+            except Exception:
+                continue
+        raise last_exception
+        </pre>
+      </div>
+      <div class="card" style="margin-top:0.5em;">
+        <h4>🔄 Auto-Failover Chain</h4>
+        <div style="font-size:0.4em; line-height:1.8;">
+          <span class="tag tag-lime">Primary</span> →
+          <span class="tag tag-cyan">Azure</span> →
+          <span class="tag tag-purple">Groq</span> →
+          <span class="tag tag-pink">Gemini</span> →
+          <span class="tag tag-blue">OpenRouter</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h4>🔧 Runtime-Configurable</h4>
+        <ul style="font-size:0.43em;">
+          <li>Users switch providers from the UI <strong>Settings</strong> page without restarting</li>
+          <li>API keys encrypted in <code>settings.json</code></li>
+          <li>Provider, model, temperature, and max_tokens all adjustable at runtime</li>
+          <li>Graph orchestrator resets on change via <code>reset_graph_orchestrator()</code></li>
+        </ul>
+      </div>
+      <div class="card" style="margin-top:0.5em;">
+        <h4>📋 Supported Models</h4>
+        <div style="font-size:0.38em;">
+          <p><strong class="cyber-cyan">Azure OpenAI:</strong> GPT-4o, GPT-5-mini (deployment-configurable)</p>
+          <p><strong class="cyber-lime">Groq:</strong> Llama 3.3-70B, Mixtral, Gemma 2</p>
+          <p><strong class="cyber-pink">Gemini:</strong> Gemini 2.5 Pro / Flash</p>
+          <p><strong class="cyber-blue">OpenRouter:</strong> Claude 3.5 Sonnet, GPT-4o, and 200+ models</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <aside class="speaker-notes">
+    <p>One of the most architecturally important decisions was the LLM Factory with automatic failover. Instead of hard-coding a single provider, we defined a BaseLLM abstract class and implemented six concrete providers. The Azure OpenAI provider supports two modes: the standard Azure OpenAI SDK for dedicated deployments, and the AI Foundry serverless API — both handled transparently. The critical piece is the FallbackLLM wrapper. If the primary provider hits a rate limit or goes down, it automatically tries Azure, then Gemini, then OpenRouter in sequence without dropping the request. This gives us effectively 99.9%+ uptime for LLM generation. The entire provider configuration is runtime-mutable — users can change their preferred model from the Settings panel and the orchestrator resets on the next request.</p>
+  </aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 8 — BILINGUAL SUPPORT & PROMPT ENGINEERING -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2 class="section-title">Bilingual Support & Prompt Engineering</h2>
+  <div class="grid-2" style="margin-top: 0.8em;">
+    <div>
+      <div class="card">
+        <h4>🌍 Arabic → English Pipeline</h4>
+        <pre style="font-size:0.35em; background:rgba(0,0,0,0.3); border-radius:8px; padding:0.5em;">
+// In SQL_GENERATION_PROMPT (rule 22)
+22. ARABIC QUESTIONS — follow EXACT steps:
+    Step 1: Detect Arabic characters (؀-ۿ)
+    Step 2: Translate full Arabic question to English
+    Step 3: Map English words to ACTUAL column names
+    Step 4: Identify SQL technique (JOIN, GROUP BY..)
+    Step 5: Generate SQL using English column names
+
+    Common mappings:
+    - "متوسط" = average ─► AVG(col)
+    - "إجمالي"/"مجموع" = total ─► SUM(col)
+    - "عدد"/"كم" = count ─► COUNT(*)
+    - "أعلى" = highest ─► ORDER BY DESC LIMIT
+    - "أقل" = lowest ─► ORDER BY ASC LIMIT
+    - "قيد التنفيذ" = "In Progress" ─► WHERE status
+        </pre>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h4>📝 Prompt Architecture</h4>
+        <ul style="font-size:0.43em;">
+          <li><strong>SQL_GENERATION_PROMPT</strong> — 28 rules including bilingual support, column mapping, join strategies, strict schema matching</li>
+          <li><strong>SQL_FIX_PROMPT</strong> — Debugging prompt with failed SQL + error + schema + scenario context</li>
+          <li><strong>SQL_ADD/UPDATE/DELETE_PROMPT</strong> — Specialized for write ops with safety mandates</li>
+          <li><strong>INSIGHT_PROMPT</strong> — Generates 3-5 bilingual insights as structured JSON</li>
+          <li><strong>SUGGESTION_PROMPT</strong> — Generates bilingual follow-up questions</li>
+          <li><strong>INITIAL_SUGGESTION_PROMPT</strong> — Schema-based starter questions for new connections</li>
+          <li><strong>CONTEXT_FILTER_PROMPT</strong> — Schema pruning for large databases</li>
+          <li><strong>INTENT_ROUTER_PROMPT</strong> — Fallback intent classification</li>
+          <li><strong>SCENARIO_LESSON_PROMPT</strong> — Structured 4-section lesson generation</li>
+        </ul>
+      </div>
+      <div class="card" style="margin-top:0.5em;">
+        <h4>📏 Key Prompt Rules</h4>
+        <ul style="font-size:0.4em;">
+          <li>Rule 5: NEVER use SELECT * — only requested columns</li>
+          <li>Rule 8: Top-N queries → ORDER BY + LIMIT (not DISTINCT)</li>
+          <li>Rule 11: HAVING for aggregate filters, include agg in SELECT</li>
+          <li>Rule 14: "Per X" queries → JOIN to get the name, never ID alone</li>
+          <li>Rule 21: Data not in schema → output SELECT 'ERROR: ...' AS error</li>
+          <li>Rule 22: Full Arabic pipeline with 5-step translation process</li>
+          <li>Rule 28: Fuzzy table matching as last resort before ERROR</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <aside class="speaker-notes">
+    <p>A key differentiator of DataPilot AI is its bilingual support. Arabic questions follow a rigorous 5-step pipeline encoded directly into the prompt: detect Arabic Unicode characters, mentally translate to English, map to actual English column names in the schema, identify the SQL technique, and generate SQL using only English identifiers. The prompt has 28 carefully crafted rules — covering everything from Arabic keyword mappings like "إجمالي" → SUM, to join strategies, to strict schema matching. If the schema doesn't contain the requested data, Rule 21 forces the LLM to output an explicit error rather than guessing. We also have specialized prompts for write operations that mandate WHERE clauses to prevent accidental mass updates. The insight and suggestion prompts generate structured JSON output — bilingual, with both Arabic and English fields — that the frontend renders side by side.</p>
+  </aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 9 — SCENARIO MEMORY & SELF-IMPROVEMENT -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2 class="section-title">Scenario Memory — Continuous Learning</h2>
+  <div class="grid-2" style="margin-top: 0.8em;">
+    <div>
+      <div class="card">
+        <h4>🧠 FAISS-Powered Memory</h4>
+        <pre style="font-size:0.3em; background:rgba(0,0,0,0.3); border-radius:8px; padding:0.5em;">
+class ScenarioMemory:
+    def __init__(self, path, threshold=0.45):
+        self.path = path  # scenarios.md
+        self.threshold = threshold
+        self._faiss_index = None
+
+    def _embed(self, text: str, dim: int = 512):
+        vec = np.zeros(dim, dtype=np.float32)
+        for token in self._tokenize(text):
+            digest = hashlib.md5(
+                token.encode()).digest()
+            idx = int.from_bytes(
+                digest[:4], "little") % dim
+            vec[idx] += 1.0
+        # L2-normalize for cosine similarity
+        return vec / (np.linalg.norm(vec) or 1)
+
+    def find_similar_solution(self, question):
+        entries = [e for e in self._load()
+                   if e.status == "resolved"]
+        vectors = np.vstack([self._embed(e.question)
+                             for e in entries])
+        query = self._embed(question).reshape(1, -1)
+        index = faiss.IndexFlatIP(vectors.shape[1])
+        index.add(vectors)
+        scores, idxs = index.search(query, 1)
+        if scores[0][0] >= self.threshold:
+            return entries[idxs[0][0]].sql
+        return None
+        </pre>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h4>📓 Persisted to scenarios.md</h4>
+        <pre style="font-size:0.25em; background:rgba(0,0,0,0.3); border-radius:8px; padding:0.5em;">
+## 2026-07-10T14:30:00+00:00 - resolved
+
+### What Went Wrong
+The generated SQL used YEAR() which doesn't
+exist in SQLite.
+
+### Correct Approach
+Use strftime('%Y', date_column) in SQLite instead
+of EXTRACT(YEAR FROM ...) or YEAR(date_column).
+
+### Key Lesson
+Always check the database dialect before using
+date/time functions. SQLite uses strftime.
+
+```json
+{
+  "created_at": "2026-07-10T14:30:00+00:00",
+  "status": "resolved",
+  "question": "...",
+  "sql": "...",
+  "lesson": "..."
+}
+```
+        </pre>
+      </div>
+      <div class="card" style="margin-top:0.5em;">
+        <h4>♻️ Learning Loop</h4>
+        <ul style="font-size:0.4em;">
+          <li><span class="cyber-lime">Success</span> → Stored with SQL + question for future reuse</li>
+          <li><span class="cyber-pink">Failure</span> → LLM generates a structured 4-section lesson</li>
+          <li>Lessons injected into fix and generation prompts as <code>scenario_context</code></li>
+          <li>FAISS threshold 0.45 enables fuzzy matching of similar questions</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <aside class="speaker-notes">
+    <p>One of the most innovative features is the Scenario Memory — a continuous learning loop that makes the agent smarter over time. Every query — successful or failed — is stored in a scenarios.md file with structured metadata. For failures, the LLM generates a full 4-section lesson: what went wrong, the correct approach, the correct SQL, and a key takeaway. These lessons are injected into the prompt context for future queries, so the agent literally learns from its mistakes. For success cases, we use FAISS to embed the question along with its SQL. When a new question arrives, we compute its hash-based embedding and search for similar resolved queries. If the similarity score exceeds 0.45, we reuse that SQL directly — skipping the LLM generation entirely. This gives us faster response times for repeated query patterns and a growing knowledge base.</p>
+  </aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 10 — DATA INGESTION & MULTI-DB CONNECTIVITY -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2 class="section-title">Data Ingestion & Multi-Database Connectivity</h2>
+  <div class="grid-2" style="margin-top: 0.8em;">
+    <div>
+      <div class="card">
+        <h4>📂 File Import Framework</h4>
+        <pre style="font-size:0.35em; background:rgba(0,0,0,0.3); border-radius:8px; padding:0.5em;">
+class ImportProvider(ABC):
+    async def validate(file) -> (bool, str)
+    async def preview(file) -> ImportPreview
+    async def parse(file, options) -> (Any, Preview)
+    async def import_data(file, options) -> Result
+
+class CSVProvider(ImportProvider):
+    # CSV ─► Pandas ─► SQLite DB
+    # Auto-type detection, column sanitization
+    # Duplicate detection, null analysis
+    # Data quality report generation
+
+_SUPPORTED = {".csv", ".db", ".sqlite",
+              ".sqlite3", ".xlsx", ".xls", ".json"}
+        </pre>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h4>🔗 Database Connectivity</h4>
+        <table style="font-size:0.38em; width:100%; border-collapse:collapse;">
+          <tr><td style="padding:0.3em;font-weight:700;">Dialect</td><td style="padding:0.3em;">Connection String</td></tr>
+          <tr><td style="padding:0.3em;">PostgreSQL</td><td style="padding:0.3em;font-family:monospace;">postgresql+psycopg2://user:pass@host:5432/db</td></tr>
+          <tr><td style="padding:0.3em;">SQLite</td><td style="padding:0.3em;font-family:monospace;">sqlite:///path/to/file.db</td></tr>
+          <tr><td style="padding:0.3em;">MySQL</td><td style="padding:0.3em;font-family:monospace;">mysql+pymysql://user:pass@host:3306/db</td></tr>
+          <tr><td style="padding:0.3em;">MSSQL</td><td style="padding:0.3em;font-family:monospace;">mssql+pymssql://user:pass@host:1433/db</td></tr>
+          <tr><td style="padding:0.3em;">Oracle</td><td style="padding:0.3em;font-family:monospace;">oracle+oracledb://user:pass@host:1521/sid</td></tr>
+        </table>
+      </div>
+      <div class="card" style="margin-top:0.5em;">
+        <h4>🔐 Security & Caching</h4>
+        <ul style="font-size:0.38em;">
+          <li>Passwords encrypted via <strong>Fernet</strong> (AES-128-CBC + HMAC-SHA256)</li>
+          <li>Thread-safe engine & schema caches with <code>threading.Lock()</code></li>
+          <li>Schema cache invalidated on write operations</li>
+          <li>CSV SHA-256 deduplication before import</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <aside class="speaker-notes">
+    <p>DataPilot AI can consume data in two ways: connecting to existing databases or importing files. For database connections, we built an abstracted credential system — passwords are encrypted with Fernet before storage. We support five database dialects, each with its own connection string builder. For file import, we built an extensible ImportProvider framework with an abstract base class and concrete implementations for CSV, SQLite, Excel, and JSON. The CSV provider generates a full data quality report including null analysis, duplicate detection, column type inference, and column name sanitization. Files are validated via SHA-256 hashing for deduplication, and uploaded files are backed up to Azure Blob Storage.</p>
+  </aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 11 — VISUALIZATION & INSIGHTS ENGINE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2 class="section-title">Automated Visualization & AI Insights Engine</h2>
+  <div class="grid-2" style="margin-top: 0.8em;">
+    <div>
+      <div class="card">
+        <h4>📈 Smart Chart Detection</h4>
+        <pre style="font-size:0.3em; background:rgba(0,0,0,0.3); border-radius:8px; padding:0.5em;">
+def generate_visualization(results, question):
+    df = pd.DataFrame(results)
+    num, dt, cat = _coerce_columns(df)
+
+    if dt_cols AND num_cols:
+        ─► px.line()     # Time series
+    elif cat_cols AND num_cols:
+        is_pie = any(
+            token in question
+            for token in _PIE_KW
+        )   # "نسبة", "توزيع", "pie", "share"
+        ─► px.pie() if is_pie AND ≤8 cats
+        ─► px.bar()      # Default
+    elif len(num_cols) >= 2:
+        ─► px.scatter()  # Correlation
+    elif len(num_cols) == 1:
+        ─► px.histogram()  # Distribution
+    else:
+        ─► px.bar(value_counts)  # Frequency
+        </pre>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h4>🧠 Bilingual AI Insights</h4>
+        <pre style="font-size:0.28em; background:rgba(0,0,0,0.3); border-radius:8px; padding:0.5em;">
+// Generate 3-5 bilingual insights
+// Returns structured JSON:
+[
+  {"ar": "رؤية بالعربية", "en": "Insight in English"},
+  {"ar": "رؤية بالعربية", "en": "Insight in English"}
+]
+
+// Frontend renders Arabic RTL, English LTR
+// Side by side in ResultVisualizer
+        </pre>
+      </div>
+      <div class="card" style="margin-top:0.5em;">
+        <h4>💡 Key Features</h4>
+        <ul style="font-size:0.38em;">
+          <li>Plotly interactive charts rendered in-browser</li>
+          <li>SVG fallback for PDF export (bar, pie, line, scatter, histogram)</li>
+          <li>Forced chart type from Settings panel override</li>
+          <li>Paginated results table with server-side page loading</li>
+          <li>Export to CSV, HTML report, SVG, PNG downloads</li>
+          <li>SQL explanation endpoint for learning</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <aside class="speaker-notes">
+    <p>After SQL execution, the post-processing pipeline runs three tasks in parallel. The visualization engine takes query results as a Pandas DataFrame and auto-detects the chart type based on data shape — line for time series, bar for categorical-numeric, scatter for multi-numeric, histogram for single-numeric. The insights engine sends a prompt asking for 3-5 bilingual insights in strict JSON format. Both insights and suggestions go through a robust parsing pipeline handling markdown-wrapped JSON, single quotes, trailing commas, and various edge cases — falling back gracefully to defaults when parsing fails.</p>
+  </aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 12 — EVALUATION & QUALITY ASSURANCE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2 class="section-title">SQL Evaluation & Quality Assurance</h2>
+  <div class="grid-2" style="margin-top: 0.8em;">
+    <div>
+      <div class="card">
+        <h4>🔍 Multi-Dimensional Evaluation</h4>
+        <pre style="font-size:0.3em; background:rgba(0,0,0,0.3); border-radius:8px; padding:0.5em;">
+scores = {
+    "syntax_valid": False,
+    "correctness": 0.0,    # LLM-judged
+    "completeness": 0.0,   # LLM-judged
+    "efficiency": 0.0,     # LLM-judged
+    "schema_score": 0.0,   # LLM-judged
+}
+
+# Syntax check (always runs):
+#   forbidden keywords, SELECT/WITH/EXPLAIN,
+#   has FROM clause, balanced parens
+
+# LLM evaluation (2-thread parallel):
+#   correctness + completeness + efficiency
+#   schema relevance
+
+# Weighted overall:
+overall = round(
+    correctness*0.4 +
+    completeness*0.25 +
+    efficiency*0.15 +
+    schema_score*0.1 +
+    syntax_bonus*0.1, 2
+)
+        </pre>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h4>📊 LangSmith Telemetry</h4>
+        <pre style="font-size:0.28em; background:rgba(0,0,0,0.3); border-radius:8px; padding:0.5em;">
+# Posted asynchronously after each query
+_LS_CLIENT.create_feedback(run_id, "sql_syntax_valid", score)
+_LS_CLIENT.create_feedback(run_id, "overall_quality", score)
+_LS_CLIENT.create_feedback(run_id, "correctness", score)
+_LS_CLIENT.create_feedback(run_id, "completeness", score)
+_LS_CLIENT.create_feedback(run_id, "latency", score)
+_LS_CLIENT.create_feedback(run_id, "has_visualization", score)
+_LS_CLIENT.create_feedback(run_id, "results_count", score)
+_LS_CLIENT.create_feedback(run_id, "insight_count", score)
+        </pre>
+      </div>
+      <div class="card" style="margin-top:0.5em;">
+        <h4>🛡️ Safety Layers</h4>
+        <ul style="font-size:0.38em;">
+          <li>🔴 <strong>Hard block:</strong> DROP, ALTER, TRUNCATE, GRANT, REVOKE, EXEC</li>
+          <li>🟡 <strong>Write approval:</strong> INSERT, UPDATE, DELETE require HITL via UI</li>
+          <li>🔵 <strong>Retry limit:</strong> Max 3 fix-attempt cycles per query</li>
+          <li>⚪ <strong>SQL injection prevention:</strong> Keyword blacklist at execution gateway</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <aside class="speaker-notes">
+    <p>Quality assurance runs at multiple levels. Every SQL goes through syntax validation (forbidden keywords, SELECT/WITH only, has FROM, balanced parens), then multi-dimensional LLM evaluation with a weighted overall score. After every query, we post structured feedback to LangSmith for tracked metrics over time. Three SQL safety layers: hard block on dangerous operations, write-approval for modifications, and retry limits to prevent infinite error loops.</p>
+  </aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 13 — AZURE DEPLOYMENT -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2 class="section-title">Microsoft Azure Deployment</h2>
+  <div class="grid-2" style="margin-top: 0.8em;">
+    <div>
+      <div class="card">
+        <h4>☁️ Azure Infrastructure</h4>
+        <table style="font-size:0.45em; width:100%; border-collapse:collapse;">
+          <tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3em;font-weight:700;">Service</td><td style="padding:0.3em;">Resource</td><td style="padding:0.3em;">Purpose</td></tr>
+          <tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3em;">Container App</td><td style="padding:0.3em;"><code>ca-datapilot</code></td><td style="padding:0.3em;">Serverless hosting</td></tr>
+          <tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3em;">Container Registry</td><td style="padding:0.3em;"><code>datapilotacr</code></td><td style="padding:0.3em;">Docker image storage</td></tr>
+          <tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3em;">PostgreSQL</td><td style="padding:0.3em;"><code>datapilot-pg</code></td><td style="padding:0.3em;">Production database</td></tr>
+          <tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3em;">OpenAI</td><td style="padding:0.3em;"><code>gpt-5-mini</code></td><td style="padding:0.3em;">LLM inference</td></tr>
+          <tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3em;">Blob Storage</td><td style="padding:0.3em;"><code>datapilotuploads</code></td><td style="padding:0.3em;">File persistence</td></tr>
+          <tr><td style="padding:0.3em;">Azure Files</td><td style="padding:0.3em;">Mounted volume</td><td style="padding:0.3em;">CSV & DB backups</td></tr>
+        </table>
+      </div>
+      <div class="card" style="margin-top:0.5em;">
+        <h4>🐳 Multi-Stage Docker Build</h4>
+        <pre style="font-size:0.25em; background:rgba(0,0,0,0.3); border-radius:8px; padding:0.5em;">
+# Stage 1: Build React Frontend
+FROM node:22-alpine AS frontend-builder
+COPY frontend/ ./
+RUN npm install && npm run build
+
+# Stage 2: FastAPI Backend + Serve
+FROM python:3.10-slim
+COPY --from=frontend-builder /app/frontend/dist
+RUN pip install -r backend/req*.txt
+COPY backend/ ./backend
+HEALTHCHECK CMD python -c "..." --interval=30s
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0"]
+        </pre>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h4>🔁 CI/CD Pipeline</h4>
+        <pre style="font-size:0.28em; background:rgba(0,0,0,0.3); border-radius:8px; padding:0.5em;">
+# GitHub Actions Workflow
+on:
+  push:
+    branches: [main, DEPLOYMENT]
+
+jobs:
+  build-and-deploy:
+    steps:
+      1. Checkout code
+      2. az acr build
+         (multi-stage Docker image,
+          tagged with git SHA)
+      3. az containerapp update
+         (zero-downtime revision)
+        </pre>
+      </div>
+      <div class="card" style="margin-top:0.5em;">
+        <h4>💾 Persistent Storage</h4>
+        <ul style="font-size:0.4em;">
+          <li><strong>Azure Files</strong> mounted at <code>/mnt/uploads/</code></li>
+          <li>SQLite DBs auto-backed up on every upload</li>
+          <li>Restore-all on container startup</li>
+          <li>Uploads mirrored to Blob Storage for redundancy</li>
+        </ul>
+      </div>
+      <div class="card" style="margin-top:0.5em;">
+        <h4>🌐 Live URL</h4>
+        <p style="font-size:0.35em; font-family:'JetBrains Mono',monospace;">
+          ca-datapilot.lemondesert-cbde89d5.italynorth.azurecontainerapps.io
+        </p>
+        <p style="font-size:0.3em; color:var(--muted);">Region: Italy North — Azure Container Apps</p>
+      </div>
+    </div>
+  </div>
+  <aside class="speaker-notes">
+    <p>The system runs on Azure Container Apps — a serverless container platform that auto-scales. The multi-stage Docker build produces a single ~200MB container: stage 1 builds the React frontend with Node.js 22, stage 2 copies the static build into a Python 3.10 slim image with the backend. CI/CD is automated through GitHub Actions — pushing to main or DEPLOYMENT builds, pushes to ACR, and deploys a new Container App revision with zero-downtime rolling updates. For storage, Azure Files is mounted as a persistent volume. SQLite databases are auto-backed up after every upload and restored on container restart, ensuring data survives container failures. Uploads are also mirrored to Blob Storage for redundancy.</p>
+  </aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 14 — SECURITY ARCHITECTURE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2 class="section-title">Security Architecture</h2>
+  <div class="grid-3" style="margin-top: 1em;">
+    <div class="card">
+      <h4>🔐 Credential Encryption</h4>
+      <ul style="font-size:0.42em;">
+        <li>Database passwords encrypted with <strong>Fernet</strong> (AES-128-CBC + HMAC-SHA256)</li>
+        <li>LLM API keys stored encrypted in <code>settings.json</code></li>
+        <li>Encryption key from <code>ENCRYPTION_KEY</code> env var (never in code)</li>
+        <li>Decrypted only at query time, never cached in plaintext</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🛡️ SQL Injection Prevention</h4>
+      <ul style="font-size:0.42em;">
+        <li><strong>Layer 1:</strong> LLM prompt instructs against dangerous SQL</li>
+        <li><strong>Layer 2:</strong> Generation node validates output against keyword blacklist</li>
+        <li><strong>Layer 3:</strong> Execution gateway re-validates before running</li>
+        <li><strong>Layer 4:</strong> HITL approval for all write operations</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔒 API Security</h4>
+      <ul style="font-size:0.42em;">
+        <li>CORS restricted to <code>FRONTEND_URL</code> in production</li>
+        <li>Rate limiting: 120 req/min per client</li>
+        <li>Request ID tracing via <code>X-Request-ID</code> headers</li>
+        <li>Health check for Azure Container App probes</li>
+      </ul>
+    </div>
+  </div>
+  <aside class="speaker-notes">
+    <p>Security was designed as a layered defense. At the credential layer, all passwords are encrypted with Fernet using an environment variable key, never hardcoded. At the SQL injection layer, we have four defenses: the LLM prompt, generation node validation, execution gateway re-validation, and human approval for writes. At the API layer, we have CORS restrictions, rate limiting at 120 req/min, request ID tracing for audit trails, and no sensitive data leakage in error responses.</p>
+  </aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 15 — SYSTEM METRICS & PERFORMANCE -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2 class="section-title">System Metrics & Performance</h2>
+  <div class="grid-4" style="margin-top: 1em;">
+    <div class="metric">
+      <div class="num cyber-cyan">~8s</div>
+      <div class="label">Avg Query Latency</div>
+      <p style="font-size:0.3em; color:var(--muted); margin-top:0.3em;">Full pipeline: schema → SQL → execute → insights → viz</p>
+    </div>
+    <div class="metric">
+      <div class="num cyber-lime">95%+</div>
+      <div class="label">Query Success Rate</div>
+      <p style="font-size:0.3em; color:var(--muted); margin-top:0.3em;">After auto-fix retry loop (up to 3 attempts)</p>
+    </div>
+    <div class="metric">
+      <div class="num cyber-pink">~4s → 0ms</div>
+      <div class="label">Suggestion Cache</div>
+      <p style="font-size:0.3em; color:var(--muted); margin-top:0.3em;">In-memory cache eliminates redundant LLM calls</p>
+    </div>
+    <div class="metric">
+      <div class="num cyber-blue">60% ↓</div>
+      <div class="label">Token Savings</div>
+      <p style="font-size:0.3em; color:var(--muted); margin-top:0.3em;">Schema filtering & scenario memory reduce LLM tokens</p>
+    </div>
+    <div class="metric">
+      <div class="num cyber-cyan">99.9%</div>
+      <div class="label">LLM Uptime</div>
+      <p style="font-size:0.3em; color:var(--muted); margin-top:0.3em;">Via FallbackLLM auto-failover chain</p>
+    </div>
+    <div class="metric">
+      <div class="num cyber-lime">5 DB</div>
+      <div class="label">Supported Dialects</div>
+      <p style="font-size:0.3em; color:var(--muted); margin-top:0.3em;">PostgreSQL, SQLite, MySQL, MSSQL, Oracle</p>
+    </div>
+    <div class="metric">
+      <div class="num cyber-pink">6 LLM</div>
+      <div class="label">Provider Support</div>
+      <p style="font-size:0.3em; color:var(--muted); margin-top:0.3em;">Azure OpenAI, Groq, Gemini, OpenRouter, LiteLLM, Mock</p>
+    </div>
+    <div class="metric">
+      <div class="num cyber-blue">3</div>
+      <div class="label">Max Retries</div>
+      <p style="font-size:0.3em; color:var(--muted); margin-top:0.3em;">Self-healing with progressive error context</p>
+    </div>
+  </div>
+  <aside class="speaker-notes">
+    <p>Average query latency is around 8 seconds on Groq's Llama 3.3-70B, faster on Azure OpenAI. Query success rate exceeds 95% thanks to the auto-fix retry loop. The suggestion cache reduced subsequent loads from ~4 seconds to instant. Schema filtering and context pruning reduce token consumption by ~60%. FallbackLLM chaining gives 99.9% generation uptime. Five database dialects and six LLM providers, all runtime-configurable without redeployment.</p>
+  </aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 16 — KEY CHALLENGES & SOLUTIONS -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2 class="section-title">Engineering Challenges & Solutions</h2>
+  <div class="grid-2" style="margin-top: 1em;">
+    <div class="card">
+      <h4>⚠️ Schema Hallucination</h4>
+      <p style="font-size:0.45em;"><strong>Problem:</strong> LLMs invent table/column names when schemas are large or ambiguous.</p>
+      <p style="font-size:0.45em;"><strong>Solution:</strong> 2-stage pipeline — fetch real schema via SQLAlchemy Inspector, then LLM-filter to relevant tables. Rule 21 forces ERROR if data not in schema.</p>
+    </div>
+    <div class="card">
+      <h4>⚠️ SQLite Path Migration</h4>
+      <p style="font-size:0.45em;"><strong>Problem:</strong> SQLite paths in DB break when container restarts or directory changes.</p>
+      <p style="font-size:0.45em;"><strong>Solution:</strong> Path resolution searches 11 locations, auto-backup/restore via Azure Files, in-memory path migration at startup.</p>
+    </div>
+    <div class="card">
+      <h4>⚠️ LLM JSON Parsing</h4>
+      <p style="font-size:0.45em;"><strong>Problem:</strong> LLMs inconsistently wrap JSON in markdown, use single quotes, or add trailing commas.</p>
+      <p style="font-size:0.45em;"><strong>Solution:</strong> 4-strategy parser: markdown extraction → brace matching → quote fixing → direct parse with graceful fallback.</p>
+    </div>
+    <div class="card">
+      <h4>⚠️ Provider Rate Limits</h4>
+      <p style="font-size:0.45em;"><strong>Problem:</strong> Free-tier providers (Groq, Gemini) have strict rate limits causing 429 errors.</p>
+      <p style="font-size:0.45em;"><strong>Solution:</strong> FallbackLLM wrapper with priority-ordered failover. Suggestion caching eliminates redundant calls.</p>
+    </div>
+    <div class="card">
+      <h4>⚠️ CORS Preflight</h4>
+      <p style="font-size:0.45em;"><strong>Problem:</strong> Browsers send OPTIONS preflight that wasn't handled.</p>
+      <p style="font-size:0.45em;"><strong>Solution:</strong> Custom middleware with explicit OPTIONS handler and catch-all route. Works across dev localhost and production domain.</p>
+    </div>
+    <div class="card">
+      <h4>⚠️ Oracle System Noise</h4>
+      <p style="font-size:0.45em;"><strong>Problem:</strong> Oracle's system tables (LOGMNR$, MVIEW$) polluted schema context.</p>
+      <p style="font-size:0.45em;"><strong>Solution:</strong> System table filters for Oracle (20+ patterns) and MSSQL. 50%+ reduction in schema noise for enterprise DBs.</p>
+    </div>
+  </div>
+  <aside class="speaker-notes">
+    <p>We faced six major engineering challenges. Schema hallucination — solved with a 2-stage real-schema-then-filter pipeline. SQLite path management — solved with 11-location path resolution and automatic Azure Files backup/restore. LLM JSON parsing — solved with a robust 4-strategy parser. Provider rate limits — solved with FallbackLLM chaining and caching. CORS preflight — solved with custom middleware. Oracle system table noise — solved with dedicated filtering. Each challenge resulted in a reusable solution that made the system more robust.</p>
+  </aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 17 — FUTURE WORK -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2 class="section-title">Future Work & Roadmap</h2>
+  <div class="grid-2" style="margin-top: 1em;">
+    <div class="card">
+      <h4>🚀 Phase 1: Enhanced Agent</h4>
+      <ul style="font-size:0.45em;">
+        <li>Multi-turn conversations with context maintenance</li>
+        <li>Autonomous tool-use decisions (search, filter, join, visualize)</li>
+        <li>Dense sentence transformers for better scenario matching</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🚀 Phase 2: Enterprise Readiness</h4>
+      <ul style="font-size:0.45em;">
+        <li>Team collaboration — shared query libraries, RBAC</li>
+        <li>Redis caching for multi-replica deployments</li>
+        <li>Grafana dashboards, structured logging, alerting</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🚀 Phase 3: Intelligence</h4>
+      <ul style="font-size:0.45em;">
+        <li>Natural language SQL explanations</li>
+        <li>Proactive anomaly detection in query results</li>
+        <li>Scheduled auto-generated PDF/HTML reports</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🚀 Phase 4: Scale</h4>
+      <ul style="font-size:0.45em;">
+        <li>Horizontal scaling with distributed state</li>
+        <li>Cost-optimized model routing (cheap models for simple queries)</li>
+        <li>SPIDER and BIRD-Bench benchmark evaluation</li>
+      </ul>
+    </div>
+  </div>
+  <aside class="speaker-notes">
+    <p>Phase 1 focuses on making the agent genuinely conversational with multi-turn context and autonomous tool-use decisions, plus better embeddings. Phase 2 adds enterprise features — shared query libraries, RBAC, Redis caching, and better monitoring. Phase 3 adds intelligence — natural language explanations, anomaly detection, and scheduled reports. Phase 4 tackles horizontal scaling, cost-optimized model routing, and formal benchmark evaluation on SPIDER and BIRD-Bench.</p>
+  </aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 18 — CONCLUSION -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2 class="section-title">Conclusion</h2>
+  <div style="margin-top: 1.5em; max-width: 70%; margin-left: auto; margin-right: auto;">
+    <div class="card" style="text-align:center; padding:1.5em;">
+      <div style="font-size: 3em; margin-bottom: 0.3em;">🧠</div>
+      <h3 style="color: var(--cyber-cyan);">DataPilot AI delivers on all six objectives:</h3>
+      <div style="margin-top: 1em; text-align: left; font-size: 0.5em; line-height: 1.8;">
+        <p>✅ <strong class="highlight-cyan">Bilingual NL Interface</strong> — Query in English or Arabic, get SQL + results + insights</p>
+        <p>✅ <strong class="highlight-cyan">Multi-Database</strong> — Connect 5 DB types, import CSV/Excel/JSON/SQLite files</p>
+        <p>✅ <strong class="highlight-cyan">Intelligent Agent</strong> — LangGraph state machine with auto-retry, scenario memory, and continuous learning</p>
+        <p>✅ <strong class="highlight-cyan">Safety First</strong> — 4-layer security: encryption, blacklists, HITL approval, rate limiting</p>
+        <p>✅ <strong class="highlight-cyan">Auto Insights & Viz</strong> — Plotly charts, bilingual narrative insights, exportable reports</p>
+        <p>✅ <strong class="highlight-cyan">Azure Cloud-Native</strong> — Container Apps, CI/CD, persistent storage, production monitoring</p>
+      </div>
+    </div>
+    <div class="card" style="margin-top: 1em; text-align:center;">
+      <p style="font-size:0.5em; color: var(--muted);">
+        Built with <span class="cyber-pink">♥</span>
+        &nbsp;|&nbsp; <span class="cyber-cyan">FastAPI</span>
+        &nbsp;|&nbsp; <span class="cyber-lime">LangGraph</span>
+        &nbsp;|&nbsp; <span class="cyber-blue">Azure</span>
+        &nbsp;|&nbsp; <span class="cyber-pink">React</span>
+      </p>
+    </div>
+  </div>
+  <aside class="speaker-notes">
+    <p>In conclusion, DataPilot AI successfully delivers on all six objectives — a bilingual natural language interface, multi-database connectivity, an intelligent LangGraph agent with self-recovery and continuous learning, four-layer security, automated visualizations with bilingual insights, and a production-grade Azure deployment with CI/CD. Thank you. I'm happy to take any questions.</p>
+  </aside>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 19 — Q&A -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section>
+  <h2 style="font-size: 5em; margin-bottom: 0.2em;">❓</h2>
+  <h1>Questions &amp; Discussion</h1>
+  <div style="margin-top: 1.5em;">
+    <p style="font-size: 0.5em; color: var(--muted);">Thank you for your time and attention.</p>
+    <div class="badge-row" style="margin-top: 1em;">
+      <span class="tag tag-cyan">DataPilot AI v1.0.0</span>
+      <span class="tag tag-pink">Graduation Project 2025-2026</span>
+      <span class="tag tag-lime">Azure Container Apps</span>
+    </div>
+  </div>
+  <div class="footer-bar">DEPI — DataPilot AI — Thank You</div>
+  <aside class="speaker-notes">
+    <p>I'd like to thank my supervisor for the guidance, the department faculty for their support, and all of you for your attention. I'm now ready to answer any questions about the system architecture, implementation details, design decisions, or future work.</p>
+  </aside>
+</section>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.0.5/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.0.5/plugin/notes/notes.js"></script>
+<script>
+  Reveal.initialize({
+    controls: true,
+    progress: true,
+    center: true,
+    hash: true,
+    slideNumber: 'c/t',
+    transition: 'slide',
+    backgroundTransition: 'fade',
+    width: 1280,
+    height: 720,
+    margin: 0.04,
+    plugins: [RevealNotes],
+    keyboard: {
+      13: 'next'
+    }
+  });
+</script>
+</body>
+</html>

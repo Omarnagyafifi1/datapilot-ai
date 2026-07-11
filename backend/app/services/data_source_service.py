@@ -17,6 +17,7 @@ from app.core.config import settings
 from app.core.logger import get_logger
 from app.services import db_service
 from app.services.database import get_sync_engine
+from app.services.db_service import _find_sqlite_db_path
 
 
 logger = get_logger(__name__)
@@ -115,36 +116,6 @@ def _get_session_factory() -> sessionmaker:
     return _SESSION_FACTORY
 
 
-def _find_sqlite_path_in_common_locations(db_path: str) -> str | None:
-    """Search for a SQLite database file in common project locations."""
-    basename = os.path.basename(db_path)
-    cwd = os.getcwd()
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-    # List of common search locations (from most to least likely)
-    search_locations = [
-        db_path,  # As-is first
-        os.path.join(cwd, basename),  # CWD
-        os.path.join(cwd, "backend", basename),  # backend/
-        os.path.join(cwd, "uploads", basename),  # uploads/
-        os.path.join(cwd, "backend", "uploads", basename),  # backend/uploads/
-        # app/services/uploads/ (where csv_provider stores CSV copies)
-        os.path.join(cwd, "app", "services", "uploads", basename),
-        os.path.join(cwd, "backend", "app", "services", "uploads", basename),
-        # Relative to project root
-        os.path.join(project_root, basename),  # project root
-        os.path.join(project_root, "backend", basename),  # project root backend/
-        os.path.join(project_root, "uploads", basename),  # project root uploads/
-        os.path.join(project_root, "backend", "uploads", basename),  # project root backend/uploads/
-        os.path.join(project_root, "app", "services", "uploads", basename),
-    ]
-
-    for loc in search_locations:
-        if os.path.exists(loc):
-            return loc
-    return None
-
-
 def _build_conn_string_from_source(source: dict, password: str) -> str:
     db_type = str(source["db_type"]).lower()
 
@@ -152,7 +123,7 @@ def _build_conn_string_from_source(source: dict, password: str) -> str:
         db_name = source['db_name']
         db_path = db_name
         if not os.path.isabs(db_path):
-            found_path = _find_sqlite_path_in_common_locations(db_path)
+            found_path = _find_sqlite_db_path(db_path)
             if found_path:
                 db_path = found_path
             else:
@@ -202,7 +173,7 @@ def save_source(params: dict) -> dict:
         db_name = os.path.abspath(db_name)
         # Verify the file exists and try to resolve it if not
         if not os.path.exists(db_name):
-            resolved = _find_sqlite_path_in_common_locations(db_name)
+            resolved = _find_sqlite_db_path(db_name)
             if resolved:
                 db_name = os.path.abspath(resolved)
             else:
