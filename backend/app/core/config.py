@@ -87,6 +87,9 @@ class Settings(BaseSettings):
     # Upload limits
     MAX_UPLOAD_SIZE: int = int(os.getenv("MAX_UPLOAD_SIZE", str(50 * 1024 * 1024)))  # 50MB default
 
+    # Evaluation sampling (0.0 = never, 1.0 = every query)
+    EVALUATION_SAMPLE_RATE: float = float(os.getenv("EVALUATION_SAMPLE_RATE", "0.2"))
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

@@ -573,6 +573,27 @@ def get_source_schema(source_id: str) -> dict:
                         continue
 
                 columns = inspector.get_columns(table_name)
+                fk_list = inspector.get_foreign_keys(table_name)
+                foreign_keys = [
+                    {
+                        "constrained_columns": fk["constrained_columns"],
+                        "referred_table": fk["referred_table"],
+                        "referred_columns": fk["referred_columns"],
+                    }
+                    for fk in fk_list
+                ]
+
+                # Get up to 3 sample rows to give the LLM real column values
+                sample_rows: list[dict] = []
+                try:
+                    quoted = f'"{table_name}"'
+                    rows = connection.execute(
+                        text(f"SELECT * FROM {quoted} LIMIT 3")
+                    ).mappings().all()
+                    sample_rows = [dict(row) for row in rows]
+                except Exception:
+                    pass
+
                 tables.append(
                     {
                         "name": table_name,
@@ -585,6 +606,8 @@ def get_source_schema(source_id: str) -> dict:
                             }
                             for column in columns
                         ],
+                        "foreign_keys": foreign_keys,
+                        "sample_rows": sample_rows,
                     }
                 )
 

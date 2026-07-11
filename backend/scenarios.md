@@ -1085,3 +1085,17 @@ Always verify the existence of tables and columns in the database schema before 
 }
 ```
 
+## 2026-07-11T21:07:19.210595+00:00 - resolved
+
+```json
+{
+  "created_at": "2026-07-11T21:07:19.210595+00:00",
+  "status": "resolved",
+  "question": "Show me how many employees are in each department",
+  "sql": "SELECT T1.dept_name, COUNT(T2.emp_id) AS number_of_employees \nFROM departments T1 \nLEFT JOIN employees T2 ON T1.dept_id = T2.dept_id \nGROUP BY T1.dept_name;",
+  "error": null,
+  "validation_reason": null,
+  "lesson": null
+}
+```
+

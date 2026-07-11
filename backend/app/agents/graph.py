@@ -40,6 +40,7 @@ from app.core.logger import get_logger
 from app.llm.base_llm import BaseLLM
 from app.models.schemas import QueryDocument
 from app.agents.scenario_memory import ScenarioMemory
+from app.core.config import settings as app_settings
 from app.services.db_service import DBService
 
 logger = get_logger(__name__)
@@ -47,6 +48,26 @@ _ARABIC_PATTERN = re.compile(r"[\u0600-\u06FF]")
 _BIDI_CONTROL_PATTERN = re.compile(r"[\u200E\u200F\u202A-\u202E\u2066-\u2069]")
 MAX_RETRIES = 3
 SCENARIO_MEMORY = ScenarioMemory(Path(__file__).resolve().parents[2] / "scenarios.md")
+
+# --- Semantic result cache ---
+_SEMANTIC_CACHE: dict[str, dict] = {}
+_SEMANTIC_CACHE_MAX = 100
+
+
+def _question_hash(question: str) -> str:
+    import hashlib
+    tokens = re.findall(r"[a-zA-Z0-9_]+", question.lower())
+    tokens.sort()
+    return hashlib.md5(" ".join(tokens).encode()).hexdigest()[:16]
+
+
+def _build_semantic_cache_key(source_id: str, question: str) -> str:
+    return f"{source_id}::{_question_hash(question)}"
+
+
+def _build_semantic_cache_storage_key(source_id: str, question: str, sql: str) -> str:
+    prefix = sql.strip().lower()[:100]
+    return f"{source_id}::{_question_hash(question)}::{hash(prefix)}"
 
 
 def _json_dumps(value: Any) -> str:
@@ -349,9 +370,175 @@ def schema_node(state: AgentState, schema_service: Any, llm: BaseLLM) -> dict:
     return {"documentation": {**state.documentation, "schema": filtered_schema}}
 
 
+def combined_router_and_filter_node(state: AgentState, llm: BaseLLM, schema_service: Any) -> dict:
+    """Merge intent routing and schema filtering into one LLM call when both are needed."""
+    import json
+    import re
+    from app.agents.prompts import ROUTER_AND_FILTER_PROMPT
+
+    # 1. Determine intent via heuristics first (fast path, no LLM)
+    normalized_question = state.question.strip().lower()
+    _READ_STARTERS = (
+        r'^(how|what|which|where|when|who|why|does|do|is|are|was|were|'
+        r'can|could|will|would|shall|should|has|have|had|did)\b'
+    )
+    _READ_VERBS = (
+        r'\b(show|list|display|find|get|fetch|count|total|average|sum|'
+        r'calculate|compare|report|describe|explain|tell|give|select|'
+        r'search|look\s*up|retrieve|check|aggregate|log|logs|'
+        r'analyze|analysis|analyse|trend|trends|group|breakdown)\b'
+    )
+    _AR_READ = (
+        r'(ما\s|من\s|كم\s|أين|متى|لماذا|هل\s|كيف|ما هي|ما هو|من هم|'
+        r'اعرض|أظهر|عرض|اذكر)'
+    )
+    is_read_question = bool(
+        re.search(_READ_STARTERS, normalized_question)
+        or re.search(_READ_VERBS, normalized_question)
+        or re.search(_AR_READ, state.question.strip())
+    )
+    if is_read_question:
+        heuristic_intent = "INQUIRE"
+    else:
+        _ADD_PATTERNS = r'(?:^|\b)(?:insert|add|create|append)\s+|(?:^|\b)(?:i\s+want\s+to|please)\s+(?:insert|add|create)'
+        _UPDATE_PATTERNS = r'(?:^|\b)(?:update|modify|edit|change|rename|replace|set)\s+|(?:^|\b)(?:i\s+want\s+to|please)\s+(?:update|modify|edit|change|rename)'
+        _DELETE_PATTERNS = r'(?:^|\b)(?:delete|remove|destroy|purge|erase)\s+|(?:^|\b)(?:i\s+want\s+to|please)\s+(?:delete|remove|drop)'
+        if re.search(_ADD_PATTERNS, normalized_question):
+            heuristic_intent = "ADD"
+        elif re.search(_UPDATE_PATTERNS, normalized_question):
+            heuristic_intent = "UPDATE"
+        elif re.search(_DELETE_PATTERNS, normalized_question):
+            heuristic_intent = "DELETE"
+        else:
+            heuristic_intent = None  # ambiguous — need LLM
+
+    # 2. Get full schema
+    full_schema = fetch_schema_context(schema_service, state.source_id)
+
+    # 3. Decide: do we need an LLM call?
+    schema_data = json.loads(full_schema)
+    tables = schema_data.get("tables", [])
+    needs_filter = len(tables) > 20
+    needs_intent_llm = heuristic_intent is None
+
+    if needs_intent_llm or needs_filter:
+        if needs_intent_llm and needs_filter:
+            # One combined call for both intent + filter
+            prompt = ROUTER_AND_FILTER_PROMPT.format(
+                full_schema=full_schema,
+                question=state.question,
+            )
+            raw = llm.generate(prompt, max_tokens=1024).strip()
+            import re as _re2
+            m = _re2.search(r'\{.*\}', raw, _re2.DOTALL)
+            if m:
+                try:
+                    parsed = json.loads(m.group(0))
+                    intent = parsed.get("intent", heuristic_intent or "INQUIRE")
+                    filtered = parsed.get("filtered_schema", schema_data)
+                    if isinstance(intent, str) and intent.upper() in {"ADD", "DELETE", "UPDATE", "INQUIRE"}:
+                        pass
+                    else:
+                        intent = heuristic_intent or "INQUIRE"
+                    if not filtered.get("tables"):
+                        filtered = schema_data
+                    return {
+                        "intent": intent.upper(),
+                        "documentation": {**state.documentation, "schema": json.dumps(filtered)},
+                    }
+                except Exception:
+                    pass
+            # Fall through to individual handling
+            return {
+                "intent": heuristic_intent or "INQUIRE",
+                "documentation": {**state.documentation, "schema": full_schema},
+            }
+        elif needs_intent_llm:
+            from app.agents.prompts import INTENT_ROUTER_PROMPT
+            prompt = INTENT_ROUTER_PROMPT.format(question=state.question)
+            raw_intent = llm.generate(prompt, max_tokens=20).strip().upper()
+            intent = raw_intent if raw_intent in {"ADD", "DELETE", "UPDATE", "INQUIRE"} else "INQUIRE"
+            return {
+                "intent": intent,
+                "documentation": {**state.documentation, "schema": full_schema},
+            }
+        else:
+            # Only need filtering
+            from app.agents.tools.context_filtering import filter_schema_context
+            filtered = filter_schema_context(llm, full_schema, state.question)
+            return {
+                "intent": heuristic_intent,
+                "documentation": {**state.documentation, "schema": filtered},
+            }
+
+    # 4. No LLM call needed — heuristic intent + unfiltered schema
+    return {
+        "intent": heuristic_intent,
+        "documentation": {**state.documentation, "schema": full_schema},
+    }
+
+
+def _get_valid_table_names(schema_str: str) -> set[str]:
+    try:
+        schema = json.loads(schema_str) if isinstance(schema_str, str) else schema_str
+        return {t["name"].lower() for t in schema.get("tables", []) if "name" in t}
+    except Exception:
+        return set()
+
+
+def _filter_scenario_context_to_schema(context: str, schema_str: str) -> str:
+    valid_tables = _get_valid_table_names(schema_str)
+    if not valid_tables:
+        return context
+
+    lines = context.splitlines()
+    filtered: list[str] = []
+    current_block: list[str] = []
+    in_sql = False
+
+    for line in lines:
+        if line.startswith("Example "):
+            if current_block:
+                block_text = "\n".join(current_block)
+                sql_match = re.search(r"SQL:\s*(.*)", block_text)
+                if sql_match:
+                    sql = sql_match.group(1)
+                    refs = re.findall(r'(?:(?:"?\w+"?)\.)?(?:"?\w+"?)', sql)
+                    # Extract potential table names (words that might be tables)
+                    tokens = re.findall(r'\b[a-z_][a-z0-9_]*\b', sql.lower())
+                    referenced_tables = {t for t in tokens if t in valid_tables}
+                    if referenced_tables:
+                        filtered.extend(current_block)
+                    # If no tables from current schema found in SQL, skip this block
+                else:
+                    filtered.extend(current_block)
+                current_block = []
+            current_block.append(line)
+        else:
+            current_block.append(line)
+
+    if current_block:
+        block_text = "\n".join(current_block)
+        sql_match = re.search(r"SQL:\s*(.*)", block_text)
+        if sql_match:
+            sql = sql_match.group(1)
+            tokens = re.findall(r'\b[a-z_][a-z0-9_]*\b', sql.lower())
+            referenced_tables = {t for t in tokens if t in valid_tables}
+            if referenced_tables:
+                filtered.extend(current_block)
+        else:
+            filtered.extend(current_block)
+
+    return "\n".join(filtered)
+
+
 def scenario_lookup_node(state: AgentState) -> dict:
     matched = SCENARIO_MEMORY.find_similar_solution(state.question)
     scenario_context = SCENARIO_MEMORY.get_recent_context(n=10)
+
+    schema_str = state.documentation.get("schema", "")
+    if schema_str:
+        scenario_context = _filter_scenario_context_to_schema(scenario_context, schema_str)
 
     result: dict = {
         "scenario_matched": False,
@@ -363,18 +550,28 @@ def scenario_lookup_node(state: AgentState) -> dict:
     }
 
     if matched:
-        result["scenario_matched"] = True
-        result["scenario_similarity"] = float(matched["score"])
-        result["documentation"]["scenario_reference_question"] = matched["question"]
-        result["documentation"]["scenario_reference_sql"] = matched["sql"]
-        matched_note = (
-            f"\n### Matched Reference (similarity={float(matched['score']):.2f})\n"
-            f"  Question: {matched['question']}\n"
-            f"  SQL: {matched['sql']}\n"
-        )
-        result["documentation"]["scenario_context"] = (
-            result["documentation"]["scenario_context"] + matched_note
-        )
+        matched_schema_valid = True
+        if schema_str:
+            valid_tables = _get_valid_table_names(schema_str)
+            matched_sql = matched.get("sql", "")
+            tokens = re.findall(r'\b[a-z_][a-z0-9_]*\b', matched_sql.lower())
+            matched_tables = {t for t in tokens if t in valid_tables}
+            if not matched_tables:
+                matched_schema_valid = False
+
+        if matched_schema_valid:
+            result["scenario_matched"] = True
+            result["scenario_similarity"] = float(matched["score"])
+            result["documentation"]["scenario_reference_question"] = matched["question"]
+            result["documentation"]["scenario_reference_sql"] = matched["sql"]
+            matched_note = (
+                f"\n### Matched Reference (similarity={float(matched['score']):.2f})\n"
+                f"  Question: {matched['question']}\n"
+                f"  SQL: {matched['sql']}\n"
+            )
+            result["documentation"]["scenario_context"] = (
+                result["documentation"]["scenario_context"] + matched_note
+            )
 
     return result
 
@@ -609,11 +806,25 @@ def fix_sql_node(state: AgentState, llm: BaseLLM, schema_service: Any, db_servic
 
 
 
+def _truncate_cell_values(rows: list[dict], max_len: int = 100) -> list[dict]:
+    truncated: list[dict] = []
+    for row in rows:
+        t = {}
+        for k, v in row.items():
+            if isinstance(v, str) and len(v) > max_len:
+                t[k] = v[:max_len] + "..."
+            else:
+                t[k] = v
+        truncated.append(t)
+    return truncated
+
+
 def _build_insight_prompt(state: AgentState) -> str:
-    truncated_results = state.query_results[:20]
+    truncated_results = state.query_results[:10]
     if truncated_results and len(truncated_results[0]) > 5:
         keys = list(truncated_results[0].keys())[:5]
         truncated_results = [{k: row.get(k) for k in keys} for row in truncated_results]
+    truncated_results = _truncate_cell_values(truncated_results)
 
     current_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
@@ -633,7 +844,7 @@ def insight_node(state: AgentState, llm: BaseLLM) -> dict:
 
     prompt = _build_insight_prompt(state)
 
-    raw_response = llm.generate(prompt, max_tokens=1024)
+    raw_response = llm.generate(prompt, max_tokens=512)
     logger.info("insight_node raw_response=%s", raw_response[:500])
     parsed_insights = _parse_insights(raw_response)
     if parsed_insights is not None:
@@ -645,39 +856,24 @@ def insight_node(state: AgentState, llm: BaseLLM) -> dict:
 
 
 def suggestion_node(state: AgentState, llm: BaseLLM) -> dict:
-    # Skip suggestions for trivial queries (1 row = list tables, count, etc.)
     if not state.query_results:
         return {"suggestions": []}
 
-    schema_str = (state.documentation or {}).get("schema", "")
-    schema_lines = []
-    if schema_str:
-        try:
-            schema_obj = json.loads(schema_str) if isinstance(schema_str, str) else schema_str
-            for tbl in schema_obj.get("tables", []):
-                cols = ", ".join(c["name"] for c in tbl.get("columns", []))
-                schema_lines.append(f"- {tbl['name']}({cols})")
-        except Exception:
-            pass
-
     results_preview = []
     if state.query_results:
-        preview = state.query_results[:3]
+        preview = state.query_results[:1]
         if preview:
             keys = list(preview[0].keys())[:5]
             results_preview = [{k: row.get(k) for k in keys} for row in preview]
-
-    schema_summary = "\n".join(schema_lines) if schema_lines else "N/A"
 
     prompt = (
         f"{SUGGESTION_PROMPT}\n\n"
         f"Question:\n{state.question}\n\n"
         f"Generated SQL:\n{state.sql}\n\n"
-        f"Database Schema:\n{schema_summary}\n\n"
-        f"Sample Results (first {len(results_preview)} rows):\n{_json_dumps(results_preview)}"
+        f"Sample Results (first {len(results_preview)} row):\n{_json_dumps(results_preview)}"
     )
 
-    raw_response = llm.generate(prompt, max_tokens=256)
+    raw_response = llm.generate(prompt, max_tokens=192)
     parsed_suggestions = _parse_suggestions(raw_response)
     return {"suggestions": parsed_suggestions if parsed_suggestions is not None else []}
 
@@ -884,8 +1080,7 @@ class AgentGraph:
         workflow = StateGraph(AgentState)
 
         # Nodes
-        workflow.add_node("router", lambda s: intent_router_node(s, self.llm))
-        workflow.add_node("fetch_schema", lambda s: schema_node(s, self.schema_service, self.llm))
+        workflow.add_node("router_and_filter", lambda s: combined_router_and_filter_node(s, self.llm, self.schema_service))
         workflow.add_node("load_memory", _make_load_long_term_memory_node(self.store))
         workflow.add_node("lookup_scenario", scenario_lookup_node)
         workflow.add_node("generate_sql", lambda s: run_sql_node(s, self.llm))
@@ -902,8 +1097,7 @@ class AgentGraph:
         workflow.add_node("persist_memory", _make_persist_long_term_memory_node(self.store))
 
         # Edges
-        workflow.add_edge(START, "router")
-        workflow.add_edge("router", "fetch_schema")
+        workflow.add_edge(START, "router_and_filter")
         
         def route_sql_gen(state: AgentState) -> Literal["lookup_scenario", "generate_mod_sql", "execute_sql", "approval"]:
             if state.sql and state.sql.strip():
@@ -912,7 +1106,7 @@ class AgentGraph:
                 return "execute_sql"
             return "generate_mod_sql" if state.intent in ["ADD", "UPDATE", "DELETE"] else "lookup_scenario"
              
-        workflow.add_edge("fetch_schema", "load_memory")
+        workflow.add_edge("router_and_filter", "load_memory")
         workflow.add_conditional_edges("load_memory", route_sql_gen, ["lookup_scenario", "generate_mod_sql", "execute_sql", "approval"])
         
         def route_scenario(state: AgentState) -> Literal["execute_sql", "generate_sql", "persist_memory"]:
@@ -1004,6 +1198,13 @@ class AgentGraph:
         preview_only: bool = False,
         sql: str | None = None,
     ) -> dict[str, Any]:
+        # Check semantic cache before any LLM calls
+        cache_key = _build_semantic_cache_key(source_id, question)
+        cached = _SEMANTIC_CACHE.get(cache_key)
+        if cached and not preview_only and not sql:
+            logger.info("Semantic cache HIT for question: %s", question[:60])
+            return dict(cached)  # return a copy
+
         resolved_thread_id = thread_id or str(uuid4())
         initial_state = {
             "question": question,
@@ -1020,39 +1221,51 @@ class AgentGraph:
         final_state = self.graph.invoke(initial_state, config=config)
         output = self._format_output(final_state, resolved_thread_id)
 
-        if _EVAL_AVAILABLE and not preview_only:
-            try:
-                generated_sql = final_state.get("sql", output.get("sql", ""))
-                results = final_state.get("query_results", output.get("results", []))
-                dialect = (final_state.get("documentation") or {}).get("dialect", "sqlite")
-                
-                def _run_eval():
-                    try:
-                        eval_scores = evaluate_sql(
-                            question=question,
-                            sql=generated_sql,
-                            results=results,
-                            dialect=dialect,
-                            llm=self.llm,
-                        )
-                        post_evaluation_to_langsmith(
-                            question=question,
-                            sql=generated_sql,
-                            source_id=source_id,
-                            thread_id=resolved_thread_id,
-                            scores=eval_scores,
-                            latency=0.0,
-                            results_count=len(results),
-                            has_visualization=output.get("visualization") is not None,
-                            insight_count=len(output.get("insights", [])),
-                        )
-                    except Exception as exc:
-                        logger.warning("Background evaluation failed: %s", exc)
+        # Store in semantic cache on success
+        if not preview_only and output.get("status") == "completed" and not output.get("requires_approval"):
+            store_key = _build_semantic_cache_storage_key(
+                source_id, question, output.get("sql", "")
+            )
+            if len(_SEMANTIC_CACHE) >= _SEMANTIC_CACHE_MAX:
+                _SEMANTIC_CACHE.pop(next(iter(_SEMANTIC_CACHE)))
+            _SEMANTIC_CACHE[cache_key] = dict(output)
+            _SEMANTIC_CACHE[store_key] = dict(output)
 
-                import threading
-                threading.Thread(target=_run_eval, daemon=True).start()
-            except Exception as exc:
-                logger.warning("Failed to start background evaluation: %s", exc)
+        if _EVAL_AVAILABLE and not preview_only:
+            import random
+            if random.random() < app_settings.EVALUATION_SAMPLE_RATE:
+                try:
+                    generated_sql = final_state.get("sql", output.get("sql", ""))
+                    results = final_state.get("query_results", output.get("results", []))
+                    dialect = (final_state.get("documentation") or {}).get("dialect", "sqlite")
+                    
+                    def _run_eval():
+                        try:
+                            eval_scores = evaluate_sql(
+                                question=question,
+                                sql=generated_sql,
+                                results=results,
+                                dialect=dialect,
+                                llm=self.llm,
+                            )
+                            post_evaluation_to_langsmith(
+                                question=question,
+                                sql=generated_sql,
+                                source_id=source_id,
+                                thread_id=resolved_thread_id,
+                                scores=eval_scores,
+                                latency=0.0,
+                                results_count=len(results),
+                                has_visualization=output.get("visualization") is not None,
+                                insight_count=len(output.get("insights", [])),
+                            )
+                        except Exception as exc:
+                            logger.warning("Background evaluation failed: %s", exc)
+
+                    import threading
+                    threading.Thread(target=_run_eval, daemon=True).start()
+                except Exception as exc:
+                    logger.warning("Failed to start background evaluation: %s", exc)
 
         return output
 

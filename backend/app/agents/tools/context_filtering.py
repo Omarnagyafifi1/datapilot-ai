@@ -11,7 +11,7 @@ def filter_schema_context(llm: BaseLLM, full_schema_str: str, question: str) -> 
     try:
         schema_data = json.loads(full_schema_str)
         tables = schema_data.get("tables", [])
-        if len(tables) <= 10:
+        if len(tables) <= 20:
             return full_schema_str
 
         prompt = CONTEXT_FILTER_PROMPT.format(

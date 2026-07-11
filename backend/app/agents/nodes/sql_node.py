@@ -47,7 +47,7 @@ def run_sql_node(state: AgentState, llm: BaseLLM) -> dict:
         scenario_context=scenario_context,
     )
 
-    sql = _sanitize_sql(llm.generate(prompt, system_message=SQL_SYSTEM_MESSAGE, max_tokens=300))
+    sql = _sanitize_sql(llm.generate(prompt, system_message=SQL_SYSTEM_MESSAGE, max_tokens=1024))
 
     if _is_noop_query(sql):
         logger.warning(

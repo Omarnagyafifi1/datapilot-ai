@@ -12,10 +12,15 @@ Understand the user's question below and generate the correct SQL query.
 {scenario_context}
 
 ### Thinking Process (Internal Reasoning)
-Step 1. Analyze the question — what columns, filters, groupings, and calculations are asked for?
-Step 2. Map each request to the schema — which table and column provides each piece?
+Step 1. Analyze the question — what columns, filters, groupings, and calculations are asked for? List each distinct user request.
+Step 2. Map each request to the schema — which table and column provides each piece.
 Step 3. Plan the query — SELECT, FROM, JOINs, WHERE, GROUP BY, HAVING, ORDER BY, LIMIT.
-Step 4. Verify — does the SELECT clause contain ONLY the requested columns? Are all filters applied?
+Step 4. Verify — write this checklist explicitly:
+  - The user asked for: [list each distinct requirement from the question]
+  - My SELECT provides: [map each requirement to a column/expression]
+  - My WHERE filters: [list each filter and which requirement it satisfies]
+  - My GROUP BY / HAVING / ORDER BY: [explain how they map to the question]
+  - Every requirement above is addressed. If any is missing, add it.
 
 ### Principles (use judgment, not rigidity)
 1. Use ONLY column and table names that exist in the schema above. Never invent columns.
@@ -25,7 +30,7 @@ Step 4. Verify — does the SELECT clause contain ONLY the requested columns? Ar
 5. For "top N" / "most/least" queries: use ORDER BY + LIMIT. Include descriptive columns (name, title) in SELECT.
 6. For JOIN queries: include descriptive names in SELECT, not just IDs. Use meaningful table aliases.
 7. If the user asks for data that does not exist in the schema at all, return: SELECT 'ERROR: Requested data not found in schema' AS error;
-8. For Arabic questions: translate the question mentally to English, then use ONLY the English column/table names from schema. Never output Arabic text in the SQL itself. Never invent _ar column variants.
+8. BILINGUAL SUPPORT: If the user's question is in Arabic, use columns with `_ar` suffixes for display/text columns (e.g., `name_ar`, `department_ar`). Use English columns for filtering/joins (e.g., `department_id`). Never output Arabic text inside the SQL itself.
 9. Append LIMIT {max_rows} when appropriate (not for aggregation queries or queries with ORDER BY)."""
 
 # Specialized prompts for Modification operations
@@ -197,12 +202,35 @@ You are an expert data architect. Your task is to analyze the user's question an
 1. Identify all tables that must be joined or queried.
 2. Identify all columns necessary for filtering (WHERE clauses), grouping (GROUP BY), or displaying (SELECT).
 3. Include foreign key columns necessary for joins.
-4. BILINGUAL SUPPORT: If the user's question is in Arabic, you MUST preserve all columns that end with `_ar` (e.g., `name_ar`, `department_ar`, `location_ar`, `job_title_ar`, etc.) to support bilingual queries.
+4. BILINGUAL SUPPORT: If the user's question is in Arabic, preserve all columns that end with `_ar` (e.g., `name_ar`, `department_ar`) — these are needed for display. Also keep the corresponding English ID columns for JOINs and filters.
 5. Output ONLY a valid JSON object containing the filtered schema. Use the exact same structure as the input schema but only include the relevant elements.
 6. If the question cannot be answered with the given schema, return an empty tables list: {{"tables": []}}.
 
 ### Output Format
 Return ONLY the raw JSON. No markdown blocks, no explanations.
+"""
+
+ROUTER_AND_FILTER_PROMPT = """
+You are an expert data architect and intent classifier. Your tasks:
+
+1. CLASSIFY INTENT: Determine if the user's question is an INQUIRE (read/analyze), ADD (insert), UPDATE (modify), or DELETE (remove) operation. Output the intent as a string.
+
+2. FILTER SCHEMA: Identify the MINIMAL subset of tables and columns needed to answer the question. Keep all foreign key columns and `_ar` columns for Arabic questions.
+
+### Full Database Schema
+{full_schema}
+
+### User Question
+{question}
+
+### Output Format
+Return ONLY a valid JSON object with exactly this structure — no markdown, no extra text:
+{{
+  "intent": "INQUIRE",
+  "filtered_schema": {{ "tables": [...] }}
+}}
+
+Use the exact same table/column structure as the input schema.
 """
 
 SCENARIO_LESSON_PROMPT = """
