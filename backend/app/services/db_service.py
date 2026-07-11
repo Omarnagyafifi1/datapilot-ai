@@ -1,10 +1,11 @@
 import os
 import re
 import threading
+import time
 
 import pandas as pd
 import sqlite3
-from sqlalchemy import create_engine, inspect, text
+from sqlalchemy import create_engine, event, inspect, text
 from sqlalchemy.engine import Engine
 from fastapi import HTTPException
 from urllib.parse import quote_plus
@@ -159,16 +160,48 @@ def _get_upload_dir() -> str:
     return upload_dir
 
 
+def _set_sqlite_busy_timeout(dbapi_conn, connection_record) -> None:
+    """Ensure every new SQLite connection waits on lock contention."""
+    try:
+        cursor = dbapi_conn.cursor()
+        cursor.execute("PRAGMA busy_timeout=30000")
+        cursor.close()
+    except Exception:  # pragma: no cover - best effort
+        pass
+
+
 def _set_sqlite_pragmas(engine: Engine) -> None:
-    with engine.connect() as conn:
-        conn.execute(text("PRAGMA journal_mode=WAL"))
-        conn.execute(text("PRAGMA busy_timeout=30000"))
-        conn.execute(text("PRAGMA synchronous=NORMAL"))
-        conn.commit()
+    """Enable WAL mode with retries to survive brief 'database is locked' races."""
+    last_err: Exception | None = None
+    for attempt in range(10):
+        try:
+            with engine.connect() as conn:
+                conn.execution_options(isolation_level="AUTOCOMMIT")
+                conn.execute(text("PRAGMA busy_timeout=30000"))
+                conn.execute(text("PRAGMA journal_mode=WAL"))
+                conn.execute(text("PRAGMA synchronous=NORMAL"))
+                conn.commit()
+            return
+        except Exception as exc:  # noqa: BLE001
+            last_err = exc
+            time.sleep(0.2 * (attempt + 1))
+    if last_err:
+        logger.warning("Could not set SQLite WAL pragmas after retries: %s", last_err)
 
 def upload_csv_to_sqlite(csv_path: str, source_id: str, table_name: str = None) -> tuple:
     """Uploads a CSV to a temporary SQLite database and returns (conn_string, table_name)."""
     try:
+        # Dispose any cached engine + clear schema/conn caches for this source.
+        # A previously cached SQLAlchemy engine keeps a pool of open connections
+        # to this exact .db file. Those lingering connections (or a half-open
+        # read transaction) hold SQLite locks and cause "database is locked"
+        # when we open a separate direct sqlite3 connection below. Releasing the
+        # engine first guarantees we are the only writer on the file.
+        try:
+            close_engine(source_id)
+        except Exception:  # pragma: no cover - best effort
+            logger.exception("Non-fatal: failed to close engine for source_id=%s before upload", source_id)
+
         df = pd.read_csv(csv_path)
         df = _normalize_numeric_text_columns(df)
         upload_dir = _get_upload_dir()
@@ -183,12 +216,45 @@ def upload_csv_to_sqlite(csv_path: str, source_id: str, table_name: str = None) 
                 table_name = f"table_{table_name}"
 
         import sqlite3 as _sqlite3
+
+        def _apply_pragmas(c):
+            last = None
+            for attempt in range(10):
+                try:
+                    c.execute("PRAGMA busy_timeout=30000")
+                    c.execute("PRAGMA journal_mode=WAL")
+                    c.execute("PRAGMA synchronous=NORMAL")
+                    return
+                except Exception as e:  # noqa: BLE001
+                    last = e
+                    time.sleep(0.2 * (attempt + 1))
+            if last:
+                logger.warning("Could not set WAL pragmas on %s: %s", db_path, last)
+
+        def _write_df(conn, tbl):
+            # Retry the write a few times — even with busy_timeout, a brief
+            # contention window (e.g. from the WAL pragma transition or a stray
+            # reader) can surface as "database is locked".
+            last_err = None
+            for attempt in range(5):
+                try:
+                    df.to_sql(tbl, conn, if_exists="replace", index=False)
+                    return
+                except Exception as exc:  # noqa: BLE001
+                    last_err = exc
+                    msg = str(exc).lower()
+                    if "database is locked" in msg:
+                        logger.warning("to_sql locked on %s (attempt %d), retrying", db_path, attempt + 1)
+                        time.sleep(0.3 * (attempt + 1))
+                        continue
+                    raise
+            if last_err:
+                raise last_err
+
         conn = _sqlite3.connect(db_path, timeout=30)
         try:
-            conn.execute("PRAGMA journal_mode=WAL")
-            conn.execute("PRAGMA busy_timeout=30000")
-            conn.execute("PRAGMA synchronous=NORMAL")
-            df.to_sql(table_name, conn, if_exists="replace", index=False)
+            _apply_pragmas(conn)
+            _write_df(conn, table_name)
         finally:
             conn.close()
 
@@ -219,14 +285,25 @@ def get_engine(source_id: str, conn_string: str) -> Engine:
     if _SOURCE_CONN_STRINGS.get(source_id, None) is not None and _SOURCE_CONN_STRINGS[source_id] != normalized_conn_string:
         _SCHEMA_CACHE.pop(source_id, None)
         logger.info("Schema cache invalidated for source_id=%s: conn_string changed", source_id)
-    connect_args = {"timeout": 30} if _is_sqlite_conn_string(normalized_conn_string) else {}
-    engine = create_engine(normalized_conn_string, connect_args=connect_args)
-    if engine.dialect.name == "oracle":
-        engine.dialect.exclude_tablespaces = ()
-    if engine.dialect.name == "sqlite":
-        _set_sqlite_pragmas(engine)
-    _ENGINE_CACHE[source_id] = engine
-    _SOURCE_CONN_STRINGS[source_id] = normalized_conn_string
+    # Serialize engine creation so the WAL pragma isn't run concurrently.
+    with _ENGINE_CACHE_LOCK:
+        cached = _ENGINE_CACHE.get(source_id)
+        if cached is not None and _SOURCE_CONN_STRINGS.get(source_id) == normalized_conn_string:
+            return cached
+        if _is_sqlite_conn_string(normalized_conn_string):
+            engine = create_engine(
+                normalized_conn_string,
+                pool_pre_ping=True,
+                connect_args={"timeout": 30, "check_same_thread": False},
+            )
+            event.listen(engine, "connect", _set_sqlite_busy_timeout)
+            _set_sqlite_pragmas(engine)
+        else:
+            engine = create_engine(normalized_conn_string, connect_args={})
+        if engine.dialect.name == "oracle":
+            engine.dialect.exclude_tablespaces = ()
+        _ENGINE_CACHE[source_id] = engine
+        _SOURCE_CONN_STRINGS[source_id] = normalized_conn_string
     return engine
 
 
