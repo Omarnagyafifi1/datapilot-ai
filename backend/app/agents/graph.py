@@ -363,10 +363,18 @@ def scenario_lookup_node(state: AgentState) -> dict:
     }
 
     if matched:
-        result["sql"] = matched["sql"]
         result["scenario_matched"] = True
         result["scenario_similarity"] = float(matched["score"])
         result["documentation"]["scenario_reference_question"] = matched["question"]
+        result["documentation"]["scenario_reference_sql"] = matched["sql"]
+        matched_note = (
+            f"\n### Matched Reference (similarity={float(matched['score']):.2f})\n"
+            f"  Question: {matched['question']}\n"
+            f"  SQL: {matched['sql']}\n"
+        )
+        result["documentation"]["scenario_context"] = (
+            result["documentation"]["scenario_context"] + matched_note
+        )
 
     return result
 
