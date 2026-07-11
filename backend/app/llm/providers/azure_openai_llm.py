@@ -50,17 +50,29 @@ class AzureOpenAILLM(BaseLLM):
             base_url.split("/")[2] if "//" in base_url else "configured",
         )
 
+    def _supports_max_completion_tokens(self) -> bool:
+        name = self.deployment.lower()
+        return any(kw in name for kw in ["gpt-5", "o1", "o2", "o3", "o4", "o5"])
+
     def generate(self, prompt: str, system_message: Optional[str] = None, max_tokens: Optional[int] = None) -> str:
         messages = []
         if system_message:
             messages.append({"role": "system", "content": system_message})
         messages.append({"role": "user", "content": prompt})
 
-        kwargs = {
-            "model": self.deployment,
-            "messages": messages,
-            "max_tokens": max_tokens or 1024,
-        }
+        max_param = max_tokens or 1024
+        if self._supports_max_completion_tokens():
+            kwargs = {
+                "model": self.deployment,
+                "messages": messages,
+                "max_completion_tokens": max_param,
+            }
+        else:
+            kwargs = {
+                "model": self.deployment,
+                "messages": messages,
+                "max_tokens": max_param,
+            }
 
         response = self.client.chat.completions.create(**kwargs)
         msg = response.choices[0].message

@@ -160,6 +160,20 @@ def _get_upload_dir() -> str:
     return upload_dir
 
 
+def _get_sqlite_db_dir() -> str:
+    """Get directory for SQLite DB files — always uses local storage.
+
+    Azure Files (/mnt/uploads) does not support POSIX file locking, so
+    SQLite databases must live on local/ephemeral storage.
+    """
+    db_dir = os.getenv("LOCAL_DB_DIR", "")
+    if not db_dir:
+        project_root = _get_project_root()
+        db_dir = os.path.join(project_root, "data")
+    os.makedirs(db_dir, exist_ok=True)
+    return db_dir
+
+
 def _set_sqlite_busy_timeout(dbapi_conn, connection_record) -> None:
     """Ensure every new SQLite connection waits on lock contention."""
     try:
@@ -204,8 +218,8 @@ def upload_csv_to_sqlite(csv_path: str, source_id: str, table_name: str = None) 
 
         df = pd.read_csv(csv_path)
         df = _normalize_numeric_text_columns(df)
-        upload_dir = _get_upload_dir()
-        db_path = os.path.join(upload_dir, f"{source_id}.db")
+        db_dir = _get_sqlite_db_dir()
+        db_path = os.path.join(db_dir, f"{source_id}.db")
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
         db_path = os.path.abspath(db_path)
         conn_string = f"sqlite:///{db_path}"
