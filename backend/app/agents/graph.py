@@ -638,7 +638,7 @@ def insight_node(state: AgentState, llm: BaseLLM) -> dict:
 
 def suggestion_node(state: AgentState, llm: BaseLLM) -> dict:
     # Skip suggestions for trivial queries (1 row = list tables, count, etc.)
-    if not state.query_results or len(state.query_results) <= 1:
+    if not state.query_results:
         return {"suggestions": []}
 
     schema_str = (state.documentation or {}).get("schema", "")
@@ -861,8 +861,8 @@ class AgentGraph:
                 try:
                     result = future.result()
                     results.update(result)
-                except Exception as exc:
-                    logger.warning("post_process_node %s failed: %s", key, exc)
+                except Exception:
+                    logger.exception("post_process_node %s failed", key)
                     if key == "insights":
                         results["insights"] = _fallback_insights()
                     elif key == "suggestions":

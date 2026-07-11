@@ -272,7 +272,8 @@ def upload_csv_to_sqlite(csv_path: str, source_id: str, table_name: str = None) 
         finally:
             conn.close()
 
-        _SOURCE_CONN_STRINGS[source_id] = conn_string
+        with _SOURCE_CONN_STRINGS_LOCK:
+            _SOURCE_CONN_STRINGS[source_id] = conn_string
         logger.info(f"Successfully uploaded {csv_path} to {db_path} as table {table_name}")
 
         try:
@@ -292,38 +293,39 @@ def _is_sqlite_conn_string(conn_string: str) -> bool:
 
 def get_engine(source_id: str, conn_string: str) -> Engine:
     normalized_conn_string = _normalize_conn_string_for_sync(conn_string)
-    cached = _ENGINE_CACHE.get(source_id)
-    if cached is not None and _SOURCE_CONN_STRINGS.get(source_id) == normalized_conn_string:
-        return cached
-    # If conn_string changed, invalidate schema cache for this source
-    if _SOURCE_CONN_STRINGS.get(source_id, None) is not None and _SOURCE_CONN_STRINGS[source_id] != normalized_conn_string:
-        _SCHEMA_CACHE.pop(source_id, None)
-        logger.info("Schema cache invalidated for source_id=%s: conn_string changed", source_id)
-    # Serialize engine creation so the WAL pragma isn't run concurrently.
-    with _ENGINE_CACHE_LOCK:
+    with _SOURCE_CONN_STRINGS_LOCK:
         cached = _ENGINE_CACHE.get(source_id)
         if cached is not None and _SOURCE_CONN_STRINGS.get(source_id) == normalized_conn_string:
             return cached
-        if _is_sqlite_conn_string(normalized_conn_string):
-            engine = create_engine(
-                normalized_conn_string,
-                pool_pre_ping=True,
-                connect_args={"timeout": 30, "check_same_thread": False},
-            )
-            event.listen(engine, "connect", _set_sqlite_busy_timeout)
-            _set_sqlite_pragmas(engine)
-        else:
-            engine = create_engine(normalized_conn_string, connect_args={})
-        if engine.dialect.name == "oracle":
-            engine.dialect.exclude_tablespaces = ()
-        _ENGINE_CACHE[source_id] = engine
-        _SOURCE_CONN_STRINGS[source_id] = normalized_conn_string
+        if _SOURCE_CONN_STRINGS.get(source_id, None) is not None and _SOURCE_CONN_STRINGS[source_id] != normalized_conn_string:
+            with _SCHEMA_CACHE_LOCK:
+                _SCHEMA_CACHE.pop(source_id, None)
+            logger.info("Schema cache invalidated for source_id=%s: conn_string changed", source_id)
+        with _ENGINE_CACHE_LOCK:
+            cached = _ENGINE_CACHE.get(source_id)
+            if cached is not None and _SOURCE_CONN_STRINGS.get(source_id) == normalized_conn_string:
+                return cached
+            if _is_sqlite_conn_string(normalized_conn_string):
+                engine = create_engine(
+                    normalized_conn_string,
+                    pool_pre_ping=True,
+                    connect_args={"timeout": 30, "check_same_thread": False},
+                )
+                event.listen(engine, "connect", _set_sqlite_busy_timeout)
+                _set_sqlite_pragmas(engine)
+            else:
+                engine = create_engine(normalized_conn_string, connect_args={})
+            if engine.dialect.name == "oracle":
+                engine.dialect.exclude_tablespaces = ()
+            _ENGINE_CACHE[source_id] = engine
+            _SOURCE_CONN_STRINGS[source_id] = normalized_conn_string
     return engine
 
 
 def _ensure_sqlite_path_resolved(source_id: str) -> str:
     """Ensure SQLite database path is resolved correctly for the source. Returns the resolved conn_string."""
-    conn_string = _SOURCE_CONN_STRINGS.get(source_id)
+    with _SOURCE_CONN_STRINGS_LOCK:
+        conn_string = _SOURCE_CONN_STRINGS.get(source_id)
     if conn_string is None:
         return None
 
@@ -354,7 +356,8 @@ def _ensure_sqlite_path_resolved(source_id: str) -> str:
             )
         if found_path != db_path:
             normalized_path = os.path.abspath(found_path)
-            _SOURCE_CONN_STRINGS[source_id] = f"sqlite:///{normalized_path}"
+            with _SOURCE_CONN_STRINGS_LOCK:
+                _SOURCE_CONN_STRINGS[source_id] = f"sqlite:///{normalized_path}"
             return f"sqlite:///{normalized_path}"
 
     return conn_string
@@ -451,8 +454,10 @@ def close_engine(source_id: str) -> None:
             engine.dispose()
         except Exception:
             logger.exception("Failed to dispose engine for source_id=%s", source_id)
-    _SOURCE_CONN_STRINGS.pop(source_id, None)
-    _SCHEMA_CACHE.pop(source_id, None)
+    with _SOURCE_CONN_STRINGS_LOCK:
+        _SOURCE_CONN_STRINGS.pop(source_id, None)
+    with _SCHEMA_CACHE_LOCK:
+        _SCHEMA_CACHE.pop(source_id, None)
 
 
 def _get_project_root() -> str:
@@ -495,7 +500,8 @@ def _find_sqlite_db_path(db_path: str) -> str | None:
 
 
 def get_source_schema(source_id: str) -> dict:
-    conn_string = _SOURCE_CONN_STRINGS.get(source_id)
+    with _SOURCE_CONN_STRINGS_LOCK:
+        conn_string = _SOURCE_CONN_STRINGS.get(source_id)
     if conn_string is None:
         raise HTTPException(status_code=404, detail="Data source not found")
 
@@ -524,11 +530,13 @@ def get_source_schema(source_id: str) -> dict:
         if found_path != db_path:
             logger.info("Fixed SQLite path for source_id=%s: %s -> %s", source_id, db_path, found_path)
             normalized_path = os.path.abspath(found_path)
-            _SOURCE_CONN_STRINGS[source_id] = f"sqlite:///{normalized_path}"
+            with _SOURCE_CONN_STRINGS_LOCK:
+                _SOURCE_CONN_STRINGS[source_id] = f"sqlite:///{normalized_path}"
             conn_string = f"sqlite:///{normalized_path}"
 
-    if source_id in _SCHEMA_CACHE:
-        return _SCHEMA_CACHE[source_id]
+    with _SCHEMA_CACHE_LOCK:
+        if source_id in _SCHEMA_CACHE:
+            return _SCHEMA_CACHE[source_id]
 
     try:
         engine = get_engine(source_id=source_id, conn_string=conn_string)
@@ -581,7 +589,8 @@ def get_source_schema(source_id: str) -> dict:
                 )
 
             result = {"tables": tables}
-            _SCHEMA_CACHE[source_id] = result
+            with _SCHEMA_CACHE_LOCK:
+                _SCHEMA_CACHE[source_id] = result
             return result
     except HTTPException:
         raise
@@ -594,11 +603,13 @@ class DBService:
     def __init__(self, source_id: str = "default", conn_string: str | None = None) -> None:
         self.source_id = source_id
         if conn_string:
-            _SOURCE_CONN_STRINGS[source_id] = _normalize_conn_string_for_sync(conn_string)
+            with _SOURCE_CONN_STRINGS_LOCK:
+                _SOURCE_CONN_STRINGS[source_id] = _normalize_conn_string_for_sync(conn_string)
 
     def get_dialect(self, source_id: str | None = None) -> str:
         resolved_source_id = source_id or self.source_id
-        conn_string = _SOURCE_CONN_STRINGS.get(resolved_source_id)
+        with _SOURCE_CONN_STRINGS_LOCK:
+            conn_string = _SOURCE_CONN_STRINGS.get(resolved_source_id)
         if conn_string is None:
             return "sqlite"
         return _dialect_from_conn_string(conn_string)

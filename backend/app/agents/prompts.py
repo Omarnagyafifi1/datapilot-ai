@@ -1,75 +1,32 @@
 SQL_SYSTEM_MESSAGE = """You are an expert SQLite database engineer. You write precise, correct SQL queries. Your output must contain ONLY the raw SQL — no markdown, no explanations, no backticks."""
 
 SQL_GENERATION_PROMPT = """
-### Database Schema
-{schema}
-{scenario_context}
+### Your Task
+Understand the user's question below and generate the correct SQL query.
 
 ### User Question
 {question}
 
+### Database Schema
+{schema}
+{scenario_context}
+
 ### Thinking Process (Internal Reasoning)
-Before generating the query, mentally perform these steps:
-Step 1. Column Analysis: Identify exactly which attributes the user requested.
-Step 2. Schema Mapping: Map each requested attribute to its specific table and column in the schema.
-Step 3. JOIN Identification: If the mapped columns span multiple tables, you MUST perform a JOIN. Do not substitute a missing attribute with a vaguely related column from the primary table.
-Step 4. Final Verification: Ensure the SELECT clause contains ONLY the requested columns. Do not add unrequested descriptive columns.
+Step 1. Analyze the question — what columns, filters, groupings, and calculations are asked for?
+Step 2. Map each request to the schema — which table and column provides each piece?
+Step 3. Plan the query — SELECT, FROM, JOINs, WHERE, GROUP BY, HAVING, ORDER BY, LIMIT.
+Step 4. Verify — does the SELECT clause contain ONLY the requested columns? Are all filters applied?
 
-### Rules
-CRITICAL: NEVER output `SELECT 1`, `SELECT 1;`, or any query without a FROM clause referencing at least one schema table. A bare SELECT without FROM is NEVER a valid answer. If no schema table matches, use rule 21's error format.
-
-1. Use ONLY table and column names from the schema above. Never invent columns.
-2. Return ONLY the raw SQL query. No markdown, no backticks, no explanations.
+### Principles (use judgment, not rigidity)
+1. Use ONLY column and table names that exist in the schema above. Never invent columns.
+2. Return ONLY the raw SQL query. No markdown, no backticks, no explanations. End with `;`.
 3. Query must be read-only. No INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE.
-4. Append LIMIT {max_rows} only if the query has no aggregate functions (COUNT, SUM, AVG, MIN, MAX) and no ORDER BY.
-18.5 Enhance Arabic keyword detection for revenue calculations:
-    - If Arabic question contains "إجمالي" (total), "مجموع" (sum), "revenue" (revenue), "إيرادات" (revenues) – detect as SUM aggregation
-    - Map single-column SUM aggregations to the actual column being summed
-    - Prevent over-joining for pure aggregation queries
-5. Never use SELECT *. Include ONLY the columns strictly requested. Do NOT add extra descriptive columns unless they are explicitly asked for or necessary to answer the question.
-6. Include WHERE-column values in SELECT when the question says "with X" or "above/below X" (e.g. "with salaries above 80000" → SELECT salary). Exclude filter-only columns from SELECT when they're just labels (e.g. "category = 'Electronics'" → no need to output 'Electronics').
-7. For "find/show which X" queries that could return duplicates, use DISTINCT. But NOT for "most/least/top" queries.
-8. For "top N" or "most/least/best/highest" queries, use ORDER BY + LIMIT (not DISTINCT). Include ALL descriptive columns (name, product_name, unit_price, etc.) in SELECT — not just one.
-9. For "average" calculations, use ROUND(AVG(...), 2).
-10. For GROUP BY queries, include all non-aggregated SELECT columns in GROUP BY.
-11. For "exceeding/above/more than" on aggregates, use HAVING after GROUP BY. The aggregate column MUST also appear in SELECT.
-12. For aggregate-in-SELECT rules:
-    - If SELECT uses SUM(X), include SUM(X) in SELECT.
-    - If ORDER BY uses SUM(X), include SUM(X) in SELECT.
-    - If HAVING uses SUM(X), include SUM(X) in SELECT.
-13. When a question says "show/list X with Y info", include the descriptive columns (name, title) AND the aggregate. Do NOT add contact columns (email, phone, address) unless asked.
-14. For "per something" queries (e.g. "per customer", "per department"), always join to get the name, never use the ID alone in SELECT.
-15. For subqueries, use unique aliases that don't conflict with outer query tables.
-16. For comparison queries ("more than", "less than", "above", "below", "higher than", "earn more than"), include the compared value column (e.g. salary) AND the grouping column (e.g. dept_name) in SELECT.
-17. NEVER use T1/T2/T3 aliases. Use meaningful first-letter aliases (c for customers, p for products, o for orders, s for suppliers, etc.).
-18. For 3-table JOINs: the table with the most relevant condition data is the anchor. Always JOIN it first, then add related tables. E.g., for "products with inventory and supplier info": FROM inventory i JOIN products p ON i.product_id = p.product_id JOIN suppliers s ON p.supplier_id = s.supplier_id.
-19. For JOIN queries, only include columns from the joined tables that directly answer the question. Rely on the JOIN Identification step: always JOIN related tables if requested attributes reside there.
-20. For IDs: include FK ID columns only if they help answer the question (e.g., "which department" = include dept_name, not dept_id).
-21. STRICT SCHEMA MATCHING: If the user asks for data, metrics, concepts, or tables (e.g., 'profit', 'sales', 'customers', 'orders') that DO NOT exist in the provided schema, DO NOT guess or substitute them with unrelated columns or tables. You MUST NOT continue generating a query. You must output exactly: SELECT 'ERROR: Requested data or table not found in schema' AS error;
-22. ARABIC QUESTIONS — follow these EXACT steps:
-    Step 1: Detect if question contains Arabic characters (Unicode \u0600-\u06FF).
-    Step 2: Mentally translate the full Arabic question into English.
-    Step 3: Map the translated English words to the ACTUAL table and column names in the schema above. Use ONLY the exact English column and table names that exist in the schema. NEVER invent or assume Arabic (_ar) column variants.
-    Step 4: Identify the SQL technique from the English translation (JOIN, GROUP BY, WHERE, HAVING, aggregate).
-    Step 5: Generate the SQL exactly as you would for an English question — same tables, same JOINs, same filters, same English column names.
-    Common Arabic→English mappings for SQL concepts:
-    - "متوسط" = average → AVG(col)
-    - "لكل" / "كل" = per/each → GROUP BY
-    - "إجمالي" / "مجموع" = total → SUM(col)
-    - "عدد" / "كم" = count/how many → COUNT(*)
-    - "من هم" / "ما هي" / "ما هو" = who/what → SELECT
-    - "المكتملة" = completed → WHERE status = 'Completed'
-    - "قيد التنفيذ" = in progress → WHERE status = 'In Progress'
-    - "أعلى" / "أكبر" / "أكثر" = highest/most → ORDER BY DESC LIMIT
-    - "أقل" / "أدنى" = lowest/least → ORDER BY ASC LIMIT
-    - "إعادة تخزين" / "إعادة الطلب" = reorder/restock → WHERE quantity < reorder_level
-    CRITICAL: The SQL output must use ONLY the English column/table names from the schema. Never output Arabic text inside the SQL query itself.
-23. NEVER output incomplete SQL. The query must be syntactically complete (SELECT, FROM, WHERE/GROUP BY/ORDER BY fully formed).
-24. If the user uses generic terms (like "users", "people", "items"), try to map them to the closest logical table (e.g. "employees", "sales", "inventory"). ONLY return "ERROR: Insufficient schema context." if the question is completely unrelated to the entire database.
-25. Output must be a single line or multiple lines with ; at the end.
-26. LEARN FROM PAST EXAMPLES: Review the "Past Query Examples" section above. Study both successful and failed examples to avoid repeating past mistakes. If you see a failed example for a question similar to the current one, make sure to fix the error pattern described.
-27. NEVER output `SELECT 1`, `SELECT 1;`, or any query that does not reference at least one table from the schema. A query without a FROM clause or table reference is not an answer. If no schema table matches the question, output the error format from rule 21.
-28. FUZZY TABLE MATCHING: If the user mentions a concept not literally present as a table name (e.g., "stores", "retail", "products", "customers"), try to map it to the closest table in the schema (e.g., "stores" → "sales" or "inventory", "people" → "employees", "items" → "products" or "inventory"). Only output the ERROR format if the mapping is genuinely impossible (no related table exists)."""
+4. For aggregation queries (COUNT, SUM, AVG, MIN, MAX): include the aggregate column in SELECT; do NOT add LIMIT.
+5. For "top N" / "most/least" queries: use ORDER BY + LIMIT. Include descriptive columns (name, title) in SELECT.
+6. For JOIN queries: include descriptive names in SELECT, not just IDs. Use meaningful table aliases.
+7. If the user asks for data that does not exist in the schema at all, return: SELECT 'ERROR: Requested data not found in schema' AS error;
+8. For Arabic questions: translate the question mentally to English, then use ONLY the English column/table names from schema. Never output Arabic text in the SQL itself. Never invent _ar column variants.
+9. Append LIMIT {max_rows} when appropriate (not for aggregation queries or queries with ORDER BY)."""
 
 # Specialized prompts for Modification operations
 SQL_ADD_PROMPT = """

@@ -1,3 +1,4 @@
+import threading
 import time
 from typing import Any, Optional
 from uuid import uuid4
@@ -309,7 +310,9 @@ def get_datasource_schema(
         return _resp(success=False, message=f"Failed to fetch schema: {str(e)}", data=None)
 
 
-_SUGGESTIONS_CACHE: dict[str, list[dict[str, str]]] = {}
+_SUGGESTIONS_CACHE: dict[str, tuple[float, list[dict[str, str]]]] = {}
+_SUGGESTIONS_CACHE_LOCK = threading.Lock()
+_SUGGESTIONS_CACHE_TTL = 3600  # 1 hour
 
 
 def _fetch_sample_rows(source_id: str, tables: list[dict], max_tables: int = 3) -> str:
@@ -330,8 +333,11 @@ def _fetch_sample_rows(source_id: str, tables: list[dict], max_tables: int = 3) 
 
 def _generate_and_cache_suggestions(source_id: str, graph) -> None:
     """Generate LLM-powered suggestions and cache them. Safe to call from background threads."""
-    if source_id in _SUGGESTIONS_CACHE:
-        return
+    with _SUGGESTIONS_CACHE_LOCK:
+        if source_id in _SUGGESTIONS_CACHE:
+            cached_at, _ = _SUGGESTIONS_CACHE[source_id]
+            if time.time() - cached_at < _SUGGESTIONS_CACHE_TTL:
+                return
 
     try:
         schema = db_service.get_source_schema(source_id)
@@ -356,9 +362,10 @@ def _generate_and_cache_suggestions(source_id: str, graph) -> None:
         ).replace("{sample_data}", sample_data if sample_data else "No sample data available.")
         raw_response = graph.llm.generate(prompt)
         parsed = _parse_suggestions(raw_response)
-        if parsed:
-            _SUGGESTIONS_CACHE[source_id] = parsed[:4]
-            return
+        with _SUGGESTIONS_CACHE_LOCK:
+            if parsed:
+                _SUGGESTIONS_CACHE[source_id] = (time.time(), parsed[:4])
+                return
     except Exception:
         logger.warning("LLM suggestion generation failed, using fallback", exc_info=True)
 
@@ -371,7 +378,8 @@ def _generate_and_cache_suggestions(source_id: str, graph) -> None:
     fallback = []
     for t in tables[:4]:
         fallback.append({"ar": f"أظهر أول 10 صفوف من {t['name']}", "en": f"Show first 10 rows from {t['name']}"})
-    _SUGGESTIONS_CACHE[source_id] = fallback[:4]
+    with _SUGGESTIONS_CACHE_LOCK:
+        _SUGGESTIONS_CACHE[source_id] = (time.time(), fallback[:4])
 
 
 @router.get("/datasources/{id}/suggestions")
@@ -380,13 +388,20 @@ def get_datasource_suggestions(
     data_source_service: DataSourceService = Depends(get_data_source_service),
     graph=Depends(get_graph_orchestrator),
 ) -> dict[str, Any]:
-    if id in _SUGGESTIONS_CACHE:
-        return _resp(success=True, message="Suggestions fetched", data=_SUGGESTIONS_CACHE[id])
+    with _SUGGESTIONS_CACHE_LOCK:
+        cached = _SUGGESTIONS_CACHE.get(id)
+    if cached:
+        cached_at, cached_val = cached
+        if time.time() - cached_at < _SUGGESTIONS_CACHE_TTL:
+            return _resp(success=True, message="Suggestions fetched", data=cached_val)
 
     try:
         data_source_service.get_conn_string(id)
         _generate_and_cache_suggestions(id, graph)
-        return _resp(success=True, message="Suggestions fetched", data=_SUGGESTIONS_CACHE.get(id, []))
+        with _SUGGESTIONS_CACHE_LOCK:
+            cache_entry = _SUGGESTIONS_CACHE.get(id)
+        data = cache_entry[1] if cache_entry else []
+        return _resp(success=True, message="Suggestions fetched", data=data)
     except Exception as e:
         logger.exception("Suggestions fetch failed for source_id=%s", id)
         return _resp(success=False, message=f"Failed to fetch suggestions: {str(e)}", data=[])

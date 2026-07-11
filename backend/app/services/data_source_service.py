@@ -412,6 +412,22 @@ def delete_dataset(id: str) -> None:
             # Delete the source
             session.execute(delete(_DATA_SOURCES).where(_DATA_SOURCES.c.id == row["source_id"]))
             session.commit()
+
+            # Clean up caches and disk files
+            try:
+                from app.services.db_service import close_engine
+                close_engine(row["source_id"])
+            except Exception:
+                logger.exception("Failed to close engine for source_id=%s", row["source_id"])
+
+            try:
+                from app.services.db_service import _get_sqlite_db_dir as _get_db_dir
+                import os
+                db_path = os.path.join(_get_db_dir(), f"{row['source_id']}.db")
+                if os.path.exists(db_path):
+                    os.remove(db_path)
+            except Exception:
+                logger.exception("Failed to delete SQLite DB file for source_id=%s", row["source_id"])
         else:
             session.rollback()
             raise HTTPException(status_code=404, detail="Dataset not found")
