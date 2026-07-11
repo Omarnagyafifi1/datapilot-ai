@@ -1,8 +1,5 @@
 import { useState, useEffect } from 'react';
-import QueryInput from './components/QueryInput';
 import SQLViewer from './components/SQLViewer';
-import ResultsTable from './components/ResultsTable';
-import InsightBox from './components/InsightBox';
 import ConfirmationModal from '../components/ConfirmationModal';
 import ErrorMessage from '../components/ErrorMessage';
 import EmptyState from '../components/EmptyState';
@@ -17,6 +14,7 @@ export default function QueryPage({ selectedSourceId, selectedSource }) {
   const [editedSQL, setEditedSQL] = useState('');
   const [results, setResults] = useState([]);
   const [insights, setInsights] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [phase, setPhase] = useState('idle'); // idle | preview | executed
@@ -48,6 +46,7 @@ export default function QueryPage({ selectedSourceId, selectedSource }) {
     if (!q || !selectedSourceId) return;
     setResults([]);
     setInsights([]);
+    setSuggestions([]);
     setLoading(true);
     setError(null);
     try {
@@ -55,6 +54,7 @@ export default function QueryPage({ selectedSourceId, selectedSource }) {
       setGeneratedSQL(resp.sql || '');
       setEditedSQL(resp.sql || '');
       setInsights(resp.insights || []);
+      setSuggestions(resp.suggestions || []);
       setRequiresApproval(resp.requiresApproval || false);
       setThreadId(resp.threadId || null);
       if (resp.results) setResults(resp.results || []);
@@ -78,6 +78,7 @@ export default function QueryPage({ selectedSourceId, selectedSource }) {
         : await queryService.execute(question, sql, selectedSourceId, tid);
       setResults(resp.results || []);
       setInsights(resp.insights || []);
+      setSuggestions(resp.suggestions || []);
       setRequiresApproval(resp.requiresApproval || false);
       setThreadId(resp.threadId || null);
       setPhase('executed');
@@ -102,7 +103,22 @@ export default function QueryPage({ selectedSourceId, selectedSource }) {
         </div>
 
         <section className="space-y-4">
-          <QueryInput value={question} onChange={setQuestion} onPreview={() => handlePreview(question)} loading={loading} disabled={!selectedSourceId} />
+          <div className="glass rounded-2xl border-border p-4 space-y-3">
+            <textarea
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Ask a question about your data..."
+              disabled={!selectedSourceId}
+              className="w-full min-h-[80px] bg-black/40 font-mono text-xs text-foreground/80 p-4 rounded resize-vertical border-border"
+            />
+            <button
+              onClick={() => handlePreview(question)}
+              disabled={loading || !question.trim() || !selectedSourceId}
+              className="py-2.5 px-6 bg-cyber-cyan text-background font-mono font-bold text-xs uppercase rounded-lg hover:brightness-105 disabled:opacity-40 transition-all flex items-center gap-2"
+            >
+              {loading ? COPY.LOADING_GENERATING : COPY.PREVIEW_SQL}
+            </button>
+          </div>
         </section>
 
         <section className="space-y-4">
@@ -125,12 +141,78 @@ export default function QueryPage({ selectedSourceId, selectedSource }) {
         </section>
 
         <section className="space-y-4">
-          <ResultsTable data={results} loading={loading} />
+          {results.length > 0 ? (
+            <div className="glass rounded-2xl border-border overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm border-collapse">
+                  <thead>
+                    <tr className="bg-foreground/5">
+                      {Object.keys(results[0] || {}).map((key) => (
+                        <th key={key} className="px-4 py-3 font-semibold text-foreground/60 border-b border-border uppercase text-[10px] tracking-wider">
+                          {key}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {results.map((row, i) => (
+                      <tr key={i} className="hover:bg-foreground/[0.02] transition-colors">
+                        {Object.keys(row).map((key) => (
+                          <td key={key} className="px-4 py-3 text-foreground/80 whitespace-nowrap">{String(row[key] ?? '')}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <div className="glass p-6 rounded-2xl border-border text-center text-sm text-muted">{COPY.NO_RESULTS}</div>
+          )}
         </section>
 
         <section>
           {error && <ErrorMessage reason={error} />}
-          <InsightBox insights={insights} error={error} />
+          {insights.length > 0 && (
+            <div className="space-y-3 mb-4">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-foreground/40 uppercase tracking-widest">
+                AI Insights
+              </div>
+              <div className="space-y-2">
+                {insights.map((item, i) => {
+                  const isObj = typeof item === 'object' && item !== null;
+                  const enText = isObj ? (item.en || '') : String(item);
+                  const arText = isObj ? (item.ar || '') : '';
+                  return (
+                    <div key={i} className="glass p-4 rounded-xl border-border">
+                      {enText && <div className="text-sm text-foreground/80 leading-relaxed">{enText}</div>}
+                      {arText && <div className="text-sm text-cyber-cyan/95 leading-relaxed text-right" dir="rtl">{arText}</div>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {suggestions.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-foreground/40 uppercase tracking-widest">
+                Next Steps
+              </div>
+              <div className="space-y-2">
+                {suggestions.map((item, i) => {
+                  const isObj = typeof item === 'object' && item !== null;
+                  const enText = isObj ? (item.en || '') : String(item);
+                  const arText = isObj ? (item.ar || '') : '';
+                  return (
+                    <div key={i} className="glass p-4 rounded-xl border-border">
+                      {enText && <div className="text-sm text-foreground/80 leading-relaxed">{enText}</div>}
+                      {arText && <div className="text-sm text-cyber-cyan/95 leading-relaxed text-right" dir="rtl">{arText}</div>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </section>
       </div>
 

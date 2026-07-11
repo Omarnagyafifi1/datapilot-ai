@@ -13,7 +13,8 @@ export const queryService = {
         return {
           sql: data.sql || data.generated_sql || resp.data.answer || '',
           results: data.results || data.rows || null,
-          insights: data.insights || data.suggestions || data.explanation || [],
+          insights: data.insights || [],
+          suggestions: data.suggestions || [],
           requiresApproval: data.requires_approval || false,
           threadId: data.thread_id || null,
         };
@@ -34,7 +35,8 @@ export const queryService = {
         }
         return {
           results: data.results || data.rows || [],
-          insights: data.insights || data.suggestions || data.explanation || [],
+          insights: data.insights || [],
+          suggestions: data.suggestions || [],
           requiresApproval: data.requires_approval || false,
           threadId: data.thread_id || null,
         };
@@ -55,7 +57,8 @@ export const queryService = {
         }
         return {
           results: data.results || data.rows || [],
-          insights: data.insights || data.suggestions || data.explanation || [],
+          insights: data.insights || [],
+          suggestions: data.suggestions || [],
           requiresApproval: data.requires_approval || false,
           threadId: data.thread_id || null,
           message: resp.data.message || '',
@@ -65,7 +68,7 @@ export const queryService = {
       if (e.response?.data?.detail) throw new Error(getErrorMessage(e, 'Approval action failed'), { cause: e });
       throw e;
     }
-    return { results: [], insights: [], requiresApproval: false, threadId: null };
+    return { results: [], insights: [], suggestions: [], requiresApproval: false, threadId: null };
   }
 };
 
