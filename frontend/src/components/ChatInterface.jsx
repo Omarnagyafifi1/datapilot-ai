@@ -7,7 +7,7 @@ import {
 import { api } from '../lib/api';
 import { COPY } from '../lib/copy';
 import { ResultVisualizer } from './ResultVisualizer';
-import { cn } from '../lib/utils';
+import { cn, getErrorMessage } from '../lib/utils';
 
 // Helper to format timestamps
 function formatTime(isoString) {
@@ -473,7 +473,7 @@ const fetchSchema = async () => {
         setRightPanelTab('schema');
       }
     } catch (err) {
-      setConnectError(err.response?.data?.detail || "Connection failed.");
+      setConnectError(getErrorMessage(err, "Connection failed."));
     } finally {
       setConnectLoading(false);
     }

@@ -17,7 +17,6 @@ import bird_data.generate_eval_dataset as gen
 from app.core.config import settings
 from app.llm.factory import get_llm
 from app.services.db_service import DBService
-from app.services.schema_service import SchemaService
 from app.services.data_source_service import DataSourceService
 from app.services.evaluation_service import evaluate_sql, post_evaluation_to_langsmith
 from app.agents.graph import AgentGraph
@@ -113,7 +112,7 @@ def main():
 
     llm = get_llm(provider=settings.LLM_PROVIDER)
     mem = GraphMemoryBackends()
-    graph = AgentGraph(llm=llm, db_service=DBService(), schema_service=SchemaService(), checkpointer=mem.checkpointer, store=mem.store)
+    graph = AgentGraph(llm=llm, db_service=DBService(), schema_service=None, checkpointer=mem.checkpointer, store=mem.store)
 
     results = []
     total = len(examples)

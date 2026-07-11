@@ -135,20 +135,6 @@ You are an expert {dialect} database engineer tasked with debugging and fixing a
 4. OUTPUT: Return ONLY the corrected raw SQL query. Do not wrap it in markdown code blocks and do not include any reasoning or apology text.
 """
 
-ANSWER_PROMPT = """
-You are a professional data analyst. Your task is to provide a clear, natural-language answer to the user's question using ONLY the provided database results.
-
-### Inputs
-- User Question: {question}
-- Raw Database Results: {results}
-
-### Rules
-1. DIRECTNESS: Provide a concise, highly readable answer based strictly on the provided data. Do not hallucinate or add outside knowledge.
-2. NO DATA HANDLING: If the results are empty (e.g., `[]`, `None`), politely inform the user that no matching data was found.
-3. NON-TECHNICAL TONE: Never mention the database, SQL queries, schema, "rows", "columns", or "null values". Speak directly to the business value of the data.
-4. FORMATTING: If the results contain multiple records, format your response using a markdown table or clean bullet points to maximize readability.
-"""
-
 INSIGHT_PROMPT = """
 You are a bilingual (Arabic/English) data analyst assistant. Your task is to analyze the context of an implicit user query and its resulting data to generate highly valuable insights.
 

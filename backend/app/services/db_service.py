@@ -1,5 +1,6 @@
 import os
 import re
+import threading
 
 import pandas as pd
 import sqlite3
@@ -14,6 +15,10 @@ logger = get_logger(__name__)
 _ENGINE_CACHE: dict[str, Engine] = {}
 _SOURCE_CONN_STRINGS: dict[str, str] = {}
 _SCHEMA_CACHE: dict[str, dict] = {}
+
+_ENGINE_CACHE_LOCK = threading.Lock()
+_SOURCE_CONN_STRINGS_LOCK = threading.Lock()
+_SCHEMA_CACHE_LOCK = threading.Lock()
 
 _MONTH_NAME_TO_NUMBER = {
     "january": "01", "jan": "01",
@@ -62,8 +67,16 @@ def _strip_identifier_quotes(identifier: str) -> str:
     return identifier.strip().strip('"').strip("`").strip("[]")
 
 
+def _is_date_column(column_expr: str) -> bool:
+    """Check if a column name suggests it holds date/time data."""
+    name = _strip_identifier_quotes(column_expr).lower()
+    date_indicators = ["date", "_at", "_dt", "_ts", "_time", "timestamp"]
+    return any(indicator in name for indicator in date_indicators)
+
+
 def _rewrite_month_name_like_filters(sql: str) -> str:
-    """Rewrite Date LIKE '%May%' patterns into month-aware SQLite filtering for DD/MM/YYYY text."""
+    """Rewrite Date LIKE month patterns into month-aware SQLite filtering for DD/MM/YYYY text.
+    Handles '%May%', 'May%', '%-May-%', 'May' variants."""
 
     def replace(match: re.Match[str]) -> str:
         column_expr = match.group("column")
@@ -72,14 +85,13 @@ def _rewrite_month_name_like_filters(sql: str) -> str:
         if month_number is None:
             return match.group(0)
 
-        normalized_column_name = _strip_identifier_quotes(column_expr).lower()
-        if "date" not in normalized_column_name:
+        if not _is_date_column(column_expr):
             return match.group(0)
 
         return f"SUBSTR({column_expr}, 4, 2) = '{month_number}'"
 
     pattern = re.compile(
-        r'(?P<column>"[^"]+"|`[^`]+`|\[[^\]]+\]|\w+)\s+LIKE\s+\'%(?P<month>[A-Za-z]+)%\'',
+        r'(?P<column>"[^"]+"|`[^`]+`|\[[^\]]+\]|\w+)\s+LIKE\s+\'[%\-\s]*(?P<month>[A-Za-z]+)[%\-\s]*\'',
         re.IGNORECASE,
     )
     return pattern.sub(replace, sql)
@@ -89,8 +101,7 @@ def _rewrite_month_extraction_filters(sql: str) -> str:
     """Rewrite non-SQLite month extraction into DD/MM/YYYY-friendly predicates."""
 
     def month_replacement(column_expr: str, month_value: str, original: str) -> str:
-        normalized_column_name = _strip_identifier_quotes(column_expr).lower()
-        if "date" not in normalized_column_name:
+        if not _is_date_column(column_expr):
             return original
 
         month_number = month_value.zfill(2)

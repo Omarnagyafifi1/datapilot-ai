@@ -63,6 +63,8 @@ services:
     profiles: ["dev"]
     ports:
       - "8000:8000"
+    command: >
+      sh -c "python /app/backend/scripts/setup_demo_db.py || true; uvicorn app.main:app --host 0.0.0.0 --port 8000"
     environment:
       - LLM_PROVIDER=${LLM_PROVIDER:-groq}
       - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-}
@@ -72,7 +74,7 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GROQ_API_KEY=${GROQ_API_KEY:-}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-YSSM7OdRq3eqDgl-QT3fE7yQUMIsc5tuYKk9louIgLY=}
       - LANGSMITH_TRACING=${LANGSMITH_TRACING:-false}
       - LANGSMITH_API_KEY=${LANGSMITH_API_KEY:-}
       - LANGSMITH_PROJECT=${LANGSMITH_PROJECT:-datapilot-ai}
@@ -85,8 +87,8 @@ services:
 
   frontend-dev:
     build:
-      context: .
-      dockerfile: frontend/Dockerfile.dev
+      context: ./frontend
+      dockerfile: Dockerfile.dev
     container_name: datapilot-ai-frontend
     profiles: ["dev"]
     ports:

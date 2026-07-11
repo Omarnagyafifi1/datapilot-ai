@@ -23,7 +23,7 @@ from langchain_core.runnables import RunnableConfig
 from langgraph.graph import StateGraph, START, END
 from langgraph.store.memory import InMemoryStore
 from langgraph.types import Command, interrupt
-from app.agents.nodes.sql_node import run_sql_node
+from app.agents.nodes.sql_node import run_sql_node, _sanitize_sql
 from app.agents.prompts import (
     INSIGHT_PROMPT,
     SUGGESTION_PROMPT,
@@ -41,7 +41,6 @@ from app.llm.base_llm import BaseLLM
 from app.models.schemas import QueryDocument
 from app.agents.scenario_memory import ScenarioMemory
 from app.services.db_service import DBService
-from app.services.schema_service import SchemaService
 
 logger = get_logger(__name__)
 _ARABIC_PATTERN = re.compile(r"[\u0600-\u06FF]")
@@ -57,20 +56,6 @@ def _json_dumps(value: Any) -> str:
 def _is_error_sql(sql: str) -> bool:
     upper = sql.strip().upper()
     return upper.startswith("ERROR:") or "SELECT 'ERROR:" in upper or 'SELECT "ERROR:' in upper
-
-
-def _sanitize_sql(sql: str) -> str:
-    """Strip markdown code fences that LLMs sometimes add despite instructions."""
-    cleaned = sql.strip()
-    if cleaned.startswith("```"):
-        lines = cleaned.splitlines()
-        # Remove opening fence (```sql or ```) and closing fence (```)
-        if len(lines) >= 3 and lines[-1].strip().startswith("```"):
-            lines = lines[1:-1]
-        elif len(lines) >= 2 and lines[0].strip().startswith("```"):
-            lines = lines[1:]
-        cleaned = "\n".join(lines).strip()
-    return cleaned
 
 
 def _fallback_insights() -> list[dict[str, str]]:
@@ -197,13 +182,26 @@ def _normalize_suggestions(payload: Any) -> list[dict[str, str]] | None:
 
         ar_value = item.get("ar")
         en_value = item.get("en")
-        if not isinstance(ar_value, str) or not isinstance(en_value, str):
+
+        if isinstance(ar_value, str) and ar_value.strip():
+            ar_value = ar_value.strip()
+        else:
+            ar_value = ""
+
+        if isinstance(en_value, str) and en_value.strip():
+            en_value = en_value.strip()
+        else:
+            en_value = ""
+
+        if not ar_value and not en_value:
             continue
 
-        ar_value = ar_value.strip()
-        en_value = en_value.strip()
-        if ar_value and en_value:
-            normalized.append({"ar": ar_value, "en": en_value})
+        if not ar_value:
+            ar_value = en_value
+        if not en_value:
+            en_value = ar_value
+
+        normalized.append({"ar": ar_value, "en": en_value})
 
     if not normalized:
         return None
@@ -345,7 +343,7 @@ def intent_router_node(state: AgentState, llm: BaseLLM) -> dict:
     return {"intent": "INQUIRE"}
 
 
-def schema_node(state: AgentState, schema_service: SchemaService, llm: BaseLLM) -> dict:
+def schema_node(state: AgentState, schema_service: Any, llm: BaseLLM) -> dict:
     full_schema = fetch_schema_context(schema_service, state.source_id)
     filtered_schema = filter_schema_context(llm, full_schema, state.question)
     return {"documentation": {**state.documentation, "schema": filtered_schema}}
@@ -377,14 +375,12 @@ def _is_mock_output(output: str) -> bool:
     upper = output.strip().upper()
     if upper.startswith("MOCK") or "MOCK RESPONSE" in upper:
         return True
-    if len(output) > 500:
-        return True
     if "INSERT statement" in output or "UPDATE statement" in output or "DELETE statement" in output:
         return True
     return False
 
 
-def modification_sql_node(state: AgentState, llm: BaseLLM, schema_service: SchemaService) -> dict:
+def modification_sql_node(state: AgentState, llm: BaseLLM, schema_service: Any) -> dict:
     schema = fetch_schema_context(schema_service, state.source_id)
     dialect = state.documentation.get("dialect", "sqlite")
     prompt_map = {
@@ -520,9 +516,12 @@ def sql_execution_node(state: AgentState, db_service: DBService) -> dict:
                 _STALE_CACHE.pop(next(iter(_STALE_CACHE)))
             _STALE_CACHE[ck] = list(results)
         else:
-            # Invalidate schema cache after writes (new tables/columns may exist)
+            # Invalidate both caches after writes — data has changed
             from app.services.db_service import _SCHEMA_CACHE
             _SCHEMA_CACHE.pop(state.source_id, None)
+            keys_to_remove = [k for k in _STALE_CACHE if k.startswith(f"{state.source_id}:::")]
+            for k in keys_to_remove:
+                _STALE_CACHE.pop(k, None)
         return {"query_results": results, "success": True}
     except Exception as e:
         logger.error("SQL execution failed: %s", e)
@@ -535,7 +534,7 @@ def sql_execution_node(state: AgentState, db_service: DBService) -> dict:
 
 
 
-def fix_sql_node(state: AgentState, llm: BaseLLM, schema_service: SchemaService, db_service: DBService) -> dict:
+def fix_sql_node(state: AgentState, llm: BaseLLM, schema_service: Any, db_service: DBService) -> dict:
     if state.success:
         return {}
 
@@ -700,7 +699,7 @@ def scenario_failure_node(state: AgentState) -> dict:
     }
 
 
-def scenario_lesson_node(state: AgentState, llm: BaseLLM, schema_service: SchemaService) -> dict:
+def scenario_lesson_node(state: AgentState, llm: BaseLLM, schema_service: Any) -> dict:
     failure_question = state.documentation.get("_failure_question") or state.question
     failure_sql = state.documentation.get("_failure_sql") or state.sql
     failure_error = state.documentation.get("_failure_error") or "Unknown failure"
@@ -825,7 +824,7 @@ class AgentGraph:
         self,
         llm: BaseLLM,
         db_service: DBService,
-        schema_service: SchemaService,
+        schema_service: Any,
         checkpointer: Any | None = None,
         store: Any | None = None,
     ) -> None:
@@ -1065,7 +1064,7 @@ if __name__ == "__main__":
     from app.core.config import settings
     from app.llm.factory import get_llm
     from app.services.db_service import DBService, get_engine, upload_csv_to_sqlite
-    from app.services.schema_service import SchemaService
+
     
     source_choice = input("Choose data source type [1=CSV, 2=Database]: ").strip()
     if source_choice not in {"1", "2"}:
@@ -1104,9 +1103,7 @@ if __name__ == "__main__":
     # Setup Groq LLM
     llm = get_llm(provider="openrouter") 
     db_service = DBService(source_id=source_id)
-    schema_service = SchemaService()
-
-    agent = AgentGraph(llm, db_service, schema_service)
+    agent = AgentGraph(llm, db_service, None)
     
     test_question = input("Enter your question: ").strip()
     

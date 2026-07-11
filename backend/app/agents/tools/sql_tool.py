@@ -1,13 +1,13 @@
 import re
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from langchain.tools import tool
 
+from app.agents.nodes.sql_node import _sanitize_sql
 from app.agents.prompts import SQL_GENERATION_PROMPT, SQL_SYSTEM_MESSAGE, SQL_FIX_PROMPT
 from app.agents.tools.schema_tools import fetch_schema_context
 from app.services.db_service import DBService
-from app.services.schema_service import SchemaService
 from app.agents.state.agent_state import AgentState
 
 MAX_RETRIES = 3
@@ -15,28 +15,15 @@ QUERY_TIMEOUT_SECONDS = 10
 MAX_ROWS = 1000
 RESULTS_FILE = Path("sql_results.txt")
 
-
-def _sanitize_sql(sql: str) -> str:
-    """Strip markdown code fences that LLMs sometimes add despite instructions."""
-    cleaned = sql.strip()
-    if cleaned.startswith("```"):
-        lines = cleaned.splitlines()
-        if len(lines) >= 3 and lines[-1].strip().startswith("```"):
-            lines = lines[1:-1]
-        elif len(lines) >= 2 and lines[0].strip().startswith("```"):
-            lines = lines[1:]
-        cleaned = "\n".join(lines).strip()
-    return cleaned
-
 _db_service: Optional[DBService] = None
-_schema_service: Optional[SchemaService] = None
+_schema_service: Optional[Any] = None
 _redis_client = None
 _llm = None
 
 
 def init_sql_tool(
     db_service: DBService,
-    schema_service: SchemaService,
+    schema_service: Any,
     redis_client=None,
     llm=None,
 ) -> None:
