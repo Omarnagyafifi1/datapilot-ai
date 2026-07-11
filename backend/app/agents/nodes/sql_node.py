@@ -25,16 +25,14 @@ NOOP_ERROR_SQL = (
 
 
 def _sanitize_sql(sql: str) -> str:
-    """Strip markdown code fences that LLMs sometimes add."""
+    """Strip markdown code fences that LLMs sometimes add despite instructions."""
+    import re
+
     cleaned = sql.strip()
-    if cleaned.startswith("```"):
-        lines = cleaned.splitlines()
-        if len(lines) >= 3 and lines[-1].strip().startswith("```"):
-            lines = lines[1:-1]
-        elif len(lines) >= 2 and lines[0].strip().startswith("```"):
-            lines = lines[1:]
-        cleaned = "\n".join(lines).strip()
-    return cleaned
+    # Remove opening ```sql or ``` and closing ```
+    cleaned = re.sub(r"^```(?:sql)?\s*", "", cleaned)
+    cleaned = re.sub(r"\s*```$", "", cleaned)
+    return cleaned.strip()
 
 
 def run_sql_node(state: AgentState, llm: BaseLLM) -> dict:

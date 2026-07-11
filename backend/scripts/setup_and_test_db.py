@@ -275,7 +275,6 @@ def run_agent_tests() -> None:
         from app.core.config import settings
         from app.llm.factory import get_llm
         from app.services.db_service import DBService, get_engine, _SOURCE_CONN_STRINGS
-        from app.services.schema_service import SchemaService
         from app.agents.graph import AgentGraph
 
         # Register data source
@@ -286,8 +285,7 @@ def run_agent_tests() -> None:
         # Init services
         llm = get_llm(provider=settings.LLM_PROVIDER)
         db_service = DBService(source_id=SOURCE_ID, conn_string=CONN_STRING)
-        schema_service = SchemaService()
-        agent = AgentGraph(llm, db_service, schema_service)
+        agent = AgentGraph(llm, db_service, None)
         print_success("AgentGraph initialized successfully")
 
         # Questions to test

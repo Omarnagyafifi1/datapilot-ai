@@ -76,7 +76,7 @@ def _default_serializer(obj):
     raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 
-def _resp(success: bool, message: str, data: dict | list | None) -> JSONResponse:
+def _resp(success: bool, message: str, data: dict | list | None, status_code: int = 200) -> JSONResponse:
     payload = {
         "success": success,
         "message": message,
@@ -89,7 +89,7 @@ def _resp(success: bool, message: str, data: dict | list | None) -> JSONResponse
     }
     # Use custom serializer to handle datetime objects
     content_str = _json.dumps(payload, default=_default_serializer)
-    return JSONResponse(content=_json.loads(content_str), headers=headers)
+    return JSONResponse(content=_json.loads(content_str), headers=headers, status_code=status_code)
 
 
 def _get_provider(file: UploadFile) -> Optional[object]:
@@ -161,7 +161,7 @@ def query_endpoint(
     except Exception as e:
         status = "ERROR"
         logger.exception("Query failed")
-        return _resp(success=False, message=f"Query failed: {str(e)}", data=None)
+        return _resp(success=False, message=f"Query failed: {str(e)}", data=None, status_code=500)
     finally:
         latency = time.time() - start_time
         try:

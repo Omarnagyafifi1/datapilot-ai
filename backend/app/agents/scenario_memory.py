@@ -1,3 +1,4 @@
+import hashlib
 import json
 import re
 from dataclasses import dataclass
@@ -79,7 +80,9 @@ class ScenarioMemory:
     def _embed(self, text: str, dim: int = 512) -> np.ndarray:
         vec = np.zeros(dim, dtype=np.float32)
         for token in self._tokenize(text):
-            vec[hash(token) % dim] += 1.0
+            digest = hashlib.md5(token.encode("utf-8")).digest()
+            idx = int.from_bytes(digest[:4], "little") % dim
+            vec[idx] += 1.0
         norm = float(np.linalg.norm(vec))
         if norm > 0:
             vec /= norm

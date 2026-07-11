@@ -7,7 +7,6 @@ from app.agents.memory_backends import GraphMemoryBackends
 from app.llm.factory import get_llm
 from app.services.db_service import DBService
 from app.services.data_source_service import DataSourceService
-from app.services.schema_service import SchemaService
 from app.services.history_service import HistoryService
 
 logger = get_logger(__name__)
@@ -15,7 +14,6 @@ logger = get_logger(__name__)
 
 _db_service = DBService()
 _data_source_service = DataSourceService()
-_schema_service = SchemaService()
 _memory_backends = GraphMemoryBackends()
 _graph_orchestrator: AgentGraph | None = None
 _history_service = HistoryService()
@@ -31,7 +29,7 @@ def get_graph_orchestrator() -> AgentGraph:
             _graph_orchestrator = AgentGraph(
                 llm=llm,
                 db_service=_db_service,
-                schema_service=_schema_service,
+                schema_service=None,
                 checkpointer=_memory_backends.checkpointer,
                 store=_memory_backends.store,
             )
