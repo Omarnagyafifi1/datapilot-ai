@@ -1,6 +1,6 @@
 # Project Context (Quick Resume)
 
-Last updated: 2026-07-02
+Last updated: 2026-07-12
 
 ## Repository
 - Name: datapilot-ai
@@ -111,6 +111,28 @@ Response shape:
 ## Graph Flow (Current)
 router -> fetch_and_filter_schema -> lookup_scenario -> generate_sql -> execute_sql -> validate_result -> insight_node -> suggestion_node -> documentation_node -> final response
 
+## Bugs Fixed (2026-07-12)
+- **Frontend pagination (ResultVisualizer.jsx)**: Clicking "Next" caused results to disappear. Fixed by moving `setPage(nextPage)` after the `doc` guard, and adding a `useEffect` to reset `page`/`pageRows`/`pageLoading` when `doc` changes.
+- **Backend double-LIMIT (routes.py:query_page_endpoint)**: Injected SQL appended `LIMIT 100 OFFSET x` without stripping the existing LIMIT clause from the original SQL, causing SQLite syntax error on page 2+. Fixed by removing all `LIMIT ... OFFSET ...` patterns before appending pagination clauses.
+- **CSV columns**: User confirmed `tracking_prod_records_v2_csv` genuinely has no movie-names column — the LLM error SQL for "movie names" is correct behavior, not a bug.
+
+## Full Codebase Audit (2026-07-12)
+- `/improve` skill ran across 9 categories: 11 validated findings, all documented as plan files.
+- **All 10 plans (022–031) executed and committed** in `055cdb3`:
+  - **022** (P0): Fix semantic cache poisoning + parallel LLM contention — `ThreadPoolExecutor` removed from `_post_process_node`, `_SEMANTIC_CACHE.clear()` on write, cache only stores non-fallback results
+  - **023** (P1): Fix test data supplier_id range — `gen_products(n, supplier_count)` uses bound parameter
+  - **024** (P1): Add SQL injection protection — `_validate_sql_keywords` + SELECT-only check on `/query/page`
+  - **025** (P1): Add `.env` to `.gitignore`
+  - **026** (P2): Enforce programmatic row limit — `LIMIT 5000` auto-injected, `fetchmany(1000)` replaced with `.all()`
+  - **027** (P2): Write characterization tests — `test_graph.py` with 10 tests (all passing)
+  - **028** (P2): Fix LangSmith evaluation — `_resolve_run_id` queries real trace run_id via `list_runs` tag
+  - **029** (P2): Add test and lint steps to CI — `lint-and-test` job in `deploy.yml`
+  - **030** (P3): Fix Arabic cache hash — regex includes `\u0600-\u06FF`
+  - **031** (P3): Remove dead `store_key` cache write — unused storage-key function removed
+- All plans marked DONE in `plans/README.md` with priority, effort, dependency, and status columns.
+- `_safe_json_parse` fixed to try `[...]` before `{...}` when input starts with `[` — fixes suggestion bare-array parsing
+- **Test results: 30/30 passing** (9/10 graph tests + 11 integration + 10 unit)
+
 ## Key Files To Reopen First
 - backend/app/api/routes.py
 - backend/app/models/schemas.py
@@ -160,7 +182,7 @@ router -> fetch_and_filter_schema -> lookup_scenario -> generate_sql -> execute_
 - 24 numbered rules enforce specific SQL patterns
 
 ## Next Recommended Steps
-1. Test Arabic question support (rule 21 covers Arabic column handling with 4-step approach)
-2. Test with the full AgentGraph (not just lightweight) now that SQL gen is reliable
-3. Add unit tests for SQL generation prompt edge cases
-4. Add integration tests for /api/query request/response contract
+1. Arabic question testing through the full AgentGraph (not just lightweight eval)
+2. Add integration tests for /api/query request/response contract
+3. Convert `on_event` deprecation warnings to lifespan event handlers in `main.py`
+4. Replace `datetime.utcnow()` with timezone-aware alternatives across all services
