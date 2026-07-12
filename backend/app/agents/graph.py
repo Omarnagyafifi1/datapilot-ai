@@ -107,8 +107,16 @@ def _safe_json_parse(text: str) -> Any | None:
         except json.JSONDecodeError:
             pass
 
-    # Try array first if text starts with `[`, otherwise try object first
-    braces = ('[', ']') if text.startswith('[') else ('{', '}')
+    # Find the first array and object brackets
+    first_square = text.find('[')
+    first_curly = text.find('{')
+    
+    # Try array first if it appears before an object, otherwise try object first
+    if first_square != -1 and (first_curly == -1 or first_square < first_curly):
+        braces = ('[', ']')
+    else:
+        braces = ('{', '}')
+    
     for open_char, close_char in [braces, ('{', '}') if braces != ('{', '}') else ('[', ']')]:
         start = text.find(open_char)
         end = text.rfind(close_char)

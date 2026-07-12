@@ -320,16 +320,34 @@ async function exportReport(doc) {
   }
 
   const viz = doc.visualization || {};
-  const chartType = viz.chart_type || 'bar';
-  const chartSvg = buildChartSVG(doc.results || [], chartType);
-  const chartSection = chartSvg
-    ? `<h2>Chart (${chartType})</h2><div style="text-align:center;margin:16px 0;">${chartSvg}</div>`
-    : '';
+  const hasPlotlySpec = viz && viz.spec && viz.spec.data;
+  
+  let chartSection = '';
+  if (hasPlotlySpec) {
+    const specJson = JSON.stringify(viz.spec).replace(/</g, '\u003c');
+    chartSection = `
+      <h2>Chart (${viz.chart_type || 'Visualization'})</h2>
+      <div id="plotly-chart" style="width:100%; height:400px; margin:16px 0;"></div>
+      <script>
+        const spec = ${specJson};
+        if (window.Plotly) {
+          Plotly.newPlot('plotly-chart', spec.data || [], spec.layout || {}, { responsive: true });
+        }
+      </script>
+    `;
+  } else {
+    const chartType = viz.chart_type || 'bar';
+    const chartSvg = buildChartSVG(doc.results || [], chartType);
+    chartSection = chartSvg
+      ? `<h2>Chart (${chartType})</h2><div style="text-align:center;margin:16px 0;">${chartSvg}</div>`
+      : '';
+  }
 
   const title = doc.question || 'DataPilot Report';
   const bodyHtml = _mdToHtml(markdown);
   const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>${title}</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 <style>
   @page { margin: 20mm; size: A4; }
   :root {
@@ -391,7 +409,11 @@ function buildChartSVG(results = [], chartType = 'bar') {
   if (!results.length) return '';
   const keys = Object.keys(results[0]);
   const strKey = keys.find((key) => typeof results[0][key] === 'string') || null;
-  const numKeys = keys.filter((key) => Number.isFinite(Number(results[0][key])));
+  const numKeys = keys.filter((key) => {
+    const val = results[0][key];
+    return val !== null && val !== '' && !Number.isNaN(Number(val)) && Number.isFinite(Number(val));
+  });
+  if (numKeys.length === 0) return '';
   const labelKey = strKey || numKeys[0] || keys[0];
   const valueKey = numKeys[0] || keys[0];
 
