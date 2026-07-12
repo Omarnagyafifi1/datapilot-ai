@@ -1,3 +1,4 @@
+import re
 import threading
 import time
 from typing import Any, Optional
@@ -201,16 +202,19 @@ def query_page_endpoint(
 ) -> dict[str, Any]:
     try:
         data_source_service.get_conn_string(payload.source_id)
+        # Strip trailing semicolons and any existing LIMIT clause before pagination
+        clean_sql = payload.sql.rstrip(';').strip()
+        clean_sql = re.sub(r'\s*LIMIT\s+\d+(\s+OFFSET\s+\d+)?\s*$', '', clean_sql, flags=re.IGNORECASE)
         # Execute query with offset/limit based on dialect
         dialect = db_service.DBService(source_id=payload.source_id).get_dialect()
-        limit_sql = payload.sql
+        limit_sql = clean_sql
         offset = (payload.page - 1) * payload.page_size
         if dialect in ("sqlite", "postgresql", "mysql"):
-            limit_sql = f"{payload.sql} LIMIT {payload.page_size} OFFSET {offset}"
+            limit_sql = f"{clean_sql} LIMIT {payload.page_size} OFFSET {offset}"
         elif dialect == "mssql":
-            limit_sql = f"{payload.sql} OFFSET {offset} ROWS FETCH NEXT {payload.page_size} ROWS ONLY"
+            limit_sql = f"{clean_sql} OFFSET {offset} ROWS FETCH NEXT {payload.page_size} ROWS ONLY"
         elif dialect == "oracle":
-            limit_sql = f"{payload.sql} OFFSET {offset} ROWS FETCH NEXT {payload.page_size} ROWS ONLY"
+            limit_sql = f"{clean_sql} OFFSET {offset} ROWS FETCH NEXT {payload.page_size} ROWS ONLY"
 
         results = db_service.execute_query(limit_sql, payload.source_id)
         return _resp(success=True, message="Page fetched", data={"rows": results, "page": payload.page})

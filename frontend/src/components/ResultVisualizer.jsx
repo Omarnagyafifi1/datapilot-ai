@@ -25,6 +25,12 @@ export function ResultVisualizer({ doc }) {
   const chartRef = React.useRef(null);
   const [chartRendered, setChartRendered] = React.useState(false);
 
+  React.useEffect(() => {
+    setPage(1);
+    setPageRows(null);
+    setPageLoading(false);
+  }, [doc]);
+
   const rows = doc ? (pageRows || doc.results || []) : [];
   const totalRows = doc ? (doc.results_count || rows.length) : 0;
   const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
@@ -34,8 +40,8 @@ export function ResultVisualizer({ doc }) {
   const hasPlotlySpec = visualization && visualization.spec && visualization.spec.data;
 
   async function loadPage(nextPage) {
-    setPage(nextPage);
     if (!doc || !doc.source_id || !doc.sql) return;
+    setPage(nextPage);
     setPageLoading(true);
     try {
       const resp = await api.queryPage({
