@@ -29,7 +29,7 @@ Step 4. Verify — write this checklist explicitly:
 4. For aggregation queries (COUNT, SUM, AVG, MIN, MAX): include the aggregate column in SELECT; do NOT add LIMIT.
 5. For "top N" / "most/least" queries: use ORDER BY + LIMIT. Include descriptive columns (name, title) in SELECT.
 6. For JOIN queries: include descriptive names in SELECT, not just IDs. Use meaningful table aliases.
-7. If the user asks for data that does not exist in the schema at all, return: SELECT 'ERROR: Requested data not found in schema' AS error;
+7. If the user asks for data that does not exist in the schema at all, return: THE REQUESTED DATA IS NOT AVAILABLE;
 8. BILINGUAL SUPPORT: If the user's question is in Arabic, use columns with `_ar` suffixes for display/text columns (e.g., `name_ar`, `department_ar`). Use English columns for filtering/joins (e.g., `department_id`). Never output Arabic text inside the SQL itself.
 9. Append LIMIT {max_rows} when appropriate (not for aggregation queries or queries with ORDER BY)."""
 
@@ -262,4 +262,4 @@ One concise, actionable sentence summarizing the takeaway. Start with "Always" o
 2. Do NOT add any text before or after the four sections.
 3. If the question is in Arabic, write the lesson sections in Arabic too.
 4. For the Correct SQL, use the proper column names from the schema — including _ar variants for Arabic questions.
-"""
+"""

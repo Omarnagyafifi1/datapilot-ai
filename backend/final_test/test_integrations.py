@@ -151,7 +151,18 @@ def test_api_evaluate():
     response = client.post("/api/evaluate", json=eval_payload)
     assert response.status_code in [200, 400, 500]  # Depends on active source database
 
-# 9. System Metrics, Stats, & Feed
+# 9. Pagination SQL injection protection
+def test_query_page_rejects_malicious_sql():
+    resp = client.post("/api/query/page", json={
+        "sql": "SELECT 1; DROP TABLE products; --",
+        "source_id": "nonexistent",
+        "page": 1,
+        "page_size": 10
+    })
+    data = resp.json()
+    assert not data.get("success", True)
+
+# 10. System Metrics, Stats, & Feed
 def test_api_system_endpoints():
     # Stats
     stats_resp = client.get("/api/system/stats")

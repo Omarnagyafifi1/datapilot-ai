@@ -17,8 +17,6 @@ except Exception:
     evaluate_sql = None
     post_evaluation_to_langsmith = None
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
-
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import StateGraph, START, END
 from langgraph.store.memory import InMemoryStore
@@ -56,7 +54,7 @@ _SEMANTIC_CACHE_MAX = 100
 
 def _question_hash(question: str) -> str:
     import hashlib
-    tokens = re.findall(r"[a-zA-Z0-9_]+", question.lower())
+    tokens = re.findall(r"[a-zA-Z0-9_\u0600-\u06FF]+", question.lower())
     tokens.sort()
     return hashlib.md5(" ".join(tokens).encode()).hexdigest()[:16]
 
@@ -109,7 +107,9 @@ def _safe_json_parse(text: str) -> Any | None:
         except json.JSONDecodeError:
             pass
 
-    for open_char, close_char in [('{', '}'), ('[', ']')]:
+    # Try array first if text starts with `[`, otherwise try object first
+    braces = ('[', ']') if text.startswith('[') else ('{', '}')
+    for open_char, close_char in [braces, ('{', '}') if braces != ('{', '}') else ('[', ']')]:
         start = text.find(open_char)
         end = text.rfind(close_char)
         if start != -1 and end > start:
@@ -721,12 +721,14 @@ def sql_execution_node(state: AgentState, db_service: DBService) -> dict:
                 _STALE_CACHE.pop(next(iter(_STALE_CACHE)))
             _STALE_CACHE[ck] = list(results)
         else:
-            # Invalidate both caches after writes — data has changed
+            # Invalidate caches after writes — data has changed
             from app.services.db_service import _SCHEMA_CACHE
             _SCHEMA_CACHE.pop(state.source_id, None)
             keys_to_remove = [k for k in _STALE_CACHE if k.startswith(f"{state.source_id}:::")]
             for k in keys_to_remove:
                 _STALE_CACHE.pop(k, None)
+            global _SEMANTIC_CACHE
+            _SEMANTIC_CACHE.clear()
         return {"query_results": results, "success": True}
     except Exception as e:
         logger.error("SQL execution failed: %s", e)
@@ -1040,39 +1042,24 @@ class AgentGraph:
         self.graph = self._build_graph()
 
     def _post_process_node(self, state: AgentState) -> dict:
-        """Run visualization, insights, and suggestions in parallel via ThreadPoolExecutor."""
         results: dict[str, Any] = {}
+        try:
+            results.update(visualization_node(state))
+        except Exception:
+            logger.exception("post_process_node visualization failed")
+            results["visualization"] = None
 
-        def run_vis(s: AgentState) -> dict:
-            return visualization_node(s)
+        try:
+            results.update(insight_node(state, self.llm))
+        except Exception:
+            logger.exception("post_process_node insights failed")
+            results["insights"] = _fallback_insights()
 
-        def run_insights(s: AgentState) -> dict:
-            return insight_node(s, self.llm)
-
-        def run_suggestions(s: AgentState) -> dict:
-            return suggestion_node(s, self.llm)
-
-        tasks = {
-            "visualization": run_vis,
-            "insights": run_insights,
-            "suggestions": run_suggestions,
-        }
-
-        with ThreadPoolExecutor(max_workers=3) as pool:
-            futures = {pool.submit(fn, state): key for key, fn in tasks.items()}
-            for future in as_completed(futures):
-                key = futures[future]
-                try:
-                    result = future.result()
-                    results.update(result)
-                except Exception:
-                    logger.exception("post_process_node %s failed", key)
-                    if key == "insights":
-                        results["insights"] = _fallback_insights()
-                    elif key == "suggestions":
-                        results["suggestions"] = []
-                    elif key == "visualization":
-                        results["visualization"] = None
+        try:
+            results.update(suggestion_node(state, self.llm))
+        except Exception:
+            logger.exception("post_process_node suggestions failed")
+            results["suggestions"] = []
 
         return results
 
@@ -1216,20 +1203,21 @@ class AgentGraph:
                 "preview_only": preview_only,
             },
         }
-        config = {"configurable": {"thread_id": resolved_thread_id}}
-        config["configurable"]["user_id"] = source_id
+        config = {
+            "configurable": {"thread_id": resolved_thread_id, "user_id": source_id},
+            "metadata": {"thread_id": resolved_thread_id},
+        }
         final_state = self.graph.invoke(initial_state, config=config)
         output = self._format_output(final_state, resolved_thread_id)
 
-        # Store in semantic cache on success
+        # Only cache if insights/suggestions are real (not fallbacks)
         if not preview_only and output.get("status") == "completed" and not output.get("requires_approval"):
-            store_key = _build_semantic_cache_storage_key(
-                source_id, question, output.get("sql", "")
-            )
-            if len(_SEMANTIC_CACHE) >= _SEMANTIC_CACHE_MAX:
-                _SEMANTIC_CACHE.pop(next(iter(_SEMANTIC_CACHE)))
-            _SEMANTIC_CACHE[cache_key] = dict(output)
-            _SEMANTIC_CACHE[store_key] = dict(output)
+            insights_ok = bool(output.get("insights")) and output["insights"] != _fallback_insights()
+            suggestions_ok = bool(output.get("suggestions"))
+            if insights_ok and suggestions_ok:
+                if len(_SEMANTIC_CACHE) >= _SEMANTIC_CACHE_MAX:
+                    _SEMANTIC_CACHE.pop(next(iter(_SEMANTIC_CACHE)))
+                _SEMANTIC_CACHE[cache_key] = dict(output)
 
         if _EVAL_AVAILABLE and not preview_only:
             import random

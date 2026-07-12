@@ -387,11 +387,21 @@ def execute_query(sql: str, source_id: str, timeout: int = 15) -> list:
                 connection = connection.execution_options(timeout=timeout)
             # Oracle: use OracleDB cancel via separate mechanism if needed
 
+            # Enforce a default LIMIT if none exists (prevents full table scans)
+            _DEFAULT_LIMIT = 5000
+            upper_sql = rewritten_sql.strip().upper().rstrip(";").strip()
+            has_limit = bool(re.search(r'\bLIMIT\s+\d+', upper_sql))
+            has_top = upper_sql.startswith("SELECT TOP")
+            has_fetch = bool(re.search(r'\bFETCH\s+(FIRST|NEXT)\s+\d+', upper_sql))
+            if not has_limit and not has_top and not has_fetch:
+                rewritten_sql = f"{rewritten_sql.rstrip(';')} LIMIT {_DEFAULT_LIMIT}"
+
             result = connection.execute(text(rewritten_sql))
             if not result.returns_rows:
                 connection.commit()
                 return [{"status": "success", "rows_affected": result.rowcount}]
-            return [dict(row) for row in result.mappings().fetchmany(1000)]
+            rows = [dict(row) for row in result.mappings().all()]
+            return rows
     except Exception as exc:
         logger.exception("Failed query execution for source_id=%s", source_id)
         raise ValueError(f"Failed to execute query: {str(exc)}") from exc

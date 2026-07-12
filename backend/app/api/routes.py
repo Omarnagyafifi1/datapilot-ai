@@ -36,6 +36,7 @@ except ImportError:
         return {}
 from app.services.data_source_service import DataSourceService, save_dataset_metadata, get_dataset_by_hash, list_datasets as _list_datasets_func, get_dataset as _get_dataset_func, delete_dataset as _delete_dataset_func, update_dataset_name as _update_dataset_name_func, DataSourceService as _DataSourceService
 from app.services.history_service import HistoryService
+from app.agents.graph import _validate_sql_keywords
 from app.services import db_service
 from app.services.data_service import DataSourceService as CSVService
 
@@ -205,6 +206,16 @@ def query_page_endpoint(
         # Strip trailing semicolons and any existing LIMIT clause before pagination
         clean_sql = payload.sql.rstrip(';').strip()
         clean_sql = re.sub(r'\s*LIMIT\s+\d+(\s+OFFSET\s+\d+)?\s*$', '', clean_sql, flags=re.IGNORECASE)
+
+        # Validate SQL structure — must be a SELECT query for read-only pagination
+        validation_error = _validate_sql_keywords(clean_sql, "INQUIRE")
+        if validation_error:
+            return _resp(success=False, message=validation_error, data=None, status_code=400)
+
+        stripped = clean_sql.lstrip().upper()
+        if not stripped.startswith("SELECT") or "INTO" in stripped.split()[0:10]:
+            return _resp(success=False, message="Only SELECT queries are allowed", data=None, status_code=400)
+
         # Execute query with offset/limit based on dialect
         dialect = db_service.DBService(source_id=payload.source_id).get_dialect()
         limit_sql = clean_sql

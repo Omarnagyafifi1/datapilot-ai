@@ -237,6 +237,21 @@ def _is_valid_uuid(value: str) -> bool:
         return False
 
 
+def _resolve_run_id(thread_id: str) -> str:
+    """Find the LangSmith run_id associated with a thread by listing recent runs."""
+    try:
+        runs = list(_LS_CLIENT.list_runs(
+            run_type="chain",
+            filter={"tags": [f"thread_id:{thread_id}"]},
+            limit=1,
+        ))
+        if runs:
+            return str(runs[0].id)
+    except Exception:
+        logger.debug("Could not resolve run_id for thread %s", thread_id, exc_info=True)
+    return thread_id
+
+
 def post_evaluation_to_langsmith(
     question: str,
     sql: str,
@@ -256,45 +271,47 @@ def post_evaluation_to_langsmith(
         logger.debug("thread_id is not a valid UUID, skipping LangSmith feedback: %s", thread_id)
         return False
 
+    resolved_run_id = _resolve_run_id(thread_id)
+
     try:
         _LS_CLIENT.create_feedback(
-            run_id=thread_id,
+            run_id=resolved_run_id,
             key="sql_syntax_valid",
             score=1.0 if scores.get("syntax_valid") else 0.0,
             comment=scores.get("syntax_error"),
         )
         _LS_CLIENT.create_feedback(
-            run_id=thread_id,
+            run_id=resolved_run_id,
             key="overall_quality",
             score=scores.get("overall", 0.0),
         )
         _LS_CLIENT.create_feedback(
-            run_id=thread_id,
+            run_id=resolved_run_id,
             key="correctness",
             score=scores.get("correctness", 0.0),
         )
         _LS_CLIENT.create_feedback(
-            run_id=thread_id,
+            run_id=resolved_run_id,
             key="completeness",
             score=scores.get("completeness", 0.0),
         )
         _LS_CLIENT.create_feedback(
-            run_id=thread_id,
+            run_id=resolved_run_id,
             key="latency",
             score=min(latency / 30.0, 1.0),
         )
         _LS_CLIENT.create_feedback(
-            run_id=thread_id,
+            run_id=resolved_run_id,
             key="has_visualization",
             score=1.0 if has_visualization else 0.0,
         )
         _LS_CLIENT.create_feedback(
-            run_id=thread_id,
+            run_id=resolved_run_id,
             key="results_count",
             score=min(results_count / 1000.0, 1.0),
         )
         _LS_CLIENT.create_feedback(
-            run_id=thread_id,
+            run_id=resolved_run_id,
             key="insight_count",
             score=min(insight_count / 5.0, 1.0),
         )

@@ -28,6 +28,9 @@ backend/*.log
 backend/err*.log
 backend/out*.log
 
+# Environment files
+.env
+
 # Test artifacts
 backend/test
 backend/test_data*
