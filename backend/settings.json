@@ -1,10 +1,10 @@
 {
-  "llm_provider": "azure",
+  "llm_provider": "groq",
   "model": "gpt-5-mini",
   "temperature": 0.2,
   "max_tokens": 4096,
   "api_keys": {
-    "groq": "",
+    "groq": "test_key",
     "openrouter": "",
     "gemini": "",
     "openai": ""

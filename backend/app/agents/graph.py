@@ -77,12 +77,15 @@ def _is_error_sql(sql: str) -> bool:
     return upper.startswith("ERROR:") or "SELECT 'ERROR:" in upper or 'SELECT "ERROR:' in upper
 
 
-def _fallback_insights() -> list[dict[str, str]]:
+def _fallback_insights_no_data() -> list[dict[str, str]]:
     return [
-        {
-            "ar": "لا توجد بيانات كافية للتحليل", 
-            "en": "No data to analyze"
-        }
+        {"ar": "لا توجد بيانات كافية للتحليل", "en": "No data to analyze"}
+    ]
+
+
+def _fallback_insights_llm_failed() -> list[dict[str, str]]:
+    return [
+        {"ar": "تعذر إنشاء رؤى من البيانات", "en": "Could not generate insights from the data"}
     ]
 
 
@@ -97,6 +100,35 @@ def _extract_json_payload(raw_response: str) -> str:
     return cleaned
 
 
+def _extract_bracketed(text: str, open_ch: str, close_ch: str) -> str | None:
+    """Extract the first properly bracket-matched substring from text."""
+    depth = 0
+    start = None
+    in_string = False
+    escape = False
+    for i, ch in enumerate(text):
+        if escape:
+            escape = False
+            continue
+        if ch == '\\':
+            escape = True
+            continue
+        if ch == '"':
+            in_string = not in_string
+            continue
+        if in_string:
+            continue
+        if ch == open_ch:
+            if depth == 0:
+                start = i
+            depth += 1
+        elif ch == close_ch:
+            depth -= 1
+            if depth == 0 and start is not None:
+                return text[start:i + 1]
+    return None
+
+
 def _safe_json_parse(text: str) -> Any | None:
     text = text.strip()
 
@@ -107,31 +139,21 @@ def _safe_json_parse(text: str) -> Any | None:
         except json.JSONDecodeError:
             pass
 
-    # Find the first array and object brackets
-    first_square = text.find('[')
-    first_curly = text.find('{')
-    
-    # Try array first if it appears before an object, otherwise try object first
-    if first_square != -1 and (first_curly == -1 or first_square < first_curly):
-        braces = ('[', ']')
-    else:
-        braces = ('{', '}')
-    
-    for open_char, close_char in [braces, ('{', '}') if braces != ('{', '}') else ('[', ']')]:
-        start = text.find(open_char)
-        end = text.rfind(close_char)
-        if start != -1 and end > start:
-            candidate = text[start:end + 1]
+    # Use bracket-depth matching for robustness
+    for open_char, close_char in [('[', ']'), ('{', '}')]:
+        candidate = _extract_bracketed(text, open_char, close_char)
+        if candidate is None:
+            continue
+        try:
+            return json.loads(candidate)
+        except json.JSONDecodeError:
+            fixed = re.sub(r",\s*}", "}", candidate)
+            fixed = re.sub(r",\s*\]", "]", fixed)
+            fixed = re.sub(r"(?<!\\)'", '"', fixed)
             try:
-                return json.loads(candidate)
+                return json.loads(fixed)
             except json.JSONDecodeError:
-                fixed = re.sub(r",\s*}", "}", candidate)
-                fixed = re.sub(r",\s*\]", "]", fixed)
-                fixed = re.sub(r"(?<!\\)'", '"', fixed)
-                try:
-                    return json.loads(fixed)
-                except json.JSONDecodeError:
-                    pass
+                pass
 
     try:
         return json.loads(text)
@@ -199,7 +221,10 @@ def _parse_insights(raw_response: str) -> list[dict[str, str]] | None:
 
 def _normalize_suggestions(payload: Any) -> list[dict[str, str]] | None:
     if isinstance(payload, dict):
-        payload = payload.get("suggestions")
+        if "ar" in payload or "en" in payload:
+            payload = [payload]
+        else:
+            payload = payload.get("suggestions")
 
     if not isinstance(payload, list):
         return None
@@ -850,7 +875,7 @@ def _build_insight_prompt(state: AgentState) -> str:
 def insight_node(state: AgentState, llm: BaseLLM) -> dict:
     if not state.query_results:
         logger.info("insight_node: query_results empty (%s rows), returning fallback", len(state.query_results))
-        return {"insights": _fallback_insights()}
+        return {"insights": _fallback_insights_no_data()}
 
     prompt = _build_insight_prompt(state)
 
@@ -862,7 +887,7 @@ def insight_node(state: AgentState, llm: BaseLLM) -> dict:
         return {"insights": parsed_insights}
 
     logger.info("insight_node: parse failed for raw_response=%s", raw_response[:300])
-    return {"insights": _fallback_insights()}
+    return {"insights": _fallback_insights_llm_failed()}
 
 
 def suggestion_node(state: AgentState, llm: BaseLLM) -> dict:
@@ -1061,7 +1086,7 @@ class AgentGraph:
             results.update(insight_node(state, self.llm))
         except Exception:
             logger.exception("post_process_node insights failed")
-            results["insights"] = _fallback_insights()
+            results["insights"] = _fallback_insights_llm_failed()
 
         try:
             results.update(suggestion_node(state, self.llm))
@@ -1220,7 +1245,7 @@ class AgentGraph:
 
         # Only cache if insights/suggestions are real (not fallbacks)
         if not preview_only and output.get("status") == "completed" and not output.get("requires_approval"):
-            insights_ok = bool(output.get("insights")) and output["insights"] != _fallback_insights()
+            insights_ok = bool(output.get("insights")) and output["insights"] != _fallback_insights_no_data()
             suggestions_ok = bool(output.get("suggestions"))
             if insights_ok and suggestions_ok:
                 if len(_SEMANTIC_CACHE) >= _SEMANTIC_CACHE_MAX:

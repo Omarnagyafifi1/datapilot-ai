@@ -413,7 +413,22 @@ function buildChartSVG(results = [], chartType = 'bar') {
     const val = results[0][key];
     return val !== null && val !== '' && !Number.isNaN(Number(val)) && Number.isFinite(Number(val));
   });
+
+  // For string-only results, build a frequency bar chart using value counts
+  if (numKeys.length === 0 && strKey) {
+    const freq = {};
+    for (const row of results) {
+      const val = String(row[strKey] ?? '');
+      freq[val] = (freq[val] || 0) + 1;
+    }
+    const labels = Object.keys(freq).slice(0, 12);
+    const values = labels.map((l) => freq[l]);
+    return buildBarSVG(labels, values);
+  }
+
+  // Fall back to empty if truly nothing to chart
   if (numKeys.length === 0) return '';
+
   const labelKey = strKey || numKeys[0] || keys[0];
   const valueKey = numKeys[0] || keys[0];
 

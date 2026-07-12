@@ -17,7 +17,7 @@ class MockLLM:
         return self.responses.get("default", "SELECT 1")
 
 
-from app.agents.graph import insight_node, suggestion_node, _fallback_insights, _normalize_insights, _parse_insights
+from app.agents.graph import insight_node, suggestion_node, _fallback_insights_no_data, _fallback_insights_llm_failed, _normalize_insights, _parse_insights
 
 
 def test_insight_node_happy_path():
@@ -34,7 +34,7 @@ def test_insight_node_empty_results():
     llm = MockLLM()
     state = AgentState(question="Show sales", source_id="test", query_results=[])
     result = insight_node(state, llm)
-    assert result["insights"] == _fallback_insights()
+    assert result["insights"] == _fallback_insights_no_data()
     assert llm.call_count == 0
 
 
@@ -42,7 +42,7 @@ def test_insight_node_parse_failure():
     llm = MockLLM(responses={"insight": "not valid json"})
     state = AgentState(question="Show sales", source_id="test", query_results=[{"sales": 100}])
     result = insight_node(state, llm)
-    assert result["insights"] == _fallback_insights()
+    assert result["insights"] == _fallback_insights_llm_failed()
 
 
 def test_suggestion_node_happy_path():
